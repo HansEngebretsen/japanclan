@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#f6f3ed">
+<title>Japan Clan · Jul 14–24</title>
+<style>
+  :root{
+    --paper:#f6f3ed; --card:#fffdf9; --ink:#1a1611; --ink-2:#5c554a; --muted:#9c9486;
+    --line:#e6e0d2; --line-2:#d4ccba; --seal:#c2492c; --seal-2:#d9603a; --soft:#f3e5de;
+    --glow:radial-gradient(120% 70% at 50% -8%, #fffefb 0%, transparent 58%);
+    --serif:"Hiragino Mincho ProN",Georgia,"Times New Roman",serif;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --map-filter:grayscale(.82) sepia(.16) contrast(.93) brightness(1.03);
+    --coin-a:#f0b78a; --coin-b:#c2492c; --coin-c:#8f2f1c;
+    --pos:#3f7a33;
+  }
+  [data-theme="dark"]{
+    --paper:#141312; --card:#1c1a18; --ink:#ece7df; --ink-2:#a7a094; --muted:#7d7669;
+    --line:#2a2722; --line-2:#39342c; --seal:#d35f3d; --seal-2:#e2724f; --soft:#23201c;
+    --glow:radial-gradient(110% 45% at 50% -12%, #201c17 0%, transparent 46%);
+    --map-filter:grayscale(.9) invert(.92) hue-rotate(190deg) contrast(.84) brightness(.96);
+    --coin-a:#e6a578; --coin-b:#c4583a; --coin-c:#94381f;
+    --pos:#7faa5f;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;font-family:var(--sans);color:var(--ink);background:var(--paper);line-height:1.4;
+    -webkit-font-smoothing:antialiased;padding-bottom:calc(env(safe-area-inset-bottom) + 30px);
+    background-image:var(--glow);background-attachment:fixed}
+  button,input{font-family:inherit;color:inherit}
+  a{color:inherit}
+  .wrap{max-width:660px;margin:0 auto;padding:0 13px}
+
+  /* header */
+  header{position:sticky;top:0;z-index:30;background:var(--paper)}
+  .hd{max-width:660px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 9px) 13px 9px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .wm{display:flex;align-items:baseline;gap:8px;min-width:0}
+  .wm .jp{font-family:var(--serif);font-size:19px;color:var(--seal);line-height:1}
+  .wm .en{font-family:var(--serif);font-size:16px;font-weight:600;white-space:nowrap}
+  .wm .dt{font-family:var(--mono);font-size:9.5px;color:var(--muted);letter-spacing:.03em;white-space:nowrap}
+  .hbtns{display:flex;align-items:center;gap:7px;flex:0 0 auto}
+  .purse{font-family:var(--mono);font-size:11px;color:var(--ink-2);display:inline-flex;align-items:center;gap:5px}
+  .purse .pc{width:13px;height:13px;border-radius:2px;background:var(--seal);display:grid;place-items:center;color:#fff;font-family:var(--serif);font-size:8px;line-height:1}
+  .purse b{color:var(--seal);font-size:12px}
+  .ibtn{border:0;background:0;width:28px;height:28px;display:grid;place-items:center;cursor:pointer;color:var(--ink-2)}
+  .ibtn svg{width:17px;height:17px}
+
+  /* calendar — printed-page style, read-only feel */
+  .cal{margin-top:14px;border:1px solid var(--line-2);border-radius:3px;overflow:hidden}
+  .calgrid{display:grid;grid-template-columns:repeat(7,1fr)}
+  .cwd{font-family:var(--mono);font-size:7.5px;color:var(--muted);text-align:center;letter-spacing:.1em;padding:5px 0 4px;border-bottom:1px solid var(--line-2);border-right:1px solid var(--line);background:var(--paper)}
+  .cwd:last-child{border-right:none}
+  .cell{min-height:38px;padding:4px 2px 3px;background:var(--card);position:relative;display:flex;flex-direction:column;align-items:center;border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .cell:nth-child(7n){border-right:none}
+  .cell.row-last{border-bottom:none}
+  .cell.out{background:var(--paper)}
+  .cell .dn{font-size:11.5px;font-family:var(--serif);font-weight:400;line-height:1;color:var(--muted)}
+  .cell.active .dn{font-weight:600;color:var(--seal)}
+  .cell .city{font-family:var(--mono);font-size:7px;letter-spacing:.02em;margin-top:2px;width:100%;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;outline:0;cursor:text}
+  .cell .city:focus{background:var(--soft);box-shadow:0 0 0 1.5px var(--seal);overflow:visible;text-overflow:clip;border-radius:2px}
+  .cell .fl{position:absolute;top:2px;right:3px;font-size:7.5px;opacity:.6}
+  .cell.z-tyo .city{color:var(--seal);opacity:.85}
+  .cell.z-hok .city{color:var(--ink-2);opacity:.85}
+  .cell.out .dn{opacity:.25}
+
+  /* clan = top key + city filters */
+  .clan{margin-top:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:7px}
+  .vault{border:1px solid var(--line);border-radius:10px;background:var(--card);padding:8px 9px;cursor:pointer;transition:.12s}
+  .vault.sel{border-color:var(--seal);background:color-mix(in srgb,var(--seal) 8%,var(--card));box-shadow:inset 0 0 0 1px var(--seal)}
+  .vault .vh{display:flex;align-items:baseline;gap:6px}
+  .vault .ve{font-size:12.5px;font-weight:700;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .vault .vc{font-family:var(--mono);font-size:9px;color:var(--muted);margin-left:auto;white-space:nowrap}
+  .vault.sel .vc{color:var(--seal)}
+  @media(max-width:640px){.vault .vc-lbl{display:none}}
+  .stacks{display:flex;flex-wrap:wrap;gap:9px;margin-top:8px;align-items:center}
+  .stack{display:flex;align-items:center}
+  .stack .mc{width:17px;height:17px;border-radius:2px;margin-left:-7px;border:1.5px solid var(--card);
+    background:var(--seal);
+    display:grid;place-items:center;color:#fff;font-family:var(--serif);font-size:8.5px}
+  .stack .mc:first-child{margin-left:0}
+  .stack .sct{font-family:var(--mono);font-size:9.5px;font-weight:700;color:var(--ink-2);margin-left:4px}
+
+  /* filters (category only) */
+  .filters{margin-top:12px}
+  .chiprow{display:flex;gap:5px;flex-wrap:wrap}
+  .chip{border:1px solid var(--line-2);background:var(--card);border-radius:99px;padding:4px 13px;font-size:12.5px;font-weight:600;color:var(--ink-2);cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+  .chip b{font-family:var(--mono);font-size:9px;font-weight:600;color:var(--muted)}
+  .chip.cat[aria-pressed="true"]{background:var(--seal);border-color:var(--seal);color:#fff}
+  .chip.cat[aria-pressed="true"] b{color:#fff;opacity:.75}
+
+  /* grid */
+  main{max-width:660px;margin:0 auto;padding:12px 13px 0}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:start}
+  .card{border:1px solid var(--line);border-radius:11px;background:var(--card);overflow:hidden;transition:border-color .15s}
+  .card.has{border-color:color-mix(in srgb,var(--seal) 38%,var(--line))}
+  .ctop{padding:9px 10px;cursor:pointer;display:flex;flex-direction:column;gap:5px}
+  .crow1{display:flex;align-items:flex-start;gap:8px}
+  .coin{flex:0 0 auto;width:26px;height:26px;border-radius:3px;cursor:pointer;border:1px solid var(--line-2);background:transparent;
+    display:grid;place-items:center;color:var(--muted);font-family:var(--serif);font-size:11px;transition:.12s}
+  .card.has .coin{border-color:transparent;color:#fff;
+    background:var(--seal)}
+  .coin:focus-visible{outline:2px solid var(--seal);outline-offset:2px}
+  .cname{font-size:13px;font-weight:600;line-height:1.22;letter-spacing:-.003em;flex:1;min-width:0;padding-top:1px}
+  .cdesc{font-size:11.5px;color:var(--ink-2);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .card.open .cdesc{-webkit-line-clamp:unset;overflow:visible}
+  .more{display:none}
+  .card.open .more{display:inline}
+  .crow2{display:flex;align-items:center;gap:7px}
+  .lvl{font-family:var(--mono);font-size:10px;color:var(--line-2);letter-spacing:-1px}
+  .lvl b{color:var(--ink-2)}
+  .flag,.verdict{font-family:var(--mono);font-size:7.5px;font-weight:700;letter-spacing:.04em;border-radius:3px;padding:1px 4px;text-transform:uppercase;white-space:nowrap}
+  .flag{color:var(--seal);border:1px solid var(--seal)}
+  .v-go{color:#3f7a33;border:1px solid #9fc18f} .v-maybe{color:#9a6a1c;border:1px solid #d8bd8e} .v-miss{color:var(--seal);border:1px solid #d9a99e}
+  .chev{margin-left:auto;color:var(--line-2);transition:transform .18s;flex:0 0 auto}
+  .card.open .chev{transform:rotate(90deg)}
+  .detailwrap{display:grid;grid-template-rows:0fr;transition:grid-template-rows .26s cubic-bezier(.4,0,.2,1)}
+  .card.open .detailwrap{grid-template-rows:1fr}
+  .dwin{overflow:hidden;min-height:0}
+  .cdetail{border-top:1px solid var(--line);margin:0 10px;padding:8px 0 10px}
+  .vt{font-size:11.5px;color:var(--ink-2);line-height:1.45}
+  .tip{font-size:11.5px;color:var(--ink-2);margin-top:6px;padding-left:12px;position:relative;line-height:1.45}
+  .tip::before{content:"";position:absolute;left:1px;top:6px;width:4px;height:4px;border-radius:50%;background:var(--seal)}
+  .embedslot{margin-top:8px}
+  .embedslot iframe{width:100%;height:150px;border:1px solid var(--line-2);border-radius:8px;display:block;background:var(--soft);filter:var(--map-filter)}
+  .dact{margin-top:8px}
+  .da{font-family:var(--mono);font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:var(--seal);cursor:pointer;border:0;background:0;font-weight:600;text-decoration:none}
+  .empty{grid-column:1/-1;text-align:center;color:var(--muted);font-size:13px;padding:30px 12px;line-height:1.6}
+
+  /* detail modal — opens over the page, never reflows the grid */
+  .ov{position:fixed;inset:0;z-index:50;background:rgba(20,16,10,.42);
+    display:flex;align-items:flex-end;justify-content:center;
+    opacity:0;pointer-events:none;transition:opacity .2s ease}
+  .ov.show{opacity:1;pointer-events:auto}
+  .sheet{background:var(--card);width:100%;max-width:520px;border:1px solid var(--line-2);
+    border-radius:14px 14px 0 0;max-height:86vh;overflow-y:auto;
+    -webkit-overflow-scrolling:touch;padding:16px 16px calc(env(safe-area-inset-bottom) + 18px);
+    transform:translateY(14px);transition:transform .24s cubic-bezier(.4,0,.2,1)}
+  .ov.show .sheet{transform:translateY(0)}
+  @media(min-width:560px){.ov{align-items:center}.sheet{border-radius:14px;max-height:82vh}}
+  .sh-top{display:flex;align-items:flex-start;gap:11px}
+  .sh-coin{flex:0 0 auto;width:30px;height:30px;border-radius:3px;cursor:pointer;border:1px solid var(--line-2);background:transparent;
+    display:grid;place-items:center;color:var(--muted);font-family:var(--serif);font-size:13px}
+  .sh-coin.has{border-color:transparent;color:#fff;background:var(--seal)}
+  .sh-name{font-family:var(--serif);font-size:18px;font-weight:600;line-height:1.25;flex:1;min-width:0;padding-top:2px}
+  .sh-x{flex:0 0 auto;border:0;background:0;cursor:pointer;color:var(--muted);width:28px;height:28px;display:grid;place-items:center;font-size:20px;line-height:1}
+  .sh-meta{display:flex;align-items:center;gap:7px;margin-top:10px;flex-wrap:wrap}
+  .sh-desc{font-size:13.5px;color:var(--ink-2);line-height:1.5;margin-top:12px}
+  .sh-vt{font-size:13px;color:var(--ink-2);line-height:1.5;margin-top:12px}
+  .sh-tip{font-size:13px;color:var(--ink-2);margin-top:10px;padding-left:13px;position:relative;line-height:1.5}
+  .sh-tip::before{content:"";position:absolute;left:1px;top:7px;width:4px;height:4px;border-radius:50%;background:var(--seal)}
+  .sh-map{margin-top:13px}
+  .sh-map iframe{width:100%;height:170px;border:1px solid var(--line-2);border-radius:9px;display:block;background:var(--soft);filter:var(--map-filter)}
+  .sh-act{margin-top:12px}
+
+  footer{max-width:660px;margin:0 auto;padding:18px 13px 0;color:var(--muted);font-size:11px;text-align:center;line-height:1.6}
+  footer .ss{font-family:var(--mono);font-size:10px}
+  /* ---- warikan: nobori tab + right-side seal drawer ---- */
+  :root{--lgw:400px;--nbpeek:38px}
+  /* square ¥ tab, flush in the top-right corner, matched to header height, rides the drawer edge */
+  .nobori{position:fixed;right:0;top:0;z-index:42;border:0;cursor:pointer;
+    width:46px;height:calc(env(safe-area-inset-top) + 46px);
+    background:linear-gradient(180deg,var(--seal-2),var(--seal));color:#fff;
+    border-radius:0 0 0 12px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14);
+    display:grid;place-items:center;font-family:var(--serif);font-size:21px;font-weight:700;line-height:1;
+    transform:translateX(0);transition:transform .3s cubic-bezier(.4,0,.2,1)}
+  .nobori:active{filter:brightness(.96)}
+  body.drawer-peek .nobori{transform:translateX(calc(-1*var(--nbpeek)))}
+  body.drawer-open .nobori{transform:translateX(calc(-1*var(--lgw)))}
+
+  /* right-edge hover hint zone (invisible, hover-only) */
+  .lg-edge{position:fixed;top:0;right:0;bottom:0;width:30px;z-index:38;pointer-events:none}
+
+  /* drawer — seal panel, light content */
+  .lgdrawer{--dtext:rgba(255,255,255,.94);--dmuted:rgba(255,255,255,.62);--dfaint:rgba(255,255,255,.42);
+    --dline:rgba(255,255,255,.16);--dline2:rgba(255,255,255,.30);--dsurf:rgba(255,255,255,.10);--dsurf2:rgba(255,255,255,.17);
+    position:fixed;right:0;top:0;bottom:0;width:var(--lgw);max-width:100%;z-index:40;
+    background:linear-gradient(180deg,var(--seal-2),var(--seal));color:var(--dtext);
+    transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);
+    overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;
+    padding:calc(env(safe-area-inset-top) + 22px) 26px calc(env(safe-area-inset-bottom) + 30px)}
+  body.drawer-peek .lgdrawer{transform:translateX(calc(100% - var(--nbpeek)))}
+  .lgdrawer.open{transform:translateX(0)}
+  /* peeking panel: resize-style cursor + big click target to pull it open */
+  .lgdrawer:not(.open){cursor:w-resize}
+  /* mobile backdrop */
+  .lg-backdrop{position:fixed;inset:0;z-index:39;background:rgba(20,16,10,.38);
+    opacity:0;pointer-events:none;transition:opacity .26s}
+  .lg-backdrop.show{opacity:1;pointer-events:auto}
+  /* desktop: push content */
+  @media(min-width:720px){
+    .lg-backdrop{display:none}
+    body{transition:padding-right .3s cubic-bezier(.4,0,.2,1)}
+    body.drawer-open{padding-right:var(--lgw)}
+  }
+  /* mobile: full width, tab hides once drawer takes over */
+  @media(max-width:719px){
+    .lgdrawer{width:100%;border-left:none}
+    body.drawer-open .nobori{opacity:0;pointer-events:none}
+  }
+
+  /* entry card */
+  .lg-entry{border:1px solid var(--dline2);border-radius:14px;background:var(--dsurf);padding:14px 15px;margin-bottom:22px;flex-shrink:0;
+    margin-top:calc(env(safe-area-inset-top) + 30px)}
+  .lg-entry.shake{animation:lgshake .38s cubic-bezier(.36,.07,.19,.97)}
+  @keyframes lgshake{10%,90%{transform:translateX(-1px)}20%,80%{transform:translateX(2px)}30%,50%,70%{transform:translateX(-4px)}40%,60%{transform:translateX(4px)}}
+
+  /* row 1: currency + amount + segmented payer */
+  .lg-amtrow{display:flex;align-items:center;gap:9px}
+  .lg-cur{font-family:var(--serif);font-size:22px;color:#fff;width:18px;text-align:center;flex:0 0 auto;
+    border:0;background:0;cursor:pointer;padding:0;line-height:1;transition:opacity .14s;user-select:none}
+  .lg-cur:hover{opacity:.65}
+  .lg-amtrow input{flex:1;min-width:0;border:0;background:0;outline:0;font-family:var(--mono);
+    font-size:24px;font-weight:700;color:#fff;letter-spacing:-.01em;padding:2px 0}
+  .lg-amtrow input::placeholder{color:var(--dfaint)}
+
+  /* payer group: "Paid by" label above the segmented control */
+  .lg-payer{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
+  .lg-payer-lbl{font-family:var(--mono);font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:var(--dmuted)}
+  /* segmented payer — sliding bg anchored to active option via JS */
+  .lg-payer-seg{position:relative;display:flex;background:rgba(0,0,0,.16);border-radius:99px;padding:3px}
+  .lg-pseg-bg{position:absolute;border-radius:99px;background:#fff;
+    box-shadow:0 1px 4px rgba(0,0,0,.22);pointer-events:none;
+    transition:left .2s cubic-bezier(.4,0,.2,1),top .2s,width .2s,height .2s}
+  .lg-pseg-opt{position:relative;z-index:1;border:0;background:0;cursor:pointer;
+    padding:5px 13px;border-radius:99px;font-size:12px;font-weight:600;
+    color:var(--dmuted);transition:color .18s;white-space:nowrap}
+  .lg-pseg-opt.on{color:var(--seal)}
+
+  /* row 2: wut + add */
+  .lg-more{display:grid;grid-template-rows:0fr;transition:grid-template-rows .24s cubic-bezier(.4,0,.2,1)}
+  .lg-entry.on .lg-more{grid-template-rows:1fr}
+  .lg-morein{overflow:hidden;min-height:0}
+  .lg-wutrow{display:flex;align-items:center;gap:8px;padding-top:11px}
+  .lg-wut{flex:1;min-width:0;border:1px solid var(--dline2);border-radius:9px;background:var(--dsurf);
+    color:#fff;padding:8px 11px;font-size:14px;outline:0;transition:border-color .12s,background .12s}
+  .lg-wut::placeholder{color:var(--dfaint)}
+  .lg-wut:focus{border-color:#fff;background:var(--dsurf2)}
+  .lg-plus{flex:0 0 auto;width:34px;height:34px;border-radius:9px;border:0;cursor:pointer;
+    background:#fff;color:var(--seal);font-family:var(--serif);font-size:20px;display:grid;place-items:center;
+    transition:transform .12s,opacity .12s}
+  .lg-plus:active{transform:scale(.92)}
+  .lg-plus:disabled{opacity:.4;cursor:default}
+  .lg-hint{font-family:var(--mono);font-size:9px;color:var(--dmuted);margin-top:8px;letter-spacing:.02em;min-height:11px}
+
+  /* table: [check] [wut+total] [hans] [swap] [spencer] [del] — wide amount cols so prices always fit */
+  .lg-thead,.lg-row{display:grid;grid-template-columns:20px 1fr 62px 18px 62px 18px;align-items:center;gap:4px}
+  .lg-thead{padding:0 2px 8px}
+  .lg-th{font-family:var(--mono);font-size:7.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--dmuted)}
+  .lg-th.r{text-align:right}
+  .lg-rows{margin-top:2px;flex:1}
+  .lg-row{padding:9px 2px;border-bottom:1px solid var(--dline);will-change:transform;transition:opacity .32s}
+  .lg-check{width:20px;height:20px;border-radius:6px;border:1.5px solid var(--dline2);background:0;cursor:pointer;
+    display:grid;place-items:center;color:transparent;font-size:11px;line-height:1;padding:0;transition:.14s}
+  .lg-check:hover{border-color:#fff}
+  .lg-row.done .lg-check{background:#fff;border-color:#fff;color:var(--seal)}
+  .lg-wutcell{min-width:0;display:flex;align-items:baseline;gap:5px;overflow:hidden;
+    background-image:linear-gradient(#fff,#fff);background-repeat:no-repeat;
+    background-position:0 62%;background-size:0% 1.5px;transition:background-size .34s ease}
+  /* editable text — outline on hover, persists while editing, never reflows neighbours */
+  .lg-wutn{font-size:13px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;
+    text-overflow:ellipsis;min-width:0;cursor:text;border-radius:5px;padding:1px 3px;margin:-1px -3px;
+    outline:1.5px solid transparent;outline-offset:1px;transition:outline-color .12s,background .12s}
+  .lg-total{font-family:var(--mono);font-size:10px;color:var(--dmuted);white-space:nowrap;flex-shrink:0;
+    cursor:text;border-radius:5px;padding:1px 3px;margin:-1px -3px;
+    outline:1.5px solid transparent;outline-offset:1px;transition:outline-color .12s,background .12s}
+  .lg-wutn:hover,.lg-total:hover{outline-color:var(--dline2);background:var(--dsurf)}
+  .lg-wutn[contenteditable="true"],.lg-total[contenteditable="true"]{outline-color:#fff;background:var(--dsurf2);overflow:visible;text-overflow:clip}
+  /* let the outline/edit box breathe instead of being clipped by the cell */
+  .lg-wutcell:has([contenteditable="true"]),.lg-wutcell:hover{overflow:visible}
+  .lg-cell{font-family:var(--mono);font-size:12px;font-weight:700;text-align:right;white-space:nowrap;
+    font-variant-numeric:tabular-nums;letter-spacing:-.02em;transition:color .3s}
+  .lg-cell.pos{color:#fff} .lg-cell.neg{color:var(--dfaint)} .lg-cell.zero{color:var(--dfaint)}
+  /* swap icon — appears on hover between hans/spencer */
+  .lg-swap{border:0;background:0;cursor:pointer;padding:0;width:18px;height:18px;
+    display:grid;place-items:center;color:var(--dmuted);font-size:13px;border-radius:4px;
+    opacity:0;transition:opacity .15s,color .12s,background .12s}
+  .lg-row:hover .lg-swap{opacity:1}
+  .lg-swap:hover{color:#fff;background:var(--dsurf2)}
+  @media(hover:none){.lg-swap{opacity:.5}} /* always show a hint on touch */
+  /* delete */
+  .lg-del{border:0;background:0;cursor:pointer;padding:0;width:18px;height:18px;
+    display:grid;place-items:center;color:var(--dmuted);font-size:13px;border-radius:4px;
+    opacity:0;transition:opacity .15s,color .12s,background .12s}
+  .lg-row:hover .lg-del{opacity:1}
+  .lg-del:hover{color:#fff;background:var(--dsurf2)}
+  @media(hover:none){.lg-del{opacity:.5}}
+  .lg-row.done{opacity:.55}
+  .lg-row.done .lg-wutcell{background-size:100% 1.5px}
+  .lg-row.done .lg-wutn,.lg-row.done .lg-total{color:rgba(255,255,255,.62)}
+  .lg-row.done .lg-cell{color:rgba(255,255,255,.5)!important;text-decoration:line-through;text-decoration-color:rgba(255,255,255,.35)}
+  .lg-empty{text-align:center;color:var(--dmuted);font-size:13px;padding:30px 10px;line-height:1.7}
+  .lg-foot{margin-top:20px;padding-top:18px;border-top:1px solid var(--dline);text-align:center;flex-shrink:0}
+  .lg-summary{display:flex;flex-direction:column;align-items:center;gap:3px;font-family:var(--serif);color:#fff}
+  .lg-owed{font-size:15px;font-weight:600;color:var(--dtext);line-height:1.2}
+  .lg-owed b{color:#fff;font-weight:700}
+  .lg-summary .lg-amt{font-size:32px;font-weight:900;letter-spacing:-.01em;line-height:1;white-space:nowrap}
+  .lg-summary.square{font-size:19px;font-weight:600;color:var(--dtext)}
+  .lg-settled{font-family:var(--mono);font-size:9.5px;color:var(--dmuted);margin-top:8px;letter-spacing:.03em;min-height:11px}
+  /* empty state: hide table, labels, and summary */
+  .lgdrawer.no-splits .lg-thead,.lgdrawer.no-splits .lg-rows,.lgdrawer.no-splits .lg-foot{display:none}
+
+  @media(prefers-reduced-motion:reduce){*{transition-duration:.001ms!important}}
+</style>
+</head>
+<body>
+<header>
+  <div class="hd">
+    <div class="wm"><span class="jp">一族</span><span class="en">Japan Clan</span><span class="dt">JUL 14–24 · 4 PAX</span></div>
+    <div class="hbtns">
+      <button class="ibtn" id="themeBtn" aria-label="Toggle dark mode" title="Light / dark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2M12 20v2M4 12H2M22 12h-2M5 5l1.5 1.5M17.5 17.5L19 19M19 5l-1.5 1.5M6.5 17.5L5 19"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <section class="cal">
+    <div class="calgrid" id="days"></div>
+  </section>
+
+  <section class="clan" id="clan"></section>
+
+  <section class="filters">
+    <div class="chiprow" id="catRow"></div>
+  </section>
+</div>
+
+<main id="main"></main>
+
+<div class="ov" id="ov" aria-hidden="true"><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
+
+<button class="nobori" id="noboriBtn" aria-label="Split the bill" title="割り勘 · Split the bill">¥</button>
+
+<div class="lg-edge" id="lgEdge" aria-hidden="true"></div>
+<div class="lg-backdrop" id="lgBackdrop"></div>
+
+<div class="lgdrawer" id="lgdrawer" role="complementary" aria-label="Split the bill">
+  <form class="lg-entry" id="lgEntry" onsubmit="return false">
+    <div class="lg-amtrow">
+      <button type="button" class="lg-cur" id="lgCur" aria-label="Toggle ¥/$">$</button>
+      <input id="lgAmt" inputmode="decimal" autocomplete="off" placeholder="0" aria-label="Amount">
+      <div class="lg-payer">
+        <span class="lg-payer-lbl">Paid by</span>
+        <div class="lg-payer-seg" id="lgPayerSeg" role="group" aria-label="Paid by">
+          <span class="lg-pseg-bg" id="lgPsegBg" aria-hidden="true"></span>
+          <button type="button" class="lg-pseg-opt" id="lgHansOpt" data-who="hans">Hans</button>
+          <button type="button" class="lg-pseg-opt" id="lgSpencerOpt" data-who="spencer">Spencer</button>
+        </div>
+      </div>
+    </div>
+    <div class="lg-more">
+      <div class="lg-morein">
+        <div class="lg-wutrow">
+          <input id="lgWut" class="lg-wut" autocomplete="off" placeholder="wut? (beef, ramen, taxi…)" aria-label="Description">
+          <button type="button" class="lg-plus" id="lgAdd" aria-label="Add expense" disabled>＋</button>
+        </div>
+        <div class="lg-hint" id="lgHint"></div>
+      </div>
+    </div>
+  </form>
+  <div class="lg-thead">
+    <span></span>
+    <span class="lg-th">Wut</span>
+    <span class="lg-th r">Hans</span>
+    <span></span>
+    <span class="lg-th r">Spencer</span>
+    <span></span>
+  </div>
+  <div class="lg-rows" id="lgRows"></div>
+  <div class="lg-foot">
+    <div class="lg-summary" id="lgSummary"></div>
+    <div class="lg-settled" id="lgSettled"></div>
+  </div>
+</div>
+
+<footer>
+  <div>Hans · Spencer · Bailey &amp; +1 — 4 adults, trains only</div>
+  <div class="ss" id="ss">Coins save on this device</div>
+</footer>
+
+<script>
+"use strict";
+/* ---------------- storage ---------------- */
+const Store=(()=>{const K="japan-clan-v1";let mem={},ok=false;
+  try{localStorage.setItem("__t","1");localStorage.removeItem("__t");ok=true;}catch(e){}
+  return{load(){if(!ok)return mem;try{return JSON.parse(localStorage.getItem(K)||"{}")}catch(e){return{}}},
+    save(o){mem=o;if(ok)try{localStorage.setItem(K,JSON.stringify(o))}catch(e){}},ok};
+})();
+let state=Object.assign({coins:{},cal:{},theme:null},Store.load());
+state.coins=state.coins||{}; state.cal=state.cal||{};
+const save=()=>Store.save(state);
+
+/* ---------------- theme ---------------- */
+function applyTheme(t){document.documentElement.setAttribute("data-theme",t);
+  const m=document.querySelector('meta[name=theme-color]');if(m)m.setAttribute("content",t==="dark"?"#141312":"#f6f3ed");}
+applyTheme(state.theme|| ((window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches)?"dark":"light"));
+document.getElementById("themeBtn").onclick=()=>{const t=document.documentElement.getAttribute("data-theme")==="dark"?"light":"dark";state.theme=t;save();applyTheme(t);};
+
+/* ---------------- calendar (editable cities; Sapporo extended over Hakodate) ---------------- */
+const DAYS=[14,15,16,17,18,19,20,21,22,23,24];
+const CAL_DAYS=[12,13,14,15,16,17,18,19,20,21,22,23,24,25];
+const TRIP=new Set(DAYS);
+const DEFAULT_CITY={14:"Tokyo",15:"Tokyo",16:"Tokyo",17:"Tokyo",18:"Tokyo",19:"Sapporo",20:"Sapporo",21:"Sapporo",22:"Sapporo",23:"Tokyo",24:"Tokyo"};
+const FLIGHTS={14:"✈",19:"✈",23:"✈",24:"✈"};
+const WD=["S","M","T","W","T","F","S"];
+const HOK=new Set(["sapporo","otaru","hakodate","furano","biei","noboribetsu","yoichi","jozankei","niseko","shiraoi","shakotan","asahikawa","chitose","toya","lake toya","abashiri","kushiro","obihiro","wakkanai","hokkaido"]);
+function cityOf(d){return (d in state.cal)?state.cal[d]:DEFAULT_CITY[d];}
+function zoneOfCity(c){return HOK.has(String(c||"").trim().toLowerCase())?"hok":"tyo";}
+function izone(i){return i.reg==="either"?"any":(i.reg==="hokkaido"?"hok":"tyo");}
+function esc2(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+function renderCal(){
+  const el=document.getElementById("days");el.innerHTML="";
+  WD.forEach(w=>{const h=document.createElement("div");h.className="cwd";h.textContent=w;el.appendChild(h);});
+  CAL_DAYS.forEach((d,idx)=>{
+    const cell=document.createElement("div");
+    const isLast=idx>=CAL_DAYS.length-7;
+    const lastCls=isLast?" row-last":"";
+    if(!TRIP.has(d)){cell.className="cell out"+lastCls;cell.innerHTML=`<div class="dn">${d}</div>`;el.appendChild(cell);return;}
+    const city=cityOf(d), z=zoneOfCity(city);
+    cell.className="cell active z-"+z+lastCls; cell.dataset.d=d;
+    cell.innerHTML=`${FLIGHTS[d]?`<span class="fl">${FLIGHTS[d]}</span>`:""}<div class="dn">${d}</div><div class="city" contenteditable="true" spellcheck="false" data-d="${d}">${esc2(city)}</div>`;
+    el.appendChild(cell);
+  });
+}
+document.getElementById("days").addEventListener("keydown",e=>{
+  if(e.target.classList&&e.target.classList.contains("city")&&e.key==="Enter"){e.preventDefault();e.target.blur();}
+});
+document.getElementById("days").addEventListener("focusout",e=>{
+  if(!(e.target.classList&&e.target.classList.contains("city")))return;
+  const d=+e.target.dataset.d, val=e.target.textContent.replace(/\s+/g," ").trim();
+  state.cal[d]=val||DEFAULT_CITY[d];
+  save();renderCal();renderBuckets();renderGrid();
+});
+
+/* ---------------- coin look (each a little different) ---------------- */
+const CATJP={eat:"食",do:"遊",buy:"買",july:"祭"};
+function hash(s){let h=0;for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))|0;return Math.abs(h);}
+function coinStyle(id){const h=hash(id);const rot=(h%17)-8;const hue=((h>>3)%18)-9;const bri=1+(((h>>6)%7)-3)/100;
+  return `transform:rotate(${rot}deg);filter:hue-rotate(${hue}deg) brightness(${bri.toFixed(2)})`;}
+
+/* ---------------- DATA (note = one sentence; split on em-dash continues as same paragraph) ---------------- */
+const ITEMS=[
+/* EAT */
+{id:"e_sando",cat:"eat",reg:"either",area:"jp",lvl:1,name:"Conbini egg sando",note:"Lawson's custard-soft egg-salad sandwich — a Japan-only convenience-store cult food locals rate above any café.",tip:"Lawson beats 7-Eleven and FamilyMart. Your default cheap breakfast.",flag:"24/7"},
+{id:"e_kaitenzushi",cat:"eat",reg:"either",area:"jp",lvl:1,name:"Conveyor-belt sushi",note:"Touchscreen-order nigiri that arrives by belt or a little bullet-train tray — a Japanese invention now copied worldwide but never matched.",tip:"Stack your plates; you're billed by the tower at the end.",flag:""},
+{id:"e_oden",cat:"eat",reg:"either",area:"jp",lvl:1,name:"Konbini oden",note:"Daikon, eggs and fishcakes simmering by the register — only-in-Japan store food you point at and pay per piece.",tip:"A ¥400 ritual; the broth-soaked daikon is the move.",flag:""},
+{id:"e_natto",cat:"eat",reg:"either",area:"jp",lvl:1,name:"Natto",note:"Sticky fermented soybeans over rice — Japan's great acquired-taste breakfast that splits even locals.",tip:"Stir 30+ times to build the strands; add the mustard packet.",flag:""},
+{id:"e_nagashisomen",cat:"eat",reg:"either",area:"jp",lvl:1,name:"Nagashi somen",note:"Chilled noodles shot down a bamboo flume that you snatch mid-flow — a summer-only game found nowhere else.",tip:"Miss a clump and it's gone downstream.",flag:"Summer"},
+{id:"e_kakigori",cat:"eat",reg:"either",area:"jp",lvl:1,name:"Kakigori",note:"A fluffy mountain of feather-shaved ice with syrup — nothing like a Western snow-cone in texture.",tip:"The good stuff uses shaved block ice, not crushed.",flag:"Summer"},
+{id:"e_taiyaki",cat:"eat",reg:"either",area:"jp",lvl:1,name:"Taiyaki",note:"Fish-shaped waffle filled with red bean or custard — a hot street-snack icon since the Meiji era.",tip:"Look for 'tennen' single molds for crispier tails.",flag:""},
+{id:"e_melonpan",cat:"eat",reg:"either",area:"jp",lvl:1,name:"Melon pan",note:"A sweet bun with a crackly cookie crust and no melon at all — pure Japanese bakery whimsy.",tip:"Asakusa's Kagetsudo bakes a famous giant version.",flag:""},
+{id:"e_fruitsando",cat:"eat",reg:"either",area:"jp",lvl:1,name:"Fruit sando",note:"Whipped cream and jewel-cut fruit between crustless milk bread — a fruit-parlor art form here.",tip:"Conbini ones are great; parlors do the photogenic cross-sections.",flag:""},
+{id:"e_chawanmushi",cat:"eat",reg:"either",area:"jp",lvl:1,name:"Chawanmushi",note:"Silky savory egg custard hiding shrimp and ginkgo — a warm, wobbly Japanese comfort dish.",tip:"Served in a lidded cup; order at any izakaya.",flag:""},
+{id:"e_wagashi",cat:"eat",reg:"either",area:"jp",lvl:2,name:"Seasonal wagashi",note:"Edible-art sweets shaped to the exact season and built to offset matcha's bitterness.",tip:"July motifs are water and morning glory; browse a depachika.",flag:""},
+{id:"e_omurice",cat:"eat",reg:"tokyo",area:"ginza",lvl:1,name:"Omurice",note:"Ketchup fried rice under a tender omelette — Japan's home-grown 'yoshoku' comfort food born in Tokyo kitchens.",tip:"A retro kissaten coffee house is the authentic place to order it.",flag:""},
+{id:"e_gyukatsu",cat:"eat",reg:"tokyo",area:"shibuya",lvl:2,name:"Gyukatsu",note:"Panko-crusted rare beef you finish searing yourself on a personal hot stone.",tip:"Sear 5 seconds a side; dip in wasabi-soy.",flag:""},
+{id:"e_unagi",cat:"eat",reg:"tokyo",area:"asakusa",lvl:2,name:"Unagi over rice",note:"Charcoal-grilled freshwater eel lacquered in sweet tare — a midsummer stamina dish with centuries of ritual.",tip:"The 'Day of the Ox' is Jul 19 — eel shops get slammed.",flag:"Summer"},
+{id:"e_monja",cat:"eat",reg:"tokyo",area:"tsukishima",lvl:2,name:"Monjayaki",note:"Tokyo's gooey griddle-pancake you cook yourself — born on Tsukishima's Monja Street and rarely seen elsewhere.",tip:"Scrape it off the teppan with tiny spatulas.",flag:""},
+{id:"e_standingsushi",cat:"eat",reg:"tokyo",area:"akihabara",lvl:1,name:"Standing sushi bar",note:"Premium nigiri eaten shoulder-to-shoulder with no chairs — a fast, cheap Tokyo ritual.",tip:"Point and eat piece by piece; cheaper than it tastes.",flag:""},
+{id:"e_depachika",cat:"eat",reg:"tokyo",area:"shinjuku",lvl:1,name:"Depachika hall",note:"A department-store basement that's a glittering food universe of bento, sweets and samples.",tip:"Go an hour before closing for marked-down gourmet bento.",flag:""},
+{id:"e_fugu",cat:"eat",reg:"either",area:"jp",lvl:3,name:"Fugu (pufferfish)",note:"The thrill dish — toxic unless trimmed by a licensed chef, so it's served legally almost only in Japan.",tip:"Try the set: sashimi, karaage, then hot-pot.",flag:""},
+{id:"e_han",cat:"eat",reg:"tokyo",area:"shibuya",lvl:2,name:"Wagyu yakiniku",note:"Grill your own A5 wagyu at the table — startling value at Han no Daidokoro in Shibuya.",tip:"Book for 4; lunch sets are far cheaper than dinner.",flag:"Book"},
+{id:"e_omoide",cat:"eat",reg:"tokyo",area:"shinjuku",lvl:2,name:"Omoide Yokocho",note:"A smoky postwar alley of six-seat charcoal yakitori counters frozen in time.",tip:"Cash only; split the four of you across two counters.",flag:"Cash"},
+{id:"e_toyosu",cat:"eat",reg:"tokyo",area:"toyosu",lvl:2,name:"Toyosu market sushi",note:"Counter omakase inside the world's biggest fish market, eaten at 7am.",tip:"Arrive ~6:30 or pick a quieter counter than Sushi Dai.",flag:""},
+{id:"e_afuri",cat:"eat",reg:"tokyo",area:"harajuku",lvl:1,name:"Yuzu ramen",note:"Light, citrus-bright chicken broth lifted with yuzu peel — the summer anti-tonkotsu.",tip:"Order from the door machine; ask for cold tsukemen in heat.",flag:""},
+{id:"e_omakase",cat:"eat",reg:"tokyo",area:"ginza",lvl:3,name:"Ginza sushi omakase",note:"A counter where the chef sets the pace and the fish is aged to the day.",tip:"Top counters book weeks out — reserve before you fly.",flag:"Book"},
+{id:"e_teppan",cat:"eat",reg:"tokyo",area:"ginza",lvl:3,name:"Wagyu teppanyaki",note:"A chef searing the highest-grade beef inches from your plate as theatre.",tip:"Sit at the counter, not a table, for the knife-work.",flag:""},
+{id:"e_misoramen",cat:"eat",reg:"hokkaido",area:"susukino",lvl:1,name:"Sapporo miso ramen",note:"Buttery miso-and-corn ramen — the style was literally invented in this city.",tip:"Ramen Alley packs ~17 tiny shops into one Susukino lane.",flag:"Only Hokkaido"},
+{id:"e_soupcurry",cat:"eat",reg:"hokkaido",area:"sapporo",lvl:2,name:"Soup curry",note:"A 1970s Sapporo invention: spiced thin broth over a whole roast chicken leg and chunky veg.",tip:"Pick spice level and rice size. Garaku is the legend — queue early.",flag:"Only Hokkaido"},
+{id:"e_jingisukan",cat:"eat",reg:"hokkaido",area:"susukino",lvl:2,name:"Jingisukan",note:"Lamb grilled on a domed skillet — a Hokkaido specialty rare elsewhere in Japan.",tip:"Order extra onions in the fat moat. Daruma is the smoky institution.",flag:"Only Hokkaido"},
+{id:"e_uni",cat:"eat",reg:"hokkaido",area:"shakotan",lvl:3,name:"Summer uni",note:"Kelp-fed sea urchin at its sweet seasonal peak off the Shakotan coast, June–August only.",tip:"July is prime; eat it as a fresh bowl, no soy.",flag:"Summer"},
+{id:"e_corn",cat:"eat",reg:"hokkaido",area:"furano",lvl:1,name:"Grilled Hokkaido corn",note:"Sugar-sweet sweetcorn charred and buttered at roadside stands — a July harvest treat.",tip:"Best ears are around Furano and Biei.",flag:"Summer"},
+{id:"e_kaisendon",cat:"eat",reg:"hokkaido",area:"sapporo",lvl:2,name:"Kaisen-don",note:"A rice bowl buried under uni, ikura, crab and squid pulled from three cold seas.",tip:"Nijo Market (Sapporo) does the classic for breakfast.",flag:""},
+{id:"e_ikasashimi",cat:"eat",reg:"hokkaido",area:"hakodate",lvl:1,name:"Live squid sashimi",note:"Just-caught squid, sometimes still moving, sliced at a northern morning market.",tip:"Squid season is Jul–Sep. Go 6–9am.",flag:"Summer"},
+{id:"e_crab",cat:"eat",reg:"hokkaido",area:"sapporo",lvl:3,name:"Hokkaido crab",note:"King, snow and creamy horsehair crab — the north's signature luxury haul.",tip:"Horsehair (kegani) is the pick; the kani-miso is the prize.",flag:""},
+{id:"e_zangi",cat:"eat",reg:"hokkaido",area:"sapporo",lvl:1,name:"Zangi",note:"Hokkaido's juicier, deeply-marinated cousin of karaage fried chicken.",tip:"An izakaya staple up north — order with a Sapporo Classic.",flag:"Only Hokkaido"},
+{id:"e_hakodateramen",cat:"eat",reg:"hokkaido",area:"hakodate",lvl:1,name:"Shio ramen",note:"A clear, delicate salt broth — Hakodate's gentle answer to Sapporo miso.",tip:"Ajisai is the 90-year-old benchmark shop.",flag:""},
+{id:"e_letao",cat:"eat",reg:"hokkaido",area:"otaru",lvl:1,name:"LeTAO cheesecake",note:"Otaru's melt-in-mouth double-fromage — far better eaten fresh on-site than shipped.",tip:"The main-store tower gives free tastings of exclusives.",flag:""},
+{id:"e_yubari",cat:"eat",reg:"hokkaido",area:"sapporo",lvl:3,name:"Yubari melon",note:"The world's priciest melon — orange-fleshed, perfumed and gone by late summer.",tip:"Try a wedge with soft serve, not a ¥10,000 whole one.",flag:"Summer"},
+{id:"e_softcream",cat:"eat",reg:"hokkaido",area:"furano",lvl:1,name:"Hokkaido soft cream",note:"The country's richest dairy churned into lavender and melon swirls in summer.",tip:"Otaru even does squid-ink and kombu if you're brave.",flag:""},
+{id:"e_kaiseki",cat:"eat",reg:"hokkaido",area:"jozankei",lvl:3,name:"Ryokan kaiseki",note:"A seasonal multi-course dinner served in your tatami room as the heart of a ryokan stay.",tip:"Half-board is standard — wear the provided yukata to dinner.",flag:""},
+/* DO */
+{id:"d_konbini",cat:"do",reg:"either",area:"jp",lvl:1,name:"Konbini deep-dive",note:"The 3am wonderland — hot fried chicken, fresh socks, concert tickets and ATMs under one roof.",tip:"Famichiki and Lawson karaage-kun are required tasting.",flag:"Free"},
+{id:"d_vending",cat:"do",reg:"either",area:"jp",lvl:1,name:"Vending-machine hunt",note:"Four million machines dispensing hot ramen in a can, oden, dashi and even fresh eggs.",tip:"Haneda T2 has one that cooks a real ramen bowl for you.",flag:""},
+{id:"d_toilet",cat:"do",reg:"either",area:"jp",lvl:1,name:"Master the washlet",note:"Heated seats, bidets and sound-masking — the gloriously over-engineered Japanese toilet.",tip:"The 'Otohime' button plays a sound to cover, well, sounds.",flag:"Free"},
+{id:"d_karaoke",cat:"do",reg:"either",area:"jp",lvl:1,name:"Karaoke box",note:"Your own private soundproof room — not a public bar stage like the West.",tip:"~¥2,500 buys two hours with all-you-can-drink. Great for 4.",flag:""},
+{id:"d_izakaya",cat:"do",reg:"either",area:"jp",lvl:1,name:"Izakaya night",note:"Japan's tapas-and-beer pubs where you order in waves and stay for hours.",tip:"You'll get a small otoshi seat-dish you didn't order — normal.",flag:""},
+{id:"d_capsule",cat:"do",reg:"either",area:"jp",lvl:1,name:"Capsule hotel",note:"A snug high-tech sleeping pod — peak Japanese space efficiency, once in a lifetime.",tip:"Grab a window-end pod for a sliver more room.",flag:""},
+{id:"d_pachinko",cat:"do",reg:"either",area:"jp",lvl:1,name:"Pachinko parlor",note:"A deafening wall of chrome and silver balls — gambling's uniquely Japanese cousin.",tip:"Five minutes inside is worth it just for the sensory overload.",flag:"Free"},
+{id:"d_ekiben",cat:"do",reg:"either",area:"jp",lvl:1,name:"Ekiben on the train",note:"A regional station bento eaten at speed — a beloved rite of Japanese rail travel.",tip:"Buy on the platform before your shinkansen; each region differs.",flag:""},
+{id:"d_onsen",cat:"do",reg:"either",area:"jp",lvl:1,name:"Public bath / onsen",note:"The communal hot-spring soak that sits at the quiet heart of Japanese life.",tip:"Wash fully first; towel on your head, never in the water.",flag:""},
+{id:"d_manhole",cat:"do",reg:"either",area:"jp",lvl:1,name:"Manhole-cover hunt",note:"Ornate, colorful civic art cast into the drain lids of nearly every town — a real collector craze.",tip:"Some towns sell coaster replicas of theirs.",flag:"Free"},
+{id:"d_sensoji",cat:"do",reg:"tokyo",area:"asakusa",lvl:1,name:"Senso-ji & Nakamise",note:"Tokyo's oldest temple behind a 250m lane of traditional snack and souvenir stalls.",tip:"Dawn or after dark = the giant lantern with no crowds.",flag:"Free"},
+{id:"d_shibuya",cat:"do",reg:"tokyo",area:"shibuya",lvl:1,name:"Shibuya Crossing",note:"Up to 3,000 people crossing at once — the world's most choreographed pedestrian chaos.",tip:"Free view from the 2F Starbucks or Mag's Park rooftop.",flag:"Free"},
+{id:"d_shibuyasky",cat:"do",reg:"tokyo",area:"shibuya",lvl:2,name:"Shibuya Sky",note:"An open-air rooftop deck 230m over the scramble, wind and all.",tip:"Book the sunset slot; it sells out on clear evenings.",flag:"Book"},
+{id:"d_meiji",cat:"do",reg:"tokyo",area:"harajuku",lvl:1,name:"Meiji Jingu",note:"A vast, entirely man-planted forest shrine hidden right beside Harajuku.",tip:"Weekend mornings you may catch a Shinto wedding.",flag:"Free"},
+{id:"d_akihabara",cat:"do",reg:"tokyo",area:"akihabara",lvl:1,name:"Akihabara",note:"A neon canyon dedicated to anime, retro games, arcades and capsule machines.",tip:"Super Potato for retro consoles; go after dark.",flag:"Free"},
+{id:"d_purikura",cat:"do",reg:"tokyo",area:"harajuku",lvl:1,name:"Purikura",note:"Photo booths that auto-enlarge your eyes and bury you in stickers — a group-of-4 classic.",tip:"Some arcades gate them to women — check the sign.",flag:""},
+{id:"d_gachaponhall",cat:"do",reg:"tokyo",area:"ikebukuro",lvl:1,name:"Gachapon hall",note:"A room of 1,000+ capsule machines, each one weirdly, wonderfully specific.",tip:"Bring a fistful of ¥100 coins; Ikebukuro's is biggest.",flag:""},
+{id:"d_maid",cat:"do",reg:"tokyo",area:"akihabara",lvl:1,name:"Maid café",note:"Akihabara's surreal, deeply earnest cute-café performance — pure only-in-Japan kitsch.",tip:"PG and gimmicky — go for the omurice art and spectacle.",flag:""},
+{id:"d_sampuru",cat:"do",reg:"tokyo",area:"kappabashi",lvl:2,name:"Make plastic food",note:"Craft your own hyper-real 'sampuru' wax tempura on Kappabashi.",tip:"Book a workshop; you keep the piece you make.",flag:"Book"},
+{id:"d_themedcafe",cat:"do",reg:"tokyo",area:"tokyo",lvl:1,name:"Themed café",note:"Cafés themed to Moomins, Pokémon or vintage arcades that simply don't exist at this density elsewhere.",tip:"Reserve the popular ones; many are timed-entry.",flag:""},
+{id:"d_nakano",cat:"do",reg:"tokyo",area:"nakano",lvl:1,name:"Nakano Broadway",note:"A retro otaku mall that's the quieter, deeper rival to Akihabara.",tip:"Floors of vintage Mandarake; hunt discontinued figures.",flag:"Free"},
+{id:"d_yanaka",cat:"do",reg:"tokyo",area:"yanaka",lvl:1,name:"Yanaka old town",note:"Low wooden pre-war streets and cat motifs — Tokyo as it was before the towers.",tip:"Walk Yanaka Ginza at dusk for cheap street snacks.",flag:"Free"},
+{id:"d_teamplanets",cat:"do",reg:"tokyo",area:"toyosu",lvl:2,name:"teamLab Planets",note:"Wade barefoot through knee-deep water under projected koi and orchids.",tip:"The Toyosu water one (not Borderless). Book ahead; bring shorts.",flag:"Book"},
+{id:"d_teamborderless",cat:"do",reg:"tokyo",area:"azabudai",lvl:2,name:"teamLab Borderless",note:"A mapless maze of digital art that flows room to room and spills onto you.",tip:"The NEW one at Azabudai Hills, not Odaiba. Timed tickets.",flag:"Book"},
+{id:"d_ghibli",cat:"do",reg:"tokyo",area:"mitaka",lvl:2,name:"Ghibli Museum",note:"Miyazaki's whimsical, no-photos museum with an exclusive short film you can't see elsewhere.",tip:"Advance tickets ONLY and they sell out instantly — plan first.",flag:"Book"},
+{id:"d_baseball",cat:"do",reg:"tokyo",area:"tokyo",lvl:2,name:"Pro baseball game",note:"Per-batter chant songs and a 7th-inning balloon launch — far louder than MLB.",tip:"July is mid-season; check the Giants' Tokyo Dome dates.",flag:""},
+{id:"d_sumo",cat:"do",reg:"tokyo",area:"ryogoku",lvl:2,name:"Sumo morning practice",note:"Watch giants drill at dawn inside a working Ryogoku stable.",tip:"No Tokyo tournament in July — a stable visit is the way. Book.",flag:"Book"},
+{id:"d_kintsugi",cat:"do",reg:"tokyo",area:"tokyo",lvl:3,name:"Kintsugi workshop",note:"Mend broken pottery with gold — the Japanese art of honoring a scar.",tip:"Beginner classes finish a real piece you take home.",flag:"Book"},
+{id:"d_tea",cat:"do",reg:"tokyo",area:"ginza",lvl:2,name:"Tea ceremony",note:"A slow, exacting bowl of matcha whisked in a garden tea house.",tip:"Happo-en and Hamarikyu run English-friendly sittings.",flag:"Book"},
+{id:"d_hakodateview",cat:"do",reg:"hokkaido",area:"hakodate",lvl:1,name:"Mt. Hakodate view",note:"One of the world's great panoramas — a city pinched into a glittering hourglass at night.",tip:"Ride up before sunset and watch it turn.",flag:""},
+{id:"d_goryokaku",cat:"do",reg:"hokkaido",area:"hakodate",lvl:1,name:"Goryokaku star fort",note:"A perfect five-point star moat — Japan's only Western-style citadel of its kind.",tip:"The shape only reads from the tower above it.",flag:""},
+{id:"d_otarucanal",cat:"do",reg:"hokkaido",area:"otaru",lvl:1,name:"Otaru Canal",note:"A gas-lit former herring port lined with stone warehouses and glassworks.",tip:"Loveliest at dusk; ~30 min by JR from Sapporo.",flag:""},
+{id:"d_nijo",cat:"do",reg:"hokkaido",area:"sapporo",lvl:1,name:"Nijo Market",note:"Sapporo's central seafood market piled with uni bowls and grilled scallops.",tip:"Breakfast donburi here beats any hotel buffet.",flag:""},
+{id:"d_beermuseum",cat:"do",reg:"hokkaido",area:"sapporo",lvl:2,name:"Sapporo Beer Museum",note:"Japan's only beer museum, set in the original 1876 red-brick brewery.",tip:"Free entry; pay for the flight of modern vs original brews.",flag:""},
+{id:"d_shiroikoibito",cat:"do",reg:"hokkaido",area:"sapporo",lvl:1,name:"Shiroi Koibito Park",note:"A kitschy European-style cookie factory and garden on Sapporo's edge.",tip:"Watch the famous biscuits made through glass.",flag:""},
+{id:"d_bluepond",cat:"do",reg:"hokkaido",area:"biei",lvl:1,name:"Blue Pond, Biei",note:"A surreal cobalt pond ringed by pale dead larches — a colour found almost nowhere else.",tip:"Pair with Shirahige Falls and Biei's patchwork hills.",flag:""},
+{id:"d_norokko",cat:"do",reg:"hokkaido",area:"furano",lvl:1,name:"Norokko lavender train",note:"A slow open-window sightseeing train trundling through the summer flower fields.",tip:"A temporary 'Lavender-batake' stop drops you at Farm Tomita.",flag:"Summer"},
+{id:"d_jigokudani",cat:"do",reg:"hokkaido",area:"noboribetsu",lvl:1,name:"Noboribetsu Hell Valley",note:"A steaming, sulfur-yellow volcanic crater feeding the onsen town below it.",tip:"Walk the boardwalk to the bubbling Oyunuma pond; free.",flag:"Free"},
+{id:"d_yotei",cat:"do",reg:"hokkaido",area:"yotei",lvl:2,name:"Mt. Yotei / Niseko",note:"'Ezo-Fuji' — a near-perfect cone rising over green summer meadows.",tip:"Niseko is a quiet hiking and rafting base in summer.",flag:"Summer"},
+{id:"d_ryokan",cat:"do",reg:"hokkaido",area:"jozankei",lvl:3,name:"Private en-suite onsen",note:"Your own 24/7 open-air hot-spring bath off a tatami room — the trip's centrepiece.",tip:"Want en-suite roten-buro, not a bookable slot. Book now for the holiday weekend.",flag:"Book"},
+/* BUY */
+{id:"b_kitkat",cat:"buy",reg:"either",area:"jp",lvl:1,name:"Regional Kit Kats",note:"Flavours that exist nowhere else — Hokkaido melon, wasabi, sake, hojicha.",tip:"Don Quijote has the widest wall; airports do exclusives.",flag:""},
+{id:"b_goshuincho",cat:"buy",reg:"either",area:"jp",lvl:1,name:"Goshuincho",note:"A folding book for collecting hand-brushed shrine and temple seals — your real-world coin collection.",tip:"Buy the book at your first shrine, then a goshuin (~¥500) at each.",flag:""},
+{id:"b_omamori",cat:"buy",reg:"either",area:"jp",lvl:1,name:"Omamori charm",note:"An embroidered silk amulet for luck, love or safe travel, blessed at the shrine.",tip:"Don't open it — the blessing's sealed inside.",flag:""},
+{id:"b_furoshiki",cat:"buy",reg:"either",area:"jp",lvl:1,name:"Furoshiki cloth",note:"A square wrapping cloth that folds into a bag, gift wrap or anything you need.",tip:"Flat, light, endlessly useful — the perfect carry-on souvenir.",flag:""},
+{id:"b_tenugui",cat:"buy",reg:"either",area:"jp",lvl:1,name:"Tenugui towel",note:"A printed thin cotton hand-towel that doubles as frameable wall art.",tip:"Designs change monthly; buy a few as flat gifts.",flag:""},
+{id:"b_daruma",cat:"buy",reg:"either",area:"jp",lvl:1,name:"Daruma doll",note:"A round red wish-doll with two blank eyes waiting to be filled.",tip:"Paint one eye and set a goal; paint the other when it's done.",flag:""},
+{id:"b_sensu",cat:"buy",reg:"either",area:"jp",lvl:1,name:"Sensu folding fan",note:"A pocket folding fan that's a genuine summer-in-Japan essential.",tip:"Cheap ones work all trip; stores do beautiful silk.",flag:"Summer"},
+{id:"b_furin",cat:"buy",reg:"either",area:"jp",lvl:1,name:"Furin wind chime",note:"A glass bell hung to 'cool' a Japanese summer with nothing but its sound.",tip:"Hang it at home and it's instantly July in Japan.",flag:"Summer"},
+{id:"b_kokeshi",cat:"buy",reg:"either",area:"jp",lvl:2,name:"Kokeshi doll",note:"A limbless painted wooden folk doll from a centuries-old northern craft.",tip:"Good ones turn up in Tokyo craft shops too.",flag:""},
+{id:"b_washi",cat:"buy",reg:"either",area:"jp",lvl:1,name:"Washi paper goods",note:"Handmade paper turned into notebooks, tape, fans and lampshades.",tip:"Browse a specialist for sheets you can frame.",flag:""},
+{id:"b_matcha",cat:"buy",reg:"either",area:"jp",lvl:2,name:"Ceremonial matcha",note:"Stone-ground green tea powder, vivid and grassy and graded by quality.",tip:"Buy a sealed tin; it stales fast once opened.",flag:""},
+{id:"b_yukata",cat:"buy",reg:"either",area:"jp",lvl:2,name:"Yukata",note:"A light cotton summer kimono perfect for festivals and lounging.",tip:"Uniqlo/GU do cheap sets; craft shops do beautiful ones.",flag:"Summer"},
+{id:"b_stationery",cat:"buy",reg:"either",area:"jp",lvl:1,name:"Stationery",note:"Cult pens, washi tape and notebooks at a quality that makes paper-lovers weep.",tip:"Itoya (Ginza) and Loft are the meccas.",flag:""},
+{id:"b_hanko",cat:"buy",reg:"tokyo",area:"akihabara",lvl:2,name:"Personal hanko seal",note:"A carved name-stamp Japan still uses in place of a handwritten signature.",tip:"Shops carve your name, even in katakana, to order.",flag:""},
+{id:"b_sampurukey",cat:"buy",reg:"tokyo",area:"kappabashi",lvl:1,name:"Fake-food keychain",note:"Uncannily real mini sushi, ramen or parfait charms from the sampuru workshops.",tip:"Kappabashi 'Kitchen Town' is the source.",flag:""},
+{id:"b_suica",cat:"buy",reg:"tokyo",area:"tokyo",lvl:1,name:"Suica Penguin goods",note:"Merch for the beloved transit-card mascot who's quietly being retired.",tip:"He bows out spring 2027 — grab a piece of history now.",flag:""},
+{id:"b_gashapontoy",cat:"buy",reg:"tokyo",area:"akihabara",lvl:1,name:"Gachapon toys",note:"Capsule figurines that get oddly, brilliantly specific — and very collectible.",tip:"Series include miniature izakaya food and awkward cats.",flag:""},
+{id:"b_pokemon",cat:"buy",reg:"tokyo",area:"ikebukuro",lvl:1,name:"Pokémon Center",note:"A flagship store stocked with region- and store-exclusive merch.",tip:"The Mega Tokyo branch in Ikebukuro is the big one.",flag:""},
+{id:"b_figures",cat:"buy",reg:"tokyo",area:"nakano",lvl:2,name:"Anime figures",note:"Museum-grade new and rare vintage character figures by the floor.",tip:"Mandarake is the legendary used-and-rare hunt.",flag:""},
+{id:"b_knives",cat:"buy",reg:"tokyo",area:"kappabashi",lvl:3,name:"Kitchen knives",note:"Hand-forged carbon-steel blades from specialist smiths.",tip:"Kama-Asa will engrave your name and wrap it to fly.",flag:""},
+{id:"b_shiroikoibito",cat:"buy",reg:"hokkaido",area:"sapporo",lvl:1,name:"Shiroi Koibito cookies",note:"White chocolate between thin Hokkaido butter biscuits — the definitive northern souvenir.",tip:"Buy at New Chitose Airport on the way out.",flag:"Only Hokkaido"},
+{id:"b_marusei",cat:"buy",reg:"hokkaido",area:"sapporo",lvl:1,name:"Marusei butter sand",note:"Rokkatei's raisin-butter-cream cookie — a Hokkaido cult classic.",tip:"Keep cool-ish; eat within a few days.",flag:"Only Hokkaido"},
+{id:"b_jagapokkuru",cat:"buy",reg:"hokkaido",area:"sapporo",lvl:1,name:"Jaga Pokkuru",note:"Calbee's crunchy potato sticks made only from Hokkaido spuds.",tip:"Light, travels well; stock up at the airport.",flag:"Only Hokkaido"},
+{id:"b_royce",cat:"buy",reg:"hokkaido",area:"sapporo",lvl:1,name:"Royce' choc chips",note:"Potato chips half-dipped in chocolate — absurd, addictive, and born here.",tip:"Buy the chips, not the fresh nama choco, to fly home.",flag:"Only Hokkaido"},
+{id:"b_classic",cat:"buy",reg:"hokkaido",area:"susukino",lvl:1,name:"Sapporo Classic beer",note:"A crisp lager brewed for and sold only within Hokkaido.",tip:"Grab cans from any conbini; you can't get it elsewhere.",flag:"Only Hokkaido"},
+{id:"b_musicbox",cat:"buy",reg:"hokkaido",area:"otaru",lvl:2,name:"Otaru music box",note:"Intricate wood-and-glass boxes that chime Ghibli and classical tunes.",tip:"Build a custom one — pick the movement and figure.",flag:""},
+{id:"b_nikka",cat:"buy",reg:"hokkaido",area:"yoichi",lvl:2,name:"Nikka whisky (Yoichi)",note:"Peaty single malt from the coastal distillery just beyond Otaru.",tip:"Free self-tour and distillery-only bottlings.",flag:""},
+{id:"b_ainu",cat:"buy",reg:"hokkaido",area:"shiraoi",lvl:2,name:"Ainu woodcraft",note:"Geometric carvings from Hokkaido's indigenous Ainu tradition.",tip:"Buy at Upopoy to support Ainu artisans directly.",flag:""},
+/* KIDS / GAMING SOUVENIRS — Japan-exclusive, under-7 friendly */
+{id:"k_nintendotokyo",cat:"buy",reg:"tokyo",area:"shibuya",lvl:2,name:"Nintendo Tokyo exclusive",note:"Plushies, pins and apparel only sold at the flagship in Shibuya PARCO — Mario, Link and Kirby in forms you cannot find elsewhere.",tip:"Floor 6, Shibuya Parco. Stock rotates monthly; arrive early for the limited shelves.",flag:"Exclusive"},
+{id:"k_pokemon_plush",cat:"buy",reg:"tokyo",area:"ikebukuro",lvl:1,name:"Pokémon Center plush",note:"Store-exclusive Pikachu and regional-form Pokémon plush only Japan's Pokémon Centers stock — not online, not outside Japan.",tip:"Mega Tokyo in Ikebukuro. Eevee in happi coat and summer Pikachu are the July exclusives.",flag:"Exclusive"},
+{id:"k_kirby",cat:"buy",reg:"tokyo",area:"shibuya",lvl:1,name:"Kirby HAL goods",note:"Officially licensed Kirby plush in Japan-only seasonal colorways from HAL Laboratory's dedicated merch line.",tip:"Sanrio Vivitix / Plaza shops carry them; Nintendo Tokyo has exclusives.",flag:""},
+{id:"k_taiko",cat:"buy",reg:"either",area:"jp",lvl:2,name:"Taiko no Tatsujin mini drum",note:"The toy drum controller for Japan's beloved children's taiko rhythm game — sold as a standalone toy that kids under 7 can bash along to.",tip:"Don Quijote carries the Bandai one cheap; larger Yodobashi Camera stores have them boxed.",flag:""},
+{id:"k_anpanman",cat:"buy",reg:"either",area:"jp",lvl:1,name:"Anpanman figure set",note:"Japan's most beloved character for under-5s — the bread-headed hero is everywhere but the best figures and plush are Japan-only.",tip:"Any major toy floor has them; Baikinman (villain) set delights even toddlers.",flag:""},
+{id:"k_sumikko",cat:"buy",reg:"either",area:"jp",lvl:1,name:"Sumikko Gurashi set",note:"San-X's 'corner creatures' — shy, anxious characters with a whole lore that children under 7 adore and that barely registers outside Japan.",tip:"Squishy plush packs at Loft or Village Vanguard; look for summer beach editions.",flag:""},
+{id:"k_gashapon_kids",cat:"buy",reg:"either",area:"jp",lvl:1,name:"Kids gashapon figures",note:"Bandai's quarter-turned capsule figures in lines like 'Chibi Maruko' and 'Dinosaur Pose' — each one ¥300 of pure toddler treasure.",tip:"Let the under-7s pick and turn the machine themselves; bring plenty of ¥100 coins.",flag:""},
+{id:"k_tamagotchi",cat:"buy",reg:"either",area:"jp",lvl:2,name:"Tamagotchi Uni",note:"The latest color-screen Tamagotchi — released in Japan first and still cheapest and widest-stocked there.",tip:"Yodobashi or BIC Camera; the Japanese packaging has characters you won't find in import versions.",flag:""},
+/* JULY */
+{id:"j_mitama",cat:"july",reg:"tokyo",area:"tokyo",lvl:0,name:"Mitama Matsuri",note:"~30,000 lanterns glowing along Yasukuni's approach — Tokyo's great Obon festival of the dead.",when:"JUL 13–16",vd:"go",vt:"Overlaps your Tokyo arrival — go the night of the 15th or 16th. Free, to ~21:30.",tip:"Nebuta floats and Awa Odori dancing on the approach.",flag:""},
+{id:"j_tanabata",cat:"july",reg:"either",area:"jp",lvl:0,name:"Tanabata wishes",note:"Bamboo hung with paper wishes for the once-a-year meeting of two star-crossed lovers.",when:"EARLY–MID JUL",vd:"maybe",vt:"Streamers from the Jul 7 festival linger in covered arcades into mid-July.",tip:"Write a tanzaku wish at a shrine.",flag:""},
+{id:"j_ushi",cat:"july",reg:"hokkaido",area:"sapporo",lvl:0,name:"Day of the Ox (eel)",note:"The midsummer day all Japan eats grilled unagi to beat the heat — a 250-year tradition.",when:"SUN JUL 19",vd:"go",vt:"Lands on your first Hokkaido day. Eel shops get busy — go early.",tip:"Look for unaju (eel over rice in a lacquer box).",flag:""},
+{id:"j_lavender",cat:"july",reg:"hokkaido",area:"furano",lvl:0,name:"Furano lavender peak",note:"Hillsides turned violet and perfumed — Hokkaido's signature summer sight at full bloom.",when:"PEAK MID–LATE JUL",vd:"go",vt:"Prime during your Hokkaido days — do it as a day trip on the 20th–22nd.",tip:"Farm Tomita is free; ride the seasonal Norokko train.",flag:""},
+{id:"j_marineday",cat:"july",reg:"hokkaido",area:"sapporo",lvl:0,name:"Marine Day weekend",note:"Umi no Hi, a national sea-holiday that turns Jul 18–20 into a packed long weekend.",when:"MON JUL 20",vd:"maybe",vt:"A holiday during your Sapporo days — sights and trains run full. Reserve seats.",tip:"Book limited-express seats rather than riding non-reserved.",flag:""},
+{id:"j_beergarden",cat:"july",reg:"hokkaido",area:"odori",lvl:0,name:"Sapporo Beer Garden",note:"Japan's largest open-air beer garden taking over the length of Odori Park.",when:"OPENS JUL 23",vd:"miss",vt:"Opens Jul 23 — the morning you fly back to Tokyo. Only if your CTS flight is late.",tip:"It's right above Odori subway station if the timing works.",flag:""},
+{id:"j_sumida",cat:"july",reg:"tokyo",area:"asakusa",lvl:0,name:"Sumida Fireworks",note:"Tokyo's oldest and biggest hanabi — 20,000 shells bursting over the river by Skytree.",when:"SAT JUL 25",vd:"miss",vt:"Lands the day after you fly home (Jul 24). One to plan around next time.",tip:"If you ever shift dates, book a riverside seat early.",flag:""}
+];
+
+/* ---------------- runtime ---------------- */
+let catF="all", selBucket=null;
+const open=new Set();
+const $=(s,e=document)=>e.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const CATS=[["all","All"],["eat","Eat"],["do","Do"],["buy","Buy"],["july","Jul"]];
+
+/* fixed filter buckets: Anywhere · Tokyo · Hokkaido */
+const BUCKETS=[["any","Anywhere"],["tokyo","Tokyo"],["hokkaido","Hokkaido"]];
+function bregOf(i){return i.reg==="either"?"any":i.reg;}
+function matchBucket(i,bk){return bregOf(i)===bk;}
+
+/* ---------------- top key / filters (with coin stacks) ---------------- */
+function renderBuckets(){
+  const el=$("#clan");el.innerHTML="";
+  BUCKETS.forEach(([bk,label])=>{
+    const items=ITEMS.filter(i=>bregOf(i)===bk);
+    const got=items.filter(i=>state.coins[i.id]);
+    const byCat={};got.forEach(i=>{(byCat[i.cat]=byCat[i.cat]||[]).push(i);});
+    let stacks="";
+    ["eat","do","buy","july"].forEach(c=>{const list=byCat[c];if(!list||!list.length)return;
+      const coins=list.slice(0,5).map(i=>`<span class="mc" style="${coinStyle(i.id)}">${CATJP[c]}</span>`).join("");
+      stacks+=`<span class="stack">${coins}<span class="sct">${list.length}</span></span>`;});
+    const count=got.length?`${got.length}/${items.length}`:`${items.length}<span class="vc-lbl"> available</span>`;
+    const v=document.createElement("div");
+    v.className="vault"+(selBucket===bk?" sel":"");v.dataset.bk=bk;
+    v.innerHTML=`<div class="vh"><span class="ve">${label}</span><span class="vc">${count}</span></div>${got.length?`<div class="stacks">${stacks}</div>`:""}`;
+    el.appendChild(v);
+  });
+}
+$("#clan").addEventListener("click",e=>{
+  const v=e.target.closest(".vault");if(!v)return;
+  selBucket=(selBucket===v.dataset.bk)?null:v.dataset.bk;
+  renderBuckets();renderGrid();
+});
+
+/* ---------------- category chips ---------------- */
+function renderChips(){
+  const cr=$("#catRow");cr.innerHTML="";
+  CATS.forEach(([k,l])=>{const n=k==="all"?ITEMS.length:ITEMS.filter(i=>i.cat===k).length;
+    const b=document.createElement("button");b.className="chip cat";b.setAttribute("aria-pressed",k===catF);
+    b.innerHTML=`${l}<b>${n}</b>`;b.onclick=()=>{catF=k;renderChips();renderGrid();};cr.appendChild(b);});
+}
+
+/* ---------------- grid (unified + prioritized) ---------------- */
+function inScope(i){
+  if(catF!=="all"&&i.cat!==catF)return false;
+  if(selBucket&&!matchBucket(i,selBucket))return false;
+  return true;
+}
+function priceMark(lvl){if(!lvl)return"";return`<span class="lvl"><b>${"¥".repeat(lvl)}</b>${"¥".repeat(3-lvl)}</span>`;}
+function cardHTML(i){
+  const has=!!state.coins[i.id];
+  const p=i.note.split(" — "), d1=p[0];
+  const flag=i.flag?`<span class="flag">${esc(i.flag)}</span>`:"";
+  const vbadge=i.vd?`<span class="verdict v-${i.vd}">${i.vd==="go"?"catch it":i.vd==="maybe"?"maybe":"you'll miss"}</span>`:"";
+  return `<article class="card ${has?"has":""}" data-id="${i.id}">
+    <div class="ctop" data-act="open">
+      <div class="crow1">
+        <button class="coin" data-act="coin" aria-label="${has?"Remove":"Collect"} coin for ${esc(i.name)}">${has?CATJP[i.cat]:"＋"}</button>
+        <div class="cname">${esc(i.name)}</div>
+      </div>
+      <div class="cdesc">${esc(d1)}</div>
+      <div class="crow2">${vbadge}${flag}${priceMark(i.lvl)}<svg class="chev" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 6l6 6-6 6"/></svg></div>
+    </div>
+  </article>`;
+}
+function renderGrid(){
+  let items=ITEMS.filter(inScope).map((it,ix)=>({it,ix}))
+    .sort((a,b)=>((state.coins[a.it.id]?0:1)-(state.coins[b.it.id]?0:1))||a.ix-b.ix).map(o=>o.it);
+  $("#main").innerHTML=`<div class="grid">${items.length?items.map(cardHTML).join(""):`<div class="empty">Nothing matches these filters.</div>`}</div>`;
+}
+
+/* ---------------- detail modal ---------------- */
+let modalId=null;
+function buildSheet(i){
+  const has=!!state.coins[i.id], loc=i.area!=="jp";
+  const flag=i.flag?`<span class="flag">${esc(i.flag)}</span>`:"";
+  const vbadge=i.vd?`<span class="verdict v-${i.vd}">${i.vd==="go"?"catch it":i.vd==="maybe"?"maybe":"you'll miss"}</span>`:"";
+  const price=priceMark(i.lvl);
+  const src=loc?`https://maps.google.com/maps?q=${encodeURIComponent(i.name+" "+i.area+" Japan")}&z=14&output=embed`:"";
+  const link=`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(i.name+" "+(loc?i.area:"Japan"))}`;
+  const when=i.when?`<span class="flag">${esc(i.when)}</span>`:"";
+  return `<div class="sh-top">
+      <button class="sh-coin ${has?"has":""}" data-act="coin" aria-label="${has?"Remove":"Collect"} coin">${has?CATJP[i.cat]:"＋"}</button>
+      <div class="sh-name">${esc(i.name)}</div>
+      <button class="sh-x" data-act="close" aria-label="Close">×</button>
+    </div>
+    <div class="sh-meta">${vbadge}${when}${flag}${price}</div>
+    <div class="sh-desc">${esc(i.note)}</div>
+    ${i.vt?`<div class="sh-vt">${esc(i.vt)}</div>`:""}
+    ${i.tip?`<div class="sh-tip">${esc(i.tip)}</div>`:""}
+    ${loc?`<div class="sh-map"><iframe loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="${src}"></iframe></div>
+      <div class="sh-act"><a class="da" href="${link}" target="_blank" rel="noreferrer">Open in Maps ↗</a></div>`:""}`;
+}
+function openModal(id){
+  const i=ITEMS.find(x=>x.id===id);if(!i)return;
+  modalId=id;
+  $("#sheet").innerHTML=buildSheet(i);
+  const ov=$("#ov");ov.setAttribute("aria-hidden","false");
+  requestAnimationFrame(()=>ov.classList.add("show"));
+}
+function closeModal(){
+  const ov=$("#ov");ov.classList.remove("show");ov.setAttribute("aria-hidden","true");
+  modalId=null;
+}
+$("#ov").addEventListener("click",e=>{
+  const act=e.target.closest("[data-act]");
+  if(e.target===$("#ov")||(act&&act.dataset.act==="close")){closeModal();return;}
+  if(act&&act.dataset.act==="coin"&&modalId){
+    if(state.coins[modalId])delete state.coins[modalId];else state.coins[modalId]=1;
+    save();renderBuckets();renderGrid();
+    $("#sheet").querySelector(".sh-coin").className="sh-coin"+(state.coins[modalId]?" has":"");
+    $("#sheet").querySelector(".sh-coin").textContent=state.coins[modalId]?CATJP[ITEMS.find(x=>x.id===modalId).cat]:"＋";
+  }
+});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&modalId)closeModal();});
+
+/* ---------------- events ---------------- */
+$("#main").addEventListener("click",e=>{
+  const act=e.target.closest("[data-act]");if(!act)return;
+  const card=e.target.closest(".card");if(!card)return;
+  const id=card.dataset.id,a=act.dataset.act;
+  if(a==="coin"){e.stopPropagation();
+    if(state.coins[id])delete state.coins[id];else state.coins[id]=1;
+    save();renderBuckets();renderGrid();
+  }else if(a==="open"){
+    openModal(id);
+  }
+});
+$("#ss").textContent=Store.ok?"✓ Coins & itinerary save on this device":"Preview — download the file to keep your coins";
+
+/* ---------------- warikan (split-the-bill) ledger ---------------- */
+state.expenses=Array.isArray(state.expenses)?state.expenses:[];
+const JPY_USD=150;
+function money(n){const a=Math.abs(n),dec=(Math.round(a*100)%100===0)?0:2;
+  return a.toLocaleString("en-US",{minimumFractionDigits:dec,maximumFractionDigits:dec});}
+/* whole-dollar display (cents excluded from display, never from calculations) */
+function money0(n){return Math.round(Math.abs(n)).toLocaleString("en-US");}
+function signed(n){if(Math.abs(n)<0.5)return{t:"$0",c:"zero"};return{t:(n>0?"+":"−")+"$"+money0(n),c:n>0?"pos":"neg"};}
+function expNets(e){const amt=+e.usd||0,p=e.payers||[];if(!p.length)return{hans:0,spencer:0};
+  const share=amt/2,ph=p.includes("hans")?amt/p.length:0,ps=p.includes("spencer")?amt/p.length:0;
+  return{hans:ph-share,spencer:ps-share};}
+
+const lgdrawer=$("#lgdrawer"),lgBackdrop=$("#lgBackdrop"),
+      lgEntry=$("#lgEntry"),lgAmt=$("#lgAmt"),lgWut=$("#lgWut"),lgRows=$("#lgRows"),
+      lgSummary=$("#lgSummary"),lgSettled=$("#lgSettled"),lgCur=$("#lgCur"),lgAdd=$("#lgAdd"),
+      lgHint=$("#lgHint"),lgPayerSeg=$("#lgPayerSeg"),lgPsegBg=$("#lgPsegBg");
+let lgPayer=(state.lgPayer==="spencer")?"spencer":"hans",lgYenOn=false,lgYenManual=false;
+
+/* segmented payer — JS positions the sliding bg */
+function positionSegBg(){
+  const opt=lgPayerSeg.querySelector(`[data-who="${lgPayer}"]`);if(!opt)return;
+  const sr=lgPayerSeg.getBoundingClientRect(),or=opt.getBoundingClientRect();
+  lgPsegBg.style.cssText=`left:${or.left-sr.left}px;top:${or.top-sr.top}px;width:${or.width}px;height:${or.height}px`;
+}
+function refreshPayerSeg(){
+  lgPayerSeg.querySelectorAll(".lg-pseg-opt").forEach(o=>o.classList.toggle("on",o.dataset.who===lgPayer));
+  positionSegBg();
+}
+
+function rawAmt(){const v=parseFloat((lgAmt.value||"").replace(/[^0-9.]/g,""));return isFinite(v)?v:0;}
+function usdAmt(){const r=rawAmt();return lgYenOn?r/JPY_USD:r;}
+function canAdd(){return usdAmt()>0.0001;}
+function refreshEntry(){
+  lgEntry.classList.toggle("on",lgAmt.value.trim()!=="");
+  lgCur.textContent=lgYenOn?"¥":"$";
+  lgAdd.disabled=!canAdd();
+  if(lgYenOn){const u=usdAmt();lgHint.textContent=u>0?`¥${money(rawAmt())} ≈ $${money(u)}  ·  ¥${JPY_USD}=$1`:"yen mode";}
+  else lgHint.textContent="";
+}
+function autoDetectCurrency(raw){
+  if(raw.includes("$")){lgYenOn=false;lgYenManual=true;return;}
+  if(raw.includes("¥")){lgYenOn=true;lgYenManual=true;return;}
+  if(!lgYenManual){const n=parseFloat(raw.replace(/[^0-9.]/g,""));if(isFinite(n)&&n>1300)lgYenOn=true;}
+}
+function addExpense(){
+  if(!canAdd()){lgEntry.classList.remove("shake");void lgEntry.offsetWidth;lgEntry.classList.add("shake");return;}
+  state.expenses.push({id:"x"+Date.now().toString(36)+Math.random().toString(36).slice(2,5),
+    wut:lgWut.value.trim()||"—",usd:usdAmt(),payers:[lgPayer],settled:false,ts:Date.now()});
+  save();lgAmt.value="";lgWut.value="";lgYenOn=false;lgYenManual=false;
+  refreshEntry();renderLedger();lgAmt.focus();
+}
+function sortedExp(){return state.expenses.map((e,i)=>({e,i}))
+  .sort((a,b)=>((a.e.settled?1:0)-(b.e.settled?1:0))||a.i-b.i).map(o=>o.e);}
+
+function renderLedger(){
+  const list=sortedExp();
+  lgRows.innerHTML=list.length?list.map(e=>{
+    const n=expNets(e),h=signed(n.hans),s=signed(n.spencer);
+    return `<div class="lg-row${e.settled?" done":""}" data-id="${e.id}">
+      <button class="lg-check" data-check aria-label="${e.settled?"Unsettle":"Settle"}">✓</button>
+      <div class="lg-wutcell">
+        <span class="lg-wutn" data-edit="wut" title="Click to rename">${esc(e.wut)}</span>
+        <span class="lg-total" data-edit="usd" title="Click to edit amount">$${money0(e.usd)}</span>
+      </div>
+      <div class="lg-cell ${h.c}">${h.t}</div>
+      <button class="lg-swap" data-swap title="Swap who paid">⇄</button>
+      <div class="lg-cell ${s.c}">${s.t}</div>
+      <button class="lg-del" data-del aria-label="Delete">×</button>
+    </div>`;
+  }).join(""):"";
+  lgdrawer.classList.toggle("no-splits",state.expenses.length===0);
+  let unh=0,seth=0;
+  state.expenses.forEach(e=>{const n=expNets(e);if(e.settled)seth+=n.hans;else unh+=n.hans;});
+  lgSummary.className="lg-summary"+(Math.abs(unh)<0.5?" square":"");
+  if(Math.abs(unh)<0.5)lgSummary.textContent="All square ✓";
+  else if(unh>0)lgSummary.innerHTML=`<span class="lg-owed">Spencer owes <b>Hans</b></span><span class="lg-amt">$${money0(unh)}</span>`;
+  else lgSummary.innerHTML=`<span class="lg-owed">Hans owes <b>Spencer</b></span><span class="lg-amt">$${money0(-unh)}</span>`;
+  if(Math.abs(seth)<0.5)lgSettled.textContent="";
+  else if(seth>0)lgSettled.textContent=`Spencer has already paid $${money0(seth)} to Hans`;
+  else lgSettled.textContent=`Hans has already paid $${money0(-seth)} to Spencer`;
+}
+
+/* inline editing via contenteditable — no layout shift */
+function beginEdit(el){
+  if(el.getAttribute("contenteditable")==="true")return;
+  const row=el.closest(".lg-row"),exp=state.expenses.find(x=>x.id===row?.dataset.id);
+  el.dataset.orig=el.textContent;
+  if(el.dataset.edit==="usd"&&exp)el.textContent=String(Math.round(exp.usd*100)/100);
+  el.setAttribute("contenteditable","true");
+  el.focus();
+  const r=document.createRange();r.selectNodeContents(el);
+  const sel=getSelection();sel.removeAllRanges();sel.addRange(r);
+}
+function saveEdit(el){
+  if(el.getAttribute("contenteditable")!=="true")return;
+  el.removeAttribute("contenteditable");
+  const row=el.closest(".lg-row"),exp=state.expenses.find(x=>x.id===row?.dataset.id);
+  const txt=(el.textContent||"").trim();
+  if(exp){
+    if(el.dataset.edit==="wut"){if(txt)exp.wut=txt;}
+    else{const v=parseFloat(txt.replace(/[^0-9.]/g,""));if(isFinite(v)&&v>0)exp.usd=v;}
+    save();
+  }
+  renderLedger();
+}
+
+const noboriBtn=$("#noboriBtn");
+function openDrawer(){
+  document.body.classList.remove("drawer-peek");
+  lgdrawer.classList.add("open");
+  document.body.classList.add("drawer-open");
+  if(window.innerWidth<720)lgBackdrop.classList.add("show");
+  renderLedger();
+  setTimeout(()=>{lgAmt.focus();refreshPayerSeg();},310);
+}
+function closeDrawer(){
+  lgdrawer.classList.remove("open");
+  lgBackdrop.classList.remove("show");
+  document.body.classList.remove("drawer-open");
+  document.body.classList.remove("drawer-peek");
+}
+/* peek when the pointer nears the right edge (<=30px), or is over the tab/drawer */
+let lgPeek=false;
+function setPeek(on){
+  if(lgdrawer.classList.contains("open")||window.innerWidth<720)on=false;
+  if(on===lgPeek)return;
+  lgPeek=on;document.body.classList.toggle("drawer-peek",on);
+}
+document.addEventListener("mousemove",e=>{
+  const nearEdge=(window.innerWidth-e.clientX)<=30;
+  const t=e.target;
+  const over=t&&t.closest&&(t.closest("#lgdrawer")||t.closest("#noboriBtn"));
+  setPeek(nearEdge||!!over);
+});
+document.addEventListener("mouseleave",()=>setPeek(false));
+
+/* --- events --- */
+/* tab toggles the drawer open/closed */
+noboriBtn.addEventListener("click",e=>{
+  e.stopPropagation();
+  lgdrawer.classList.contains("open")?closeDrawer():openDrawer();
+});
+/* clicking anywhere on the peeking panel pulls it fully open */
+lgdrawer.addEventListener("click",e=>{
+  if(!lgdrawer.classList.contains("open")){e.stopPropagation();openDrawer();}
+});
+lgBackdrop.addEventListener("click",closeDrawer);
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&lgdrawer.classList.contains("open"))closeDrawer();});
+window.addEventListener("resize",()=>{
+  if(!lgdrawer.classList.contains("open"))return;
+  lgBackdrop.classList.toggle("show",window.innerWidth<720);
+  refreshPayerSeg();
+});
+
+/* currency */
+lgCur.addEventListener("click",()=>{lgYenOn=!lgYenOn;lgYenManual=true;refreshEntry();lgAmt.focus();});
+lgAmt.addEventListener("input",()=>{autoDetectCurrency(lgAmt.value);refreshEntry();});
+lgAmt.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();canAdd()?addExpense():lgWut.focus();}});
+lgAmt.addEventListener("paste",e=>{
+  setTimeout(()=>{
+    const raw=lgAmt.value,stripped=raw.replace(/[$¥,\s]/g,"");
+    if(raw.includes("$")){lgYenOn=false;lgYenManual=true;}
+    else if(raw.includes("¥")){lgYenOn=true;lgYenManual=true;}
+    else if(!lgYenManual){const n=parseFloat(stripped);if(isFinite(n)&&n>1300)lgYenOn=true;}
+    lgAmt.value=stripped;refreshEntry();if(rawAmt()>0)lgWut.focus();
+  },0);
+});
+lgWut.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();if(canAdd())addExpense();}});
+lgAdd.addEventListener("click",addExpense);
+
+/* payer segmented control — remembers last choice */
+lgPayerSeg.addEventListener("click",e=>{
+  const opt=e.target.closest("[data-who]");if(!opt)return;
+  lgPayer=opt.dataset.who;state.lgPayer=lgPayer;save();refreshPayerSeg();
+});
+
+/* rows */
+lgRows.addEventListener("click",e=>{
+  const row=e.target.closest(".lg-row");if(!row)return;
+  const id=row.dataset.id,exp=state.expenses.find(x=>x.id===id);
+
+  if(e.target.closest("[data-check]")&&exp){
+    const first={};lgRows.querySelectorAll(".lg-row").forEach(r=>first[r.dataset.id]=r.getBoundingClientRect().top);
+    exp.settled=!exp.settled;save();renderLedger();
+    lgRows.querySelectorAll(".lg-row").forEach(r=>{const o=first[r.dataset.id];if(o==null)return;
+      const dy=o-r.getBoundingClientRect().top;
+      if(dy){r.style.transition="none";r.style.transform=`translateY(${dy}px)`;
+        requestAnimationFrame(()=>{r.style.transition="transform .42s cubic-bezier(.4,0,.2,1)";r.style.transform="";})}});
+    return;
+  }
+  if(e.target.closest("[data-swap]")&&exp){
+    exp.payers=exp.payers.includes("hans")?["spencer"]:["hans"];
+    save();renderLedger();return;
+  }
+  if(e.target.closest("[data-del]")){
+    state.expenses=state.expenses.filter(x=>x.id!==id);save();renderLedger();return;
+  }
+  const ed=e.target.closest("[data-edit]");
+  if(ed)beginEdit(ed);
+});
+lgRows.addEventListener("keydown",e=>{
+  const el=e.target.closest("[data-edit]");if(!el||el.getAttribute("contenteditable")!=="true")return;
+  if(e.key==="Enter"){e.preventDefault();el.blur();}
+  else if(e.key==="Escape"){e.preventDefault();el.textContent=el.dataset.orig||"";el.removeAttribute("contenteditable");renderLedger();}
+});
+lgRows.addEventListener("focusout",e=>{
+  const el=e.target.closest?.("[data-edit]");if(el)saveEdit(el);
+});
+
+/* init */
+renderCal();renderBuckets();renderChips();renderGrid();refreshEntry();renderLedger();
+</script>
+</body>
+</html>
