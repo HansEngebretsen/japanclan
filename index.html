@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#f6f3ed">
+<meta name="robots" content="noindex, nofollow">
 <title>Japan Clan · Jul 14–24</title>
 <style>
   :root{
@@ -37,6 +38,8 @@
   /* header — scrolls away with the page */
   header{background:var(--paper)}
   .hd{max-width:660px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 9px) 13px 9px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+  /* reserve room for the fixed ¥ tab (46px, viewport-right) so the header buttons never hide under it */
+  @media(max-width:745px){.hd{padding-right:56px}}
   .wm{display:flex;align-items:baseline;gap:8px;min-width:0}
   .wm .jp{font-family:var(--serif);font-size:19px;color:var(--seal);line-height:1}
   .wm .en{font-family:var(--serif);font-size:16px;font-weight:600;white-space:nowrap}
@@ -51,7 +54,10 @@
   .thicon{transition:transform .55s cubic-bezier(.4,0,.2,1)}
   [data-theme="dark"] .thicon{transform:rotate(360deg)}
   .th-orb{transition:r .45s cubic-bezier(.4,0,.2,1),fill .45s}
-  [data-theme="dark"] .th-orb{r:7;fill:#bc002d}
+  [data-theme="dark"] .th-orb{r:7.5;fill:#bc002d;stroke:none}
+  /* the "bite" is a background-coloured disc that carves the red circle into a crescent moon in dark mode */
+  .th-bite{fill:var(--paper);stroke:none;transition:r .45s cubic-bezier(.4,0,.2,1)}
+  [data-theme="dark"] .th-bite{r:6.4}
   .th-rays{transform-origin:center;transition:opacity .4s,transform .45s cubic-bezier(.4,0,.2,1)}
   [data-theme="dark"] .th-rays{opacity:0;transform:scale(.3)}
 
@@ -293,9 +299,9 @@
   .lg-hd{display:flex;align-items:center;justify-content:space-between;flex-shrink:0;margin-bottom:15px}
   .lg-hd-title{display:flex;align-items:center;gap:9px;font-family:var(--serif);font-size:15px;font-weight:700;color:#fff;letter-spacing:.01em}
   .lg-hd .nb-coin{width:19px;height:19px;font-size:11px}
-  .lg-x{display:none;border:0;background:rgba(255,255,255,.14);color:#fff;width:32px;height:32px;border-radius:50%;
-    font-family:var(--serif);font-size:22px;line-height:1;cursor:pointer;place-items:center;transition:background .14s}
-  .lg-x:hover{background:rgba(255,255,255,.24)}
+  .lg-x{display:none;border:0;background:0;color:var(--dmuted);width:32px;height:32px;
+    font-family:var(--serif);font-size:24px;line-height:1;cursor:pointer;place-items:center;transition:color .14s}
+  .lg-x:hover{color:#fff}
 
   /* entry card */
   .lg-entry{border:1px solid var(--dline2);border-radius:14px;background:var(--dsurf);padding:14px 15px;margin-bottom:22px;flex-shrink:0}
@@ -400,6 +406,40 @@
   /* empty state: hide table, labels, and summary */
   .lgdrawer.no-splits .lg-thead,.lgdrawer.no-splits .lg-rows,.lgdrawer.no-splits .lg-foot{display:none}
 
+  /* ---- sign-in / profile (Firebase) ---- */
+  .authwrap{position:relative;display:flex;align-items:center}
+  /* signed out: plain text link */
+  .authbtn{border:0;background:0;padding:2px 2px;cursor:pointer;color:var(--ink-2);
+    font-family:var(--sans);font-size:12.5px;font-weight:600;letter-spacing:.01em;transition:color .12s}
+  .authbtn:hover{color:var(--seal);text-decoration:underline}
+  /* signed in: just the avatar */
+  .authbtn.pic{padding:0;width:19px;height:19px;border-radius:50%;overflow:hidden;
+    box-shadow:0 0 0 1px var(--line-2);transition:box-shadow .12s}
+  .authbtn.pic:hover{text-decoration:none;box-shadow:0 0 0 2px var(--seal)}
+  .authbtn .av{width:100%;height:100%;border-radius:50%;object-fit:cover;background:var(--soft);
+    display:grid;place-items:center;font-family:var(--serif);font-size:9.5px;color:var(--seal);overflow:hidden}
+  /* profile dropdown */
+  .authmenu{position:absolute;top:calc(100% + 8px);right:0;z-index:60;min-width:190px;
+    background:var(--card);border:1px solid var(--line-2);border-radius:12px;
+    box-shadow:0 10px 28px rgba(20,16,10,.20);padding:12px 13px 10px}
+  .authmenu[hidden]{display:none}
+  .am-name{font-size:13px;font-weight:700;color:var(--ink);line-height:1.2}
+  .am-email{font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:3px;word-break:break-all;line-height:1.3}
+  .am-out{margin-top:10px;padding-top:9px;border-top:1px solid var(--line);width:100%;text-align:left;
+    border-left:0;border-right:0;border-bottom:0;background:0;cursor:pointer;color:var(--seal);
+    font-family:var(--sans);font-size:12px;font-weight:600;transition:opacity .12s}
+  .am-out:hover{opacity:.7}
+  /* "someone else pinned this" cue on a card coin */
+  .coin{position:relative}
+  .others{position:absolute;top:-5px;right:-5px;min-width:15px;height:15px;padding:0 3px;border-radius:99px;
+    background:var(--seal);color:#fff;border:1.5px solid var(--card);display:none;place-items:center;
+    font-family:var(--mono);font-size:8px;font-weight:700;line-height:1;overflow:hidden}
+  .others.show{display:grid}
+  .others img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+  .sh-coin{position:relative}
+  .sh-coin .others{top:-4px;right:-4px}
+  .card.byothers{border-color:color-mix(in srgb,var(--seal) 30%,var(--line))}
+
   @media(prefers-reduced-motion:reduce){*{transition-duration:.001ms!important}}
 </style>
 </head>
@@ -408,9 +448,18 @@
   <div class="hd">
     <div class="wm"><span class="jp">一族</span><span class="en">Japan Clan</span></div>
     <div class="hbtns">
+      <div class="authwrap" id="authWrap">
+        <button class="authbtn" id="authBtn" type="button" hidden>Sign in</button>
+        <div class="authmenu" id="authMenu" hidden>
+          <div class="am-name" id="amName"></div>
+          <div class="am-email" id="amEmail"></div>
+          <button class="am-out" id="amOut" type="button">Sign out</button>
+        </div>
+      </div>
       <button class="ibtn" id="themeBtn" aria-label="Toggle dark mode" title="Light / dark">
         <svg class="thicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle class="th-orb" cx="12" cy="12" r="4.5"/>
+          <circle class="th-bite" cx="15.5" cy="9.5" r="0"/>
           <g class="th-rays"><path d="M12 2v2M12 20v2M4 12H2M22 12h-2M5 5l1.5 1.5M17.5 17.5L19 19M19 5l-1.5 1.5M6.5 17.5L5 19"/></g>
         </svg>
       </button>
@@ -505,6 +554,21 @@
   <div>Hans · Spencer · Bailey &amp; +1 — 4 adults, trains only</div>
   <div class="ss" id="ss">Coins save on this device</div>
 </footer>
+
+<!-- Firebase (compat build → works inside this classic single-file script) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+  window.JC_FB_CONFIG={
+    apiKey:"AIzaSyD3gXWMMo9V3WC7Q6KhmUsgwyqV2D4yEDk",
+    authDomain:"japanclan2k6.firebaseapp.com",
+    projectId:"japanclan2k6",
+    storageBucket:"japanclan2k6.firebasestorage.app",
+    messagingSenderId:"186574298020",
+    appId:"1:186574298020:web:f4dd9c0c412542de1d7f31"
+  };
+</script>
 
 <script>
 "use strict";
@@ -772,6 +836,9 @@ const ITEMS=[
 
 /* ---------------- runtime ---------------- */
 let catF="all", selBucket=null, shuffleRank=null, showStamped=(state.showStamped!==false);
+/* sync state: `me` = signed-in user (null when signed out); othersByItem[id] = [{uid,name,photo}] who else pinned it */
+let me=null, othersByItem=Object.create(null);
+let fbAuth=null, fbLedger=null, fbPins=null, fbRoster=null; /* Firestore refs, set once Firebase loads */
 const open=new Set();
 const $=(s,e=document)=>e.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -843,15 +910,23 @@ function inScope(i){
   return true;
 }
 function priceMark(lvl){if(!lvl)return"";return`<span class="lvl"><b>${"¥".repeat(lvl)}</b>${"¥".repeat(3-lvl)}</span>`;}
+/* small badge shown on a token when other people have collected it (only meaningful when signed in) */
+function othersBadge(id){
+  const list=othersByItem[id];if(!list||!list.length)return"";
+  const f=list[0], face=f.photo?`<img src="${esc(f.photo)}" alt="">`:esc((f.name||"?").slice(0,1).toUpperCase());
+  const label=list.map(o=>o.name||"someone").join(", ");
+  return `<span class="others show" title="Also collected by ${esc(label)}">${list.length>1?list.length:face}</span>`;
+}
 function cardHTML(i){
   const has=!!state.coins[i.id];
+  const others=othersByItem[i.id]&&othersByItem[i.id].length;
   const p=i.note.split(" — "), d1=p[0];
   const flag=i.flag?`<span class="flag">${esc(i.flag)}</span>`:"";
   const vbadge=i.vd?`<span class="verdict v-${i.vd}">${i.vd==="go"?"catch it":i.vd==="maybe"?"maybe":"you'll miss"}</span>`:"";
-  return `<article class="card ${has?"has":""}" data-id="${i.id}">
+  return `<article class="card ${has?"has":""}${!has&&others?" byothers":""}" data-id="${i.id}">
     <div class="ctop" data-act="open">
       <div class="crow1">
-        <button class="coin" data-act="coin" aria-label="${has?"Remove":"Collect"} coin for ${esc(i.name)}">${has?CATJP[i.cat]:"＋"}</button>
+        <button class="coin" data-act="coin" aria-label="${has?"Remove":"Collect"} coin for ${esc(i.name)}">${has?CATJP[i.cat]:"＋"}${othersBadge(i.id)}</button>
         <div class="cname">${esc(i.name)}</div>
       </div>
       <div class="cdesc">${esc(d1)}</div>
@@ -883,7 +958,7 @@ function buildSheet(i){
   const link=`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(i.name+" "+(loc?i.area:"Japan"))}`;
   const when=i.when?`<span class="flag">${esc(i.when)}</span>`:"";
   return `<div class="sh-top">
-      <button class="sh-coin ${has?"has":""}" data-act="coin" aria-label="${has?"Remove":"Collect"} coin">${has?CATJP[i.cat]:"＋"}</button>
+      <button class="sh-coin ${has?"has":""}" data-act="coin" aria-label="${has?"Remove":"Collect"} coin">${has?CATJP[i.cat]:"＋"}${othersBadge(i.id)}</button>
       <div class="sh-name">${esc(i.name)}</div>
       <button class="sh-x" data-act="close" aria-label="Close">×</button>
     </div>
@@ -909,10 +984,10 @@ $("#ov").addEventListener("click",e=>{
   const act=e.target.closest("[data-act]");
   if(e.target===$("#ov")||(act&&act.dataset.act==="close")){closeModal();return;}
   if(act&&act.dataset.act==="coin"&&modalId){
-    if(state.coins[modalId])delete state.coins[modalId];else state.coins[modalId]=1;
-    save();renderBuckets();renderGrid();
-    $("#sheet").querySelector(".sh-coin").className="sh-coin"+(state.coins[modalId]?" has":"");
-    $("#sheet").querySelector(".sh-coin").textContent=state.coins[modalId]?CATJP[ITEMS.find(x=>x.id===modalId).cat]:"＋";
+    toggleCoin(modalId);
+    const c=$("#sheet").querySelector(".sh-coin");
+    c.className="sh-coin"+(state.coins[modalId]?" has":"");
+    c.innerHTML=(state.coins[modalId]?CATJP[ITEMS.find(x=>x.id===modalId).cat]:"＋")+othersBadge(modalId);
   }
 });
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&modalId)closeModal();});
@@ -923,12 +998,18 @@ $("#main").addEventListener("click",e=>{
   const card=e.target.closest(".card");if(!card)return;
   const id=card.dataset.id,a=act.dataset.act;
   if(a==="coin"){e.stopPropagation();
-    if(state.coins[id])delete state.coins[id];else state.coins[id]=1;
-    save();renderBuckets();renderGrid();
+    toggleCoin(id);
   }else if(a==="open"){
     openModal(id);
   }
 });
+/* one place to flip a pin: local cache always, plus cloud when signed in */
+function toggleCoin(id){
+  if(state.coins[id])delete state.coins[id];else state.coins[id]=1;
+  save();
+  if(me)syncPin(id,!!state.coins[id]);
+  renderBuckets();renderGrid();
+}
 $("#ss").textContent=Store.ok?"✓ Coins & itinerary save on this device":"Preview — download the file to keep your coins";
 
 /* ---------------- warikan (split-the-bill) ledger ---------------- */
@@ -975,12 +1056,25 @@ function autoDetectCurrency(raw){
   if(raw.includes("¥")){lgYenOn=true;lgYenManual=true;return;}
   if(!lgYenManual){const n=parseFloat(raw.replace(/[^0-9.]/g,""));if(isFinite(n)&&n>1300)lgYenOn=true;}
 }
+/* ledger writes: cloud when signed in (snapshot re-renders), else the local array */
+function expAdd(entry){
+  if(me&&window.fbReady){entry.by=me.uid;fbLedger.add(entry).catch(fbErr);return;}
+  entry.id="x"+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+  state.expenses.push(entry);save();renderLedger();
+}
+function expUpdate(id,patch){
+  if(me&&window.fbReady){fbLedger.doc(id).update(patch).catch(fbErr);return;}
+  const e=state.expenses.find(x=>x.id===id);if(e){Object.assign(e,patch);save();renderLedger();}
+}
+function expDelete(id){
+  if(me&&window.fbReady){fbLedger.doc(id).delete().catch(fbErr);return;}
+  state.expenses=state.expenses.filter(x=>x.id!==id);save();renderLedger();
+}
 function addExpense(){
   if(!canAdd()){lgEntry.classList.remove("shake");void lgEntry.offsetWidth;lgEntry.classList.add("shake");return;}
-  state.expenses.push({id:"x"+Date.now().toString(36)+Math.random().toString(36).slice(2,5),
-    wut:lgWut.value.trim()||"—",usd:usdAmt(),payers:[lgPayer],settled:false,ts:Date.now()});
-  save();lgAmt.value="";lgWut.value="";lgYenOn=false;lgYenManual=false;
-  refreshEntry();renderLedger();lgAmt.focus();
+  expAdd({wut:lgWut.value.trim()||"—",usd:usdAmt(),payers:[lgPayer],settled:false,ts:Date.now()});
+  lgAmt.value="";lgWut.value="";lgYenOn=false;lgYenManual=false;
+  refreshEntry();lgAmt.focus();
 }
 function sortedExp(){return state.expenses.map((e,i)=>({e,i}))
   .sort((a,b)=>((a.e.settled?1:0)-(b.e.settled?1:0))||a.i-b.i).map(o=>o.e);}
@@ -1032,9 +1126,10 @@ function saveEdit(el){
   const row=el.closest(".lg-row"),exp=state.expenses.find(x=>x.id===row?.dataset.id);
   const txt=(el.textContent||"").trim();
   if(exp){
-    if(el.dataset.edit==="wut"){if(txt)exp.wut=txt;}
-    else{const v=parseFloat(txt.replace(/[^0-9.]/g,""));if(isFinite(v)&&v>0)exp.usd=v;}
-    save();
+    let patch=null;
+    if(el.dataset.edit==="wut"){if(txt)patch={wut:txt};}
+    else{const v=parseFloat(txt.replace(/[^0-9.]/g,""));if(isFinite(v)&&v>0)patch={usd:v};}
+    if(patch){expUpdate(row.dataset.id,patch);return;}
   }
   renderLedger();
 }
@@ -1156,6 +1251,7 @@ lgRows.addEventListener("click",e=>{
   const id=row.dataset.id,exp=state.expenses.find(x=>x.id===id);
 
   if(e.target.closest("[data-check]")&&exp){
+    if(me&&window.fbReady){expUpdate(id,{settled:!exp.settled});return;} /* cloud: snapshot re-sorts */
     const first={};lgRows.querySelectorAll(".lg-row").forEach(r=>first[r.dataset.id]=r.getBoundingClientRect().top);
     exp.settled=!exp.settled;save();renderLedger();
     lgRows.querySelectorAll(".lg-row").forEach(r=>{const o=first[r.dataset.id];if(o==null)return;
@@ -1165,11 +1261,10 @@ lgRows.addEventListener("click",e=>{
     return;
   }
   if(e.target.closest("[data-swap]")&&exp){
-    exp.payers=exp.payers.includes("hans")?["spencer"]:["hans"];
-    save();renderLedger();return;
+    expUpdate(id,{payers:exp.payers.includes("hans")?["spencer"]:["hans"]});return;
   }
   if(e.target.closest("[data-del]")){
-    state.expenses=state.expenses.filter(x=>x.id!==id);save();renderLedger();return;
+    expDelete(id);return;
   }
   const ed=e.target.closest("[data-edit]");
   if(ed)beginEdit(ed);
@@ -1186,6 +1281,127 @@ lgRows.addEventListener("focusout",e=>{
 /* init */
 updateStampTog();
 renderCal();renderBuckets();renderChips();renderGrid();refreshEntry();renderLedger();
+
+/* ================= Firebase sync (optional layer — app works fully without it) ================= */
+const TRIP_ID="japan-2026";
+function fbErr(e){console.warn("[sync]",e&&e.code||e);}
+let localExpensesBackup=null;                 /* the signed-out (local) ledger, restored on sign-out */
+let ledgerUnsub=null, pinsUnsub=null;
+
+/* first sign-in: union my local pins into the cloud (merge keeps any pins made on other devices) */
+function mergeMyPins(){
+  if(!me||!fbPins)return;
+  fbPins.doc(me.uid).set({coins:state.coins||{},name:me.name,photo:me.photo||null,updatedAt:Date.now()},{merge:true}).catch(fbErr);
+}
+/* per-toggle: touch only the one key so concurrent devices don't clobber each other */
+function syncPin(id,on){
+  if(!me||!fbPins)return;
+  const ref=fbPins.doc(me.uid);
+  if(on)ref.set({coins:{[id]:true},name:me.name,photo:me.photo||null,updatedAt:Date.now()},{merge:true}).catch(fbErr);
+  else ref.update({["coins."+id]:firebase.firestore.FieldValue.delete(),updatedAt:Date.now()}).catch(fbErr);
+}
+
+function subscribePins(){
+  if(pinsUnsub)pinsUnsub();
+  pinsUnsub=fbPins.onSnapshot(snap=>{
+    const others=Object.create(null); let mine=null;
+    snap.forEach(doc=>{
+      const d=doc.data()||{}, coins=d.coins||{};
+      if(doc.id===(me&&me.uid)){mine=coins;return;}
+      Object.keys(coins).forEach(id=>{if(coins[id])(others[id]=others[id]||[]).push({uid:doc.id,name:d.name,photo:d.photo});});
+    });
+    othersByItem=others;
+    if(mine){state.coins=Object.assign({},mine);save();}   /* my cloud pins are authoritative; cache locally */
+    renderBuckets();renderGrid();
+    if(modalId){const c=$("#sheet").querySelector(".sh-coin");if(c){c.className="sh-coin"+(state.coins[modalId]?" has":"");c.innerHTML=(state.coins[modalId]?CATJP[ITEMS.find(x=>x.id===modalId).cat]:"＋")+othersBadge(modalId);}}
+  },fbErr);
+}
+
+function subscribeLedger(){
+  if(ledgerUnsub)ledgerUnsub();
+  ledgerUnsub=fbLedger.orderBy("ts","asc").onSnapshot(snap=>{
+    const list=[];
+    snap.forEach(doc=>{const d=doc.data()||{};list.push({id:doc.id,wut:d.wut,usd:d.usd,payers:d.payers||[],settled:!!d.settled,ts:d.ts,by:d.by});});
+    state.expenses=list;                        /* cloud is source of truth — do NOT save() to localStorage */
+    renderLedger();
+  },fbErr);
+}
+
+/* auth UI ---------------------------------------------------------------- */
+function initials(n){return (n||"?").trim().slice(0,1).toUpperCase();}
+function closeAuthMenu(){const m=$("#authMenu");if(m)m.hidden=true;}
+function paintAuthBtn(){
+  const b=$("#authBtn");if(!b)return;b.hidden=false;
+  if(me){
+    b.classList.add("pic");b.setAttribute("aria-label","Account");b.title=me.name||"Account";
+    b.innerHTML=me.photo?`<img class="av" src="${esc(me.photo)}" alt="">`:`<span class="av">${esc(initials(me.name))}</span>`;
+    $("#amName").textContent=me.name||"Traveler";
+    $("#amEmail").textContent=me.email||"";
+  }else{
+    b.classList.remove("pic");b.removeAttribute("title");b.setAttribute("aria-label","Sign in");b.textContent="Sign in";
+    closeAuthMenu();
+  }
+}
+
+function signIn(){
+  if(!fbAuth)return;
+  fbAuth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(e=>{
+    fbErr(e);
+    if(e&&e.code&&e.code!=="auth/popup-closed-by-user")alert("Sign-in failed: "+e.code);
+  });
+}
+function signOut(){if(fbAuth)fbAuth.signOut();}
+
+/* boot Firebase if the SDK + config are present ------------------------- */
+(function bootFirebase(){
+  if(!window.firebase||!window.JC_FB_CONFIG||!firebase.initializeApp){console.warn("[sync] Firebase SDK not loaded — running local-only");return;}
+  try{
+    firebase.initializeApp(window.JC_FB_CONFIG);
+    fbAuth=firebase.auth();
+    const db=firebase.firestore();
+    const trip=db.collection("trips").doc(TRIP_ID);
+    fbLedger=trip.collection("ledger");
+    fbPins=trip.collection("pins");
+    fbRoster=trip.collection("roster").doc("list");
+  }catch(e){console.warn("[sync] init failed",e);return;}
+  window.fbReady=true;
+  paintAuthBtn();
+
+  /* signed out → sign in; signed in → toggle the profile dropdown */
+  $("#authBtn").addEventListener("click",e=>{
+    if(!me){signIn();return;}
+    e.stopPropagation();
+    const m=$("#authMenu");m.hidden=!m.hidden;
+  });
+  $("#amOut").addEventListener("click",()=>{closeAuthMenu();signOut();});
+  document.addEventListener("click",e=>{if(!e.target.closest("#authWrap"))closeAuthMenu();});
+
+  fbAuth.onAuthStateChanged(async user=>{
+    if(user){
+      me={uid:user.uid,name:user.displayName||user.email||"Traveler",email:user.email||"",photo:user.photoURL||null};
+      /* join the roster (rules cap it at 13, self-add only) */
+      try{await fbRoster.set({members:{[me.uid]:{email:me.email,name:me.name,photo:me.photo||null,ts:Date.now()}}},{merge:true});}
+      catch(e){fbErr(e);if(e&&e.code==="permission-denied"){alert("This trip is full (13 people max) or sign-in isn't allowed for this account.");await fbAuth.signOut();return;}}
+      /* merge local pins up, then subscribe (snapshot makes cloud authoritative) */
+      mergeMyPins();
+      subscribePins();
+      /* swap the local ledger out for the shared one */
+      localExpensesBackup=state.expenses;
+      subscribeLedger();
+      paintAuthBtn();
+    }else{
+      me=null;
+      if(ledgerUnsub){ledgerUnsub();ledgerUnsub=null;}
+      if(pinsUnsub){pinsUnsub();pinsUnsub=null;}
+      othersByItem=Object.create(null);
+      if(localExpensesBackup){state.expenses=localExpensesBackup;localExpensesBackup=null;}
+      else{state.expenses=Array.isArray(Store.load().expenses)?Store.load().expenses:[];}
+      /* my pins fall back to whatever is cached locally (already in state.coins) */
+      paintAuthBtn();
+      renderBuckets();renderGrid();renderLedger();
+    }
+  });
+})();
 </script>
 </body>
 </html>
