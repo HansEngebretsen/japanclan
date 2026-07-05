@@ -1,0 +1,38 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /trips/{trip} {
+      function rosterExists() {
+        return exists(/databases/$(database)/documents/trips/$(trip)/roster/list);
+      }
+      function members() {
+        return get(/databases/$(database)/documents/trips/$(trip)/roster/list).data.members;
+      }
+      function isMember() {
+        return request.auth != null && rosterExists() && request.auth.uid in members();
+      }
+
+      // roster: readable by members; a signed-in user may add ONLY themselves, capped at 13
+      match /roster/list {
+        allow read: if isMember();
+        allow create: if request.auth != null
+          && request.resource.data.members.size() <= 13
+          && request.resource.data.members.keys().hasOnly([request.auth.uid]);
+        allow update: if request.auth != null
+          && request.resource.data.members.size() <= 13
+          && request.resource.data.members.diff(resource.data.members).affectedKeys().hasOnly([request.auth.uid]);
+      }
+
+      // shared IOU ledger — members only
+      match /ledger/{entry} {
+        allow read, write: if isMember();
+      }
+
+      // pins — members read all; you write only your own doc
+      match /pins/{uid} {
+        allow read: if isMember();
+        allow write: if request.auth != null && request.auth.uid == uid && isMember();
+      }
+    }
+  }
+}
