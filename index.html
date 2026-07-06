@@ -200,7 +200,7 @@
     background:var(--soft);border-radius:50%;
     -webkit-mask:radial-gradient(circle at 50% 50%, #000 56%, rgba(0,0,0,.45) 78%, transparent 100%);
             mask:radial-gradient(circle at 50% 50%, #000 56%, rgba(0,0,0,.45) 78%, transparent 100%)}
-  .itin-map iframe{width:100%;height:100%;border:0;display:block;filter:var(--map-filter);pointer-events:none}
+  .itin-map iframe, .itin-map img{width:100%;height:100%;border:0;display:block;filter:var(--map-filter);pointer-events:none;object-fit:cover}
   /* header row: nav + expand + close, all top-right */
   .itin-arrows{justify-content:flex-end}
   .itin-expand svg{width:15px;height:15px}
@@ -799,7 +799,31 @@ const ITIN={
 function mapsLink(wp){return "https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(wp);}
 /* wider for airports/stations, closer for hotels & venues */
 function mapZoom(ic){return ic==="flight"?11:ic==="train"?12:15;}
-function mapThumb(wp,z){return `<a class="itin-map" href="${mapsLink(wp)}" target="_blank" rel="noopener" aria-label="Open map"><iframe loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=${encodeURIComponent(wp)}&z=${z}&output=embed" title="${esc(wp)}"></iframe></a>`;}
+function mapThumb(wp,z){
+  const key = window.JC_FB_CONFIG.apiKey;
+  const url = `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(wp)}&zoom=${z}&size=60x60&scale=2&maptype=roadmap&markers=color:0xa53e25%7C${encodeURIComponent(wp)}&key=${key}`;
+  return `<a class="itin-map" href="${mapsLink(wp)}" target="_blank" rel="noopener" aria-label="Open map"><img loading="lazy" src="${url}" alt="${esc(wp)}"></a>`;
+}
+function getDisplayTime(m) {
+  if (!m.t) return "";
+  let arr = null;
+  if (m.sub) {
+    for (const s of m.sub) {
+      const match = s.match(/^(?:Arrives|Ends)\s+(.+)$/i);
+      if (match) {
+        const timeMatch = match[1].match(/(\d{1,2}:\d{2}\s*(?:AM|PM))/i);
+        if (timeMatch) {
+          arr = timeMatch[1];
+          if (match[1].includes("Jul 15")) {
+            arr += " (+1d)";
+          }
+          break;
+        }
+      }
+    }
+  }
+  return arr ? `${m.t} → ${arr}` : m.t;
+}
 const DOW3=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 function dowOf(d){return DOW3[new Date(2026,6,d).getDay()];}
 function ttlHTML(m){return m.wp?`<a class="itin-ttl" href="${mapsLink(m.wp)}" target="_blank" rel="noopener">${esc(m.title)}</a>`:`<span class="itin-ttl">${esc(m.title)}</span>`;}
@@ -811,7 +835,7 @@ function renderItinDay(d){
   if(it.main){
     const m=it.main, subs=(m.sub||[]).map(esc).join("<br>");
     mainHTML=`<div class="itin-main"><div class="itin-ic">${ICONS[m.ic]||ICONS.event}</div>`
-      +`<div class="itin-mn"><div class="itin-time">${esc(m.t||"")}</div>${ttlHTML(m)}${subs?`<div class="itin-sub">${subs}</div>`:""}</div>`
+      +`<div class="itin-mn"><div class="itin-time">${esc(getDisplayTime(m))}</div>${ttlHTML(m)}${subs?`<div class="itin-sub">${subs}</div>`:""}</div>`
       +`${m.wp?mapThumb(m.wp,mapZoom(m.ic)):""}</div>`;
   }
   let stayHTML="";
@@ -839,7 +863,7 @@ function renderItinAll(){
     return `<div class="${cls}">`
       +`<div class="tl-rail"><span class="tl-dot${free?" free":""}">${ICONS[m.ic]||ICONS.event}</span></div>`
       +`<div class="tl-main"><div class="tl-date">${dowOf(d)} · Jul ${d}</div>`
-      +`${m.t?`<div class="tl-time">${esc(m.t)}</div>`:""}${ttlHTML(m)}${subs?`<div class="itin-sub">${subs}</div>`:""}</div>`
+      +`${m.t?`<div class="tl-time">${esc(getDisplayTime(m))}</div>`:""}${ttlHTML(m)}${subs?`<div class="itin-sub">${subs}</div>`:""}</div>`
       +`${m.wp?mapThumb(m.wp,mapZoom(m.ic)):""}</div>`;
   }).join("");
   return `<div class="itin"><div class="itin-arrows">`
