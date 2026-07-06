@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="light" data-skin="sumi">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -7,11 +7,11 @@
 <meta name="robots" content="noindex, nofollow">
 <title>Japan Clan · Jul 14–24</title>
 <!-- favicons / touch icons (一族 seal) -->
-<link rel="icon" href="favicon.ico" sizes="any">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
-<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-<link rel="manifest" href="site.webmanifest">
+<link rel="icon" href="favicon/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="favicon/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="favicon/apple-touch-icon.png">
+<link rel="manifest" href="favicon/site.webmanifest">
 <meta name="apple-mobile-web-app-title" content="一族">
 <meta name="application-name" content="一族">
 <style>
@@ -36,6 +36,74 @@
     --pos:#7faa5f;
     --barseal:#b35134;
   }
+
+  /* ===== secret skins — pure CSS-variable remaps (each mirrors light + dark) ===== */
+  /* 侍 Samurai — grayscale washi + rising-sun red */
+  [data-skin="samurai"]{
+    --paper:#e8e6e2; --card:#f4f3f0; --ink:#16161a; --ink-2:#48484d; --muted:#8d8d90;
+    --line:#dbd9d4; --line-2:#c6c4bf; --seal:#e0534a; --seal-2:#ee685d; --soft:#eceae6;
+    --glow:radial-gradient(120% 70% at 50% -8%, #fbfbfa 0%, transparent 58%);
+    --map-filter:grayscale(1) contrast(.96) brightness(1.02); --coin-b:#e0534a; --barseal:#c33d33;
+  }
+  [data-skin="samurai"][data-theme="dark"]{
+    --paper:#121213; --card:#1c1c1e; --ink:#f1f0ed; --ink-2:#a6a6a9; --muted:#76767a;
+    --line:#292a2c; --line-2:#3a3a3d; --seal:#ec5b4e; --seal-2:#f2746a; --soft:#202022;
+    --glow:radial-gradient(110% 45% at 50% -12%, #242426 0%, transparent 46%);
+    --map-filter:grayscale(1) invert(.93) contrast(.85) brightness(.95); --coin-b:#ec5b4e; --barseal:#c94a3e;
+  }
+  /* 藍 Indigo — cool washi, deep Japanese blue */
+  [data-skin="ai"]{
+    --paper:#eceef1; --card:#fafbfc; --ink:#141a26; --ink-2:#465063; --muted:#8b93a3;
+    --line:#dde2e8; --line-2:#c7cdd7; --seal:#2c4d84; --seal-2:#3d5f9a; --soft:#e5e9ef;
+    --glow:radial-gradient(120% 70% at 50% -8%, #ffffff 0%, transparent 58%);
+    --map-filter:grayscale(.35) sepia(.12) hue-rotate(178deg) contrast(.95) brightness(1.02); --coin-b:#2c4d84; --barseal:#243f6e;
+  }
+  [data-skin="ai"][data-theme="dark"]{
+    --paper:#0e111a; --card:#161b25; --ink:#e6eaf2; --ink-2:#9aa3b5; --muted:#6a7285;
+    --line:#232936; --line-2:#333b4a; --seal:#5c81c2; --seal-2:#7493ce; --soft:#1b212c;
+    --glow:radial-gradient(110% 45% at 50% -12%, #1a2130 0%, transparent 46%);
+    --map-filter:grayscale(.5) invert(.9) hue-rotate(190deg) contrast(.85) brightness(.95); --coin-b:#5c81c2; --barseal:#3f5f9e;
+  }
+  /* 抹茶 Matcha — warm cream, green tea */
+  [data-skin="matcha"]{
+    --paper:#edefe4; --card:#fafcf4; --ink:#1c211a; --ink-2:#4d5545; --muted:#8a917d;
+    --line:#e0e3d5; --line-2:#cbcfbd; --seal:#5a7d3f; --seal-2:#6f954f; --soft:#e7ebdc;
+    --glow:radial-gradient(120% 70% at 50% -8%, #ffffff 0%, transparent 58%);
+    --map-filter:grayscale(.35) sepia(.22) hue-rotate(55deg) contrast(.95) brightness(1.02); --coin-b:#5a7d3f; --barseal:#4a6a34;
+  }
+  [data-skin="matcha"][data-theme="dark"]{
+    --paper:#101210; --card:#181b14; --ink:#e9ecdf; --ink-2:#a0a691; --muted:#717763;
+    --line:#242719; --line-2:#343824; --seal:#82a457; --seal-2:#98b96c; --soft:#1c2015;
+    --glow:radial-gradient(110% 45% at 50% -12%, #1c2016 0%, transparent 46%);
+    --map-filter:grayscale(.5) invert(.9) hue-rotate(70deg) contrast(.85) brightness(.95); --coin-b:#82a457; --barseal:#5e7d3f;
+  }
+  /* 寿 Sushi — cobalt blue & orange (izakaya poster) */
+  [data-skin="sushi"]{
+    --paper:#3832be; --card:#463fc8; --ink:#ffffff; --ink-2:#cdccf2; --muted:#9a97d8;
+    --line:#4d46c9; --line-2:#5f59d2; --seal:#ee5a22; --seal-2:#f47139; --soft:#443dc5;
+    --glow:radial-gradient(120% 70% at 50% -8%, #4a44cf 0%, transparent 60%);
+    --map-filter:grayscale(.45) sepia(.35) hue-rotate(185deg) saturate(1.1) contrast(.95) brightness(1.02); --coin-b:#ee5a22; --barseal:#d64e18;
+  }
+  [data-skin="sushi"][data-theme="dark"]{
+    --paper:#1b1856; --card:#262178; --ink:#f2f1ff; --ink-2:#b9b6e8; --muted:#827ec0;
+    --line:#2c2874; --line-2:#3c3789; --seal:#f26a30; --seal-2:#f78048; --soft:#231e6c;
+    --glow:radial-gradient(110% 45% at 50% -12%, #241f70 0%, transparent 48%);
+    --map-filter:grayscale(.5) invert(.9) hue-rotate(200deg) saturate(1.1) contrast(.85) brightness(.95); --coin-b:#f26a30; --barseal:#d9541c;
+  }
+  /* 紅 Red Red — ivory washi & vivid crimson (fashion editorial) */
+  [data-skin="beni"]{
+    --paper:#f6efde; --card:#fdf9ee; --ink:#3a120d; --ink-2:#7d2b22; --muted:#a97264;
+    --line:#ecdcc4; --line-2:#e0cbae; --seal:#d81f18; --seal-2:#e8352b; --soft:#f3e5d1;
+    --glow:radial-gradient(120% 70% at 50% -8%, #fffaf0 0%, transparent 58%);
+    --map-filter:grayscale(.3) sepia(.4) hue-rotate(-14deg) saturate(1.1) contrast(.95) brightness(1.02); --coin-b:#d81f18; --barseal:#b81810;
+  }
+  [data-skin="beni"][data-theme="dark"]{
+    --paper:#190b09; --card:#241210; --ink:#f3e7df; --ink-2:#c99b90; --muted:#8f6258;
+    --line:#2e1714; --line-2:#412420; --seal:#e8352b; --seal-2:#f04d40; --soft:#221310;
+    --glow:radial-gradient(110% 45% at 50% -12%, #2a1310 0%, transparent 46%);
+    --map-filter:grayscale(.4) invert(.9) hue-rotate(-10deg) saturate(1.05) contrast(.85) brightness(.95); --coin-b:#e8352b; --barseal:#c2211a;
+  }
+
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html{-webkit-text-size-adjust:100%}
   body{margin:0;font-family:var(--sans);color:var(--ink);background:var(--paper);line-height:1.4;
@@ -127,18 +195,15 @@
   .itin-stay .sic svg{width:17px;height:17px}
   .itin-stay .snm{font-weight:600;color:var(--ink-2)}
   .itin-stay.link:hover .snm{color:var(--seal)}
-  /* small circular map thumbnail shown across from an itinerary entry */
-  .itin-map{flex:0 0 auto;width:58px;height:58px;border-radius:50%;overflow:hidden;position:relative;
-    border:1px solid var(--line-2);display:block;margin-top:1px;
-    background:var(--soft) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%239c9486' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z'/><circle cx='12' cy='10' r='3'/></svg>") center/22px no-repeat}
+  /* circular map thumbnail across from an itinerary entry — edges fade softly into the page */
+  .itin-map{flex:0 0 auto;width:60px;height:60px;overflow:hidden;position:relative;display:block;margin-top:1px;
+    background:var(--soft);border-radius:50%;
+    -webkit-mask:radial-gradient(circle at 50% 50%, #000 56%, rgba(0,0,0,.45) 78%, transparent 100%);
+            mask:radial-gradient(circle at 50% 50%, #000 56%, rgba(0,0,0,.45) 78%, transparent 100%)}
   .itin-map iframe{width:100%;height:100%;border:0;display:block;filter:var(--map-filter);pointer-events:none}
-  .itin-map::after{content:"";position:absolute;inset:0;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06)}
-  /* header row: View all / Hide on the left, nav + close on the right */
-  .itin-arrows{justify-content:space-between}
-  .itin-navgrp{display:flex;align-items:center;gap:2px}
-  .itin-viewall{border:0;background:0;padding:2px;cursor:pointer;color:var(--muted);
-    font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;transition:color .12s}
-  .itin-viewall:hover{color:var(--seal)}
+  /* header row: nav + expand + close, all top-right */
+  .itin-arrows{justify-content:flex-end}
+  .itin-expand svg{width:15px;height:15px}
   /* timeline (View all) — every day on one connected rail */
   .itin-tl{padding-top:2px}
   .tl-row{display:flex;gap:11px;align-items:flex-start;position:relative}
@@ -483,6 +548,36 @@
   .sh-coin .others{top:-4px;right:-4px}
   .card.byothers{border-color:color-mix(in srgb,var(--seal) 30%,var(--line))}
 
+  /* ===== settings dialog (Esc) ===== */
+  .setov{position:fixed;inset:0;z-index:80;background:rgba(20,16,10,.44);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);
+    display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .18s ease}
+  .setov.show{opacity:1;pointer-events:auto}
+  .setsheet{width:100%;max-width:430px;background:var(--card);border:1px solid var(--line-2);border-radius:18px;
+    box-shadow:0 24px 60px rgba(20,16,10,.32);padding:17px 18px 20px;max-height:88vh;overflow-y:auto;
+    transform:translateY(10px) scale(.98);transition:transform .22s cubic-bezier(.34,1.3,.64,1)}
+  .setov.show .setsheet{transform:none}
+  .set-hd{display:flex;align-items:center;justify-content:space-between}
+  .set-ttl{font-family:var(--serif);font-size:16px;font-weight:700;color:var(--ink);letter-spacing:.01em}
+  .set-x{border:0;background:0;color:var(--muted);font-family:var(--serif);font-size:25px;line-height:1;cursor:pointer;padding:0 2px;transition:color .12s}
+  .set-x:hover{color:var(--seal)}
+  .set-lbl{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
+    margin:15px 2px 10px;display:flex;align-items:center;gap:8px}
+  .set-lbl .set-sub{color:var(--line-2);letter-spacing:.03em;text-transform:none}
+  .set-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .set-card{text-align:left;border:1.5px solid var(--line-2);background:var(--paper);border-radius:13px;padding:9px;cursor:pointer;
+    display:flex;flex-direction:column;gap:9px;font-family:inherit;position:relative;transition:border-color .14s,transform .12s}
+  .set-card:hover{transform:translateY(-1px)}
+  .set-card[aria-pressed="true"]{border-color:var(--seal);box-shadow:0 0 0 1px var(--seal)}
+  .set-card[aria-pressed="true"]::after{content:"✓";position:absolute;top:7px;right:10px;color:var(--seal);font-size:12px;font-weight:700}
+  .set-prev{border-radius:9px;height:48px;position:relative;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(0,0,0,.07)}
+  .set-prev .pv-h{position:absolute;left:9px;top:12px;height:7px;width:48%;border-radius:3px}
+  .set-prev .pv-b{position:absolute;left:9px;top:25px;height:4px;width:64%;border-radius:2px;opacity:.5}
+  .set-prev .pv-seal{position:absolute;right:9px;top:10px;width:17px;height:17px;border-radius:50%}
+  .set-meta{display:flex;align-items:baseline;gap:7px;flex-wrap:wrap}
+  .set-meta .pv-jp{font-family:var(--serif);font-size:15px;font-weight:700;color:var(--ink)}
+  .set-meta .pv-name{font-size:12.5px;font-weight:700;color:var(--ink)}
+  .set-meta .pv-note{width:100%;font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:.02em}
+
   @media(prefers-reduced-motion:reduce){*{transition-duration:.001ms!important}}
 </style>
 </head>
@@ -540,6 +635,14 @@
 <main id="main"></main>
 
 <div class="ov" id="ov" aria-hidden="true"><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
+
+<div class="setov" id="setOv" aria-hidden="true">
+  <div class="setsheet" role="dialog" aria-modal="true" aria-label="Settings">
+    <div class="set-hd"><span class="set-ttl">設定 · Settings</span><button class="set-x" data-setclose aria-label="Close">×</button></div>
+    <div class="set-lbl">Theme<span class="set-sub">secret · press Esc anytime</span></div>
+    <div class="set-grid" id="setThemes"></div>
+  </div>
+</div>
 
 <button class="nobori" id="noboriBtn" aria-label="Split the bill" title="割り勘 · Split the bill"><span class="nb-coin">¥</span></button>
 
@@ -675,7 +778,9 @@ const ICONS={
   event:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2M13 11v2M13 17v2"/></svg>',
   chevL:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>',
   chevR:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>',
-  x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>'
+  x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>',
+  expand:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>',
+  collapse:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14h6v6"/><path d="M20 10h-6V4"/><path d="M14 10l7-7"/><path d="M3 21l7-7"/></svg>'
 };
 /* one headline per day (flight/train > hotel check-in > event) + where you sleep that night */
 const ITIN={
@@ -716,12 +821,11 @@ function renderItinDay(d){
       +`<span class="sic">${ICONS.hotel}</span><span class="snm">${esc(s.title)}</span></button>`;
   }
   return `<div class="itin"><div class="itin-arrows">`
-    +`<button class="itin-viewall" data-viewall type="button">View all</button>`
-    +`<div class="itin-navgrp">`
     +`<button class="itin-arrow" data-prev ${d>first?"":"disabled"} aria-label="Previous day">${ICONS.chevL}</button>`
     +`<button class="itin-arrow" data-next ${d<last?"":"disabled"} aria-label="Next day">${ICONS.chevR}</button>`
+    +`<button class="itin-arrow itin-expand" data-viewall type="button" aria-label="View all days" title="View all">${ICONS.expand}</button>`
     +`<button class="itin-arrow itin-close" data-close aria-label="Close">${ICONS.x}</button>`
-    +`</div></div><div class="itin-body">${mainHTML}${stayHTML}</div></div>`;
+    +`</div><div class="itin-body">${mainHTML}${stayHTML}</div></div>`;
 }
 
 /* View all — every trip day on one connected timeline */
@@ -739,7 +843,7 @@ function renderItinAll(){
       +`${m.wp?mapThumb(m.wp,mapZoom(m.ic)):""}</div>`;
   }).join("");
   return `<div class="itin"><div class="itin-arrows">`
-    +`<button class="itin-viewall" data-viewall type="button">Hide</button>`
+    +`<button class="itin-arrow itin-expand" data-viewall type="button" aria-label="Collapse" title="Collapse">${ICONS.collapse}</button>`
     +`<button class="itin-arrow itin-close" data-close aria-label="Back">${ICONS.x}</button>`
     +`</div><div class="itin-tl">${rows}</div></div>`;
 }
@@ -1078,7 +1182,41 @@ $("#ov").addEventListener("click",e=>{
     c.innerHTML=(state.coins[modalId]?CATJP[ITEMS.find(x=>x.id===modalId).cat]:"＋")+othersBadge(modalId);
   }
 });
-document.addEventListener("keydown",e=>{if(e.key==="Escape"&&modalId)closeModal();});
+/* ===== settings dialog (Esc) + secret theme skins ===== */
+const THEMES=[
+  {id:"sumi",jp:"墨",name:"Sumi",note:"Ink on washi",sw:["#f6f3ed","#1a1611","#c2492c"]},
+  {id:"samurai",jp:"侍",name:"Samurai",note:"Rising-sun red",sw:["#e8e6e2","#16161a","#e0534a"]},
+  {id:"ai",jp:"藍",name:"Indigo",note:"Deep blue",sw:["#eceef1","#141a26","#2c4d84"]},
+  {id:"matcha",jp:"抹茶",name:"Matcha",note:"Green tea",sw:["#edefe4","#1c211a","#5a7d3f"]},
+  {id:"sushi",jp:"寿",name:"Sushi",note:"Cobalt & orange",sw:["#3832be","#ffffff","#ee5a22"]},
+  {id:"beni",jp:"紅",name:"Red Red",note:"Ivory & crimson",sw:["#f5eede","#d81f18","#d81f18"]}
+];
+const setOv=$("#setOv");
+function currentSkin(){return state.skin||"sumi";}
+function applySkin(id){document.documentElement.dataset.skin=id;state.skin=id;save();setBarColor();}
+function renderThemes(){
+  $("#setThemes").innerHTML=THEMES.map(t=>
+    `<button class="set-card" type="button" data-pick="${t.id}" aria-pressed="${currentSkin()===t.id}">`
+    +`<span class="set-prev" style="background:${t.sw[0]}"><span class="pv-h" style="background:${t.sw[1]}"></span>`
+    +`<span class="pv-b" style="background:${t.sw[1]}"></span><span class="pv-seal" style="background:${t.sw[2]}"></span></span>`
+    +`<span class="set-meta"><span class="pv-jp">${t.jp}</span><span class="pv-name">${t.name}</span><span class="pv-note">${t.note}</span></span>`
+    +`</button>`).join("");
+}
+function settingsOpen(){return setOv.classList.contains("show");}
+function openSettings(){renderThemes();setOv.classList.add("show");setOv.setAttribute("aria-hidden","false");}
+function closeSettings(){setOv.classList.remove("show");setOv.setAttribute("aria-hidden","true");}
+setOv.addEventListener("click",e=>{
+  if(e.target===setOv||e.target.closest("[data-setclose]")){closeSettings();return;}
+  const p=e.target.closest("[data-pick]");if(p){applySkin(p.dataset.pick);renderThemes();}
+});
+document.documentElement.dataset.skin=currentSkin();setBarColor();   /* apply saved skin on load */
+/* Esc anywhere: close settings → close item modal → otherwise open settings */
+document.addEventListener("keydown",e=>{
+  if(e.key!=="Escape")return;
+  if(settingsOpen()){closeSettings();return;}
+  if(modalId){closeModal();return;}
+  openSettings();
+});
 
 /* ---------------- events ---------------- */
 $("#main").addEventListener("click",e=>{
