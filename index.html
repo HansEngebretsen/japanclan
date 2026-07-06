@@ -17,6 +17,7 @@
     --map-filter:grayscale(.82) sepia(.16) contrast(.93) brightness(1.03);
     --coin-a:#f0b78a; --coin-b:#c2492c; --coin-c:#8f2f1c;
     --pos:#3f7a33;
+    --barseal:#a53e25; /* solid ~ the ledger drawer's top colour, for the mobile status bar */
   }
   [data-theme="dark"]{
     --paper:#141312; --card:#1c1a18; --ink:#ece7df; --ink-2:#a7a094; --muted:#7d7669;
@@ -25,6 +26,7 @@
     --map-filter:grayscale(.9) invert(.92) hue-rotate(190deg) contrast(.84) brightness(.96);
     --coin-a:#e6a578; --coin-b:#c4583a; --coin-c:#94381f;
     --pos:#7faa5f;
+    --barseal:#b35134;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html{-webkit-text-size-adjust:100%}
@@ -215,6 +217,9 @@
   .card.has .coin{border-color:transparent;color:#fff;
     background:var(--seal)}
   .coin:focus-visible{outline:2px solid var(--seal);outline-offset:2px}
+  /* brief pop when a token is collected, so it's clear it was added (before the deferred re-sort) */
+  .coin.pulse{animation:coinpop .42s cubic-bezier(.34,1.56,.64,1)}
+  @keyframes coinpop{0%{transform:scale(1)}45%{transform:scale(1.3)}100%{transform:scale(1)}}
   .cname{font-size:13px;font-weight:600;line-height:1.22;letter-spacing:-.003em;flex:1;min-width:0;padding-top:1px}
   .cdesc{font-size:11.5px;color:var(--ink-2);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
   .card.open .cdesc{-webkit-line-clamp:unset;overflow:visible}
@@ -613,8 +618,18 @@ state.coins=state.coins||{}; state.cal=state.cal||{};
 const save=()=>Store.save(state);
 
 /* ---------------- theme ---------------- */
-function applyTheme(t){document.documentElement.setAttribute("data-theme",t);
-  const m=document.querySelector('meta[name=theme-color]');if(m)m.setAttribute("content",t==="dark"?"#141312":"#f6f3ed");}
+/* keep the mobile-Safari status/URL bar in sync with what's on screen:
+   the orange ledger colour while the drawer is open, paper otherwise (and it resets on close) */
+function setBarColor(){
+  const m=document.querySelector('meta[name=theme-color]');if(!m)return;
+  const dark=document.documentElement.getAttribute("data-theme")==="dark";
+  if(document.body.classList.contains("drawer-open")){
+    m.setAttribute("content",(getComputedStyle(document.documentElement).getPropertyValue("--barseal").trim())||(dark?"#b35134":"#a53e25"));
+  }else{
+    m.setAttribute("content",dark?"#141312":"#f6f3ed");
+  }
+}
+function applyTheme(t){document.documentElement.setAttribute("data-theme",t);setBarColor();}
 applyTheme(state.theme|| ((window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches)?"dark":"light"));
 document.getElementById("themeBtn").onclick=()=>{const t=document.documentElement.getAttribute("data-theme")==="dark"?"light":"dark";state.theme=t;save();applyTheme(t);};
 
@@ -899,7 +914,7 @@ const ITEMS=[
 ];
 
 /* ---------------- runtime ---------------- */
-let catF="all", selBucket=null, shuffleRank=null, showStamped=(state.showStamped!==false);
+let catF="all", selBucket=null, shuffleRank=null, showStamped=(state.showStamped!==false), sortPending=false;
 /* sync state: `me` = signed-in user (null when signed out); othersByItem[id] = [{uid,name,photo}] who else pinned it */
 let me=null, othersByItem=Object.create(null);
 let fbAuth=null, fbLedger=null, fbPins=null, fbRoster=null; /* Firestore refs, set once Firebase loads */
@@ -999,6 +1014,7 @@ function cardHTML(i){
   </article>`;
 }
 function renderGrid(){
+  sortPending=false;                               /* any full render resolves a deferred re-sort */
   let items=ITEMS.filter(inScope).map((it,ix)=>({it,ix}))
     .sort((a,b)=>{
       const sa=state.coins[a.it.id]?0:1, sb=state.coins[b.it.id]?0:1;
@@ -1068,12 +1084,34 @@ $("#main").addEventListener("click",e=>{
   }
 });
 /* one place to flip a pin: local cache always, plus cloud when signed in */
-function toggleCoin(id){
-  if(state.coins[id])delete state.coins[id];else state.coins[id]=1;
-  save();
-  if(me)syncPin(id,!!state.coins[id]);
-  renderBuckets();renderGrid();
+/* update the collected/others styling of ONE card in place (no reorder) */
+function updateCardState(id,pulse){
+  const card=document.querySelector(`.card[data-id="${CSS.escape(id)}"]`);
+  if(!card){renderGrid();return;}
+  const it=ITEMS.find(x=>x.id===id),has=!!state.coins[id];
+  const others=othersByItem[id]&&othersByItem[id].length;
+  card.classList.toggle("has",has);
+  card.classList.toggle("byothers",!has&&!!others);
+  const coin=card.querySelector(".coin");
+  if(coin){
+    coin.innerHTML=(has?CATJP[it.cat]:"＋")+othersBadge(id);
+    coin.setAttribute("aria-label",(has?"Remove":"Collect")+" coin for "+it.name);
+    if(pulse){coin.classList.remove("pulse");void coin.offsetWidth;coin.classList.add("pulse");}
+  }
 }
+function toggleCoin(id){
+  const nowOn=!state.coins[id];
+  if(nowOn)state.coins[id]=1;else delete state.coins[id];
+  save();
+  if(me)syncPin(id,nowOn);
+  renderBuckets();
+  /* while collected cards are visible, keep the tapped card in place and defer the re-sort
+     (so the layout doesn't jump); it re-sorts on scroll-to-top or any view change */
+  if(showStamped){updateCardState(id,nowOn);sortPending=true;}
+  else renderGrid();
+}
+/* flush the deferred re-sort once the user is back at the top */
+window.addEventListener("scroll",()=>{if(sortPending&&window.scrollY<=4)renderGrid();},{passive:true});
 $("#ss").textContent=Store.ok?"✓ Coins & itinerary save on this device":"Preview — download the file to keep your coins";
 
 /* ---------------- warikan (split-the-bill) ledger ---------------- */
@@ -1204,6 +1242,7 @@ function openDrawer(){
   lgdrawer.classList.add("open");
   document.body.classList.add("drawer-open");
   if(window.innerWidth<720)lgBackdrop.classList.add("show");
+  setBarColor();
   renderLedger();
   setTimeout(()=>{lgAmt.focus();refreshPayerSeg();},310);
 }
@@ -1212,6 +1251,7 @@ function closeDrawer(){
   lgBackdrop.classList.remove("show");
   document.body.classList.remove("drawer-open");
   document.body.classList.remove("drawer-peek");
+  setBarColor();
 }
 /* peek when the pointer nears the right edge (<=30px), or is over the tab/drawer */
 let lgPeek=false;
