@@ -611,35 +611,32 @@
   .sh-coin .others{top:-4px;right:-4px}
   .card.byothers{border-color:color-mix(in srgb,var(--seal) 30%,var(--line))}
 
-  /* ===== settings dialog (Esc) ===== */
-  .setov{position:fixed;inset:0;z-index:80;background:rgba(20,16,10,.44);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);
-    display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .18s ease}
-  .setov.show{opacity:1;pointer-events:auto}
-  .setsheet{width:100%;max-width:430px;background:var(--card);border:1px solid var(--line-2);border-radius:18px;
-    box-shadow:0 24px 60px rgba(20,16,10,.32);padding:17px 18px 20px;max-height:88vh;overflow-y:auto;
-    transform:translateY(10px) scale(.98);transition:transform .22s cubic-bezier(.34,1.3,.64,1)}
-  .setov.show .setsheet{transform:none}
-  .set-hd{display:flex;align-items:center;justify-content:space-between}
-  .set-ttl{font-family:var(--serif);font-size:16px;font-weight:700;color:var(--ink);letter-spacing:.01em}
-  .set-x{border:0;background:0;color:var(--muted);font-family:var(--serif);font-size:25px;line-height:1;cursor:pointer;padding:0 2px;transition:color .12s}
-  .set-x:hover{color:var(--seal)}
-  .set-lbl{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
-    margin:15px 2px 10px;display:flex;align-items:center;gap:8px}
-  .set-lbl .set-sub{color:var(--line-2);letter-spacing:.03em;text-transform:none}
-  .set-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  .set-card{text-align:left;border:1.5px solid var(--line-2);background:var(--paper);border-radius:13px;padding:9px;cursor:pointer;
-    display:flex;flex-direction:column;gap:9px;font-family:inherit;position:relative;transition:border-color .14s,transform .12s}
-  .set-card:hover{transform:translateY(-1px)}
-  .set-card[aria-pressed="true"]{border-color:var(--seal);box-shadow:0 0 0 1px var(--seal)}
-  .set-card[aria-pressed="true"]::after{content:"✓";position:absolute;top:7px;right:10px;color:var(--seal);font-size:12px;font-weight:700}
-  .set-prev{border-radius:9px;height:48px;position:relative;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(0,0,0,.07)}
-  .set-prev .pv-h{position:absolute;left:9px;top:12px;height:7px;width:48%;border-radius:3px}
-  .set-prev .pv-b{position:absolute;left:9px;top:25px;height:4px;width:64%;border-radius:2px;opacity:.5}
-  .set-prev .pv-seal{position:absolute;right:9px;top:10px;width:17px;height:17px;border-radius:50%}
-  .set-meta{display:flex;align-items:baseline;gap:7px;flex-wrap:wrap}
-  .set-meta .pv-jp{font-family:var(--serif);font-size:15px;font-weight:700;color:var(--ink)}
-  .set-meta .pv-name{font-size:12.5px;font-weight:700;color:var(--ink)}
-  .set-meta .pv-note{width:100%;font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:.02em}
+  /* ===== settings cog dropdown ===== */
+  .cogwrap{position:relative}
+  .cogmenu{position:absolute;top:calc(100% + 8px);right:0;z-index:60;width:240px;
+    background:var(--card);border:1px solid var(--line-2);border-radius:12px;
+    box-shadow:0 10px 28px rgba(20,16,10,.20);padding:12px 13px 13px}
+  .cogmenu[hidden]{display:none}
+  .cog-lbl{font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 2px 2px}
+  .cogseg+.cog-lbl{margin-top:14px}
+  /* scheme segmented control — same sliding-bg logic as the payer control */
+  .cogseg{position:relative;display:flex;background:var(--soft);border-radius:99px;padding:3px;margin-top:5px}
+  .cogseg .segbg{position:absolute;border-radius:99px;background:var(--card);box-shadow:0 1px 4px rgba(0,0,0,.16);pointer-events:none;
+    transition:left .2s cubic-bezier(.4,0,.2,1),top .2s,width .2s,height .2s}
+  .cogseg .segopt{position:relative;z-index:1;flex:1;border:0;background:0;cursor:pointer;padding:5px 0;border-radius:99px;
+    font-family:var(--sans);font-size:11.5px;font-weight:600;color:var(--muted);transition:color .18s}
+  .cogseg .segopt.on{color:var(--seal)}
+  /* theme cycler: prev/next + swatch + select */
+  .cogthemerow{display:flex;align-items:center;gap:6px;margin-top:6px}
+  .cog-it{flex:0 0 auto;width:24px;height:30px;border:1px solid var(--line-2);background:0;border-radius:7px;
+    display:grid;place-items:center;cursor:pointer;color:var(--ink-2);transition:color .12s,border-color .12s}
+  .cog-it:hover{color:var(--seal);border-color:var(--seal)}
+  .cog-it svg{width:14px;height:14px}
+  .cog-sw{flex:0 0 auto;width:22px;height:22px;border-radius:6px;position:relative;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}
+  .cog-sw-dot{position:absolute;inset:5px;border-radius:50%}
+  .cog-sel{flex:1;min-width:0;-webkit-appearance:none;appearance:none;border:1px solid var(--line-2);border-radius:7px;background:var(--card);
+    color:var(--ink);font-family:var(--sans);font-size:12.5px;font-weight:600;padding:7px 26px 7px 9px;cursor:pointer;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239c9486' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center}
 
   @media(prefers-reduced-motion:reduce){*{transition-duration:.001ms!important}}
 </style>
@@ -657,13 +654,27 @@
           <button class="am-out" id="amOut" type="button">Sign out</button>
         </div>
       </div>
-      <button class="ibtn" id="themeBtn" aria-label="Toggle dark mode" title="Light / dark">
-        <svg class="thicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle class="th-orb" cx="12" cy="12" r="4.5"/>
-          <circle class="th-bite" cx="15.5" cy="9.5" r="0"/>
-          <g class="th-rays"><path d="M12 2v2M12 20v2M4 12H2M22 12h-2M5 5l1.5 1.5M17.5 17.5L19 19M19 5l-1.5 1.5M6.5 17.5L5 19"/></g>
-        </svg>
-      </button>
+      <div class="cogwrap" id="cogWrap">
+        <button class="ibtn" id="cogBtn" type="button" aria-label="Settings" title="Settings" aria-haspopup="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+        <div class="cogmenu" id="cogMenu" hidden>
+          <div class="cog-lbl">Appearance</div>
+          <div class="cogseg" id="cogScheme" role="group" aria-label="Color scheme">
+            <span class="segbg" id="cogSchemeBg" aria-hidden="true"></span>
+            <button type="button" class="segopt" data-scheme="system">System</button>
+            <button type="button" class="segopt" data-scheme="light">Light</button>
+            <button type="button" class="segopt" data-scheme="dark">Dark</button>
+          </div>
+          <div class="cog-lbl">Theme</div>
+          <div class="cogthemerow">
+            <button type="button" class="cog-it" id="cogPrev" aria-label="Previous theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+            <button type="button" class="cog-it" id="cogNext" aria-label="Next theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
+            <span class="cog-sw" id="cogSw"></span>
+            <select class="cog-sel" id="cogSel" aria-label="Theme"></select>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </header>
@@ -698,14 +709,6 @@
 <main id="main"></main>
 
 <div class="ov" id="ov" aria-hidden="true"><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
-
-<div class="setov" id="setOv" aria-hidden="true">
-  <div class="setsheet" role="dialog" aria-modal="true" aria-label="Settings">
-    <div class="set-hd"><span class="set-ttl">設定 · Settings</span><button class="set-x" data-setclose aria-label="Close">×</button></div>
-    <div class="set-lbl">Theme<span class="set-sub">secret · press Esc anytime</span></div>
-    <div class="set-grid" id="setThemes"></div>
-  </div>
-</div>
 
 <button class="nobori" id="noboriBtn" aria-label="Split the bill" title="割り勘 · Split the bill"><span class="nb-coin">¥</span></button>
 
@@ -803,9 +806,13 @@ function setBarColor(){
     m.setAttribute("content",dark?"#141312":"#f6f3ed");
   }
 }
-function applyTheme(t){document.documentElement.setAttribute("data-theme",t);setBarColor();}
-applyTheme(state.theme|| ((window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches)?"dark":"light"));
-document.getElementById("themeBtn").onclick=()=>{const t=document.documentElement.getAttribute("data-theme")==="dark"?"light":"dark";state.theme=t;save();applyTheme(t);};
+/* color scheme: "system" (follow OS), "light", or "dark" */
+const mqDark=(window.matchMedia?matchMedia("(prefers-color-scheme: dark)"):{matches:false});
+if(!state.scheme)state.scheme=(state.theme==="light"||state.theme==="dark")?state.theme:"system";  /* migrate old toggle */
+function resolveScheme(){const s=state.scheme||"system";return s==="system"?(mqDark.matches?"dark":"light"):s;}
+function applyScheme(){document.documentElement.setAttribute("data-theme",resolveScheme());setBarColor();}
+applyScheme();
+mqDark.addEventListener&&mqDark.addEventListener("change",()=>{if((state.scheme||"system")==="system")applyScheme();});
 
 /* ---------------- calendar (editable cities; Sapporo extended over Hakodate) ---------------- */
 const DAYS=[14,15,16,17,18,19,20,21,22,23,24];
@@ -1302,46 +1309,47 @@ $("#ov").addEventListener("click",e=>{
     c.innerHTML=(state.coins[modalId]?CATJP[ITEMS.find(x=>x.id===modalId).cat]:"＋")+othersBadge(modalId);
   }
 });
-/* ===== settings dialog (Esc) + secret theme skins ===== */
+/* ===== theme skins (colours) + settings cog dropdown ===== */
 const THEMES=[
-  {id:"sumi",jp:"墨",name:"Sumi",note:"Ink on washi",sw:["#f6f3ed","#1a1611","#c2492c"],cr:"11px",pr:"3px",ss:"3px"},
-  {id:"samurai",jp:"侍",name:"Samurai",note:"Fog & red sun",sw:["#e8e6e2","#16161a","#e0534a"],cr:"5px",pr:"2px",ss:"2px"},
-  {id:"ai",jp:"藍",name:"Indigo",note:"Sashiko blue",sw:["#eceef1","#141a26","#2c4d84"],cr:"10px",pr:"6px",ss:"4px"},
-  {id:"matcha",jp:"抹茶",name:"Matcha",note:"Zen garden",sw:["#edefe4","#1c211a","#5a7d3f"],cr:"16px",pr:"14px",ss:"50%"},
-  {id:"sushi",jp:"寿",name:"Sushi",note:"Cobalt waves",sw:["#3832be","#ffffff","#ee5a22"],cr:"20px",pr:"18px",ss:"50%"},
-  {id:"beni",jp:"紅",name:"Red Red",note:"Ivory & crimson",sw:["#f7f1e2","#e01b18","#e01b18"],cr:"2px",pr:"2px",ss:"2px"},
-  {id:"mono",jp:"無",name:"Mono",note:"Black & white",sw:["#fbfbfb","#141414","#1a1a1a"],cr:"8px",pr:"3px",ss:"3px"}
+  {id:"sumi",jp:"墨",name:"Sumi",sw:["#f6f3ed","#1a1611","#c2492c"]},
+  {id:"samurai",jp:"侍",name:"Samurai",sw:["#e8e6e2","#16161a","#e0534a"]},
+  {id:"ai",jp:"藍",name:"Indigo",sw:["#eceef1","#141a26","#2c4d84"]},
+  {id:"matcha",jp:"抹茶",name:"Matcha",sw:["#edefe4","#1c211a","#5a7d3f"]},
+  {id:"sushi",jp:"寿",name:"Sushi",sw:["#3832be","#ffffff","#ee5a22"]},
+  {id:"beni",jp:"紅",name:"Red Red",sw:["#f7f1e2","#e01b18","#e01b18"]},
+  {id:"mono",jp:"無",name:"Mono",sw:["#fbfbfb","#141414","#1a1a1a"]}
 ];
-const setOv=$("#setOv");
 function currentSkin(){return state.skin||"sumi";}
 function applySkin(id){document.documentElement.dataset.skin=id;state.skin=id;save();setBarColor();}
-function renderThemes(){
-  $("#setThemes").innerHTML=THEMES.map(t=>{
-    const rb=parseInt(t.pr)>8?"4px":"2px";
-    return `<button class="set-card" type="button" data-pick="${t.id}" aria-pressed="${currentSkin()===t.id}" style="border-radius:${t.cr}">`
-    +`<span class="set-prev" style="background:${t.sw[0]};border-radius:${t.pr}${t.ac?';border-top:3px solid '+t.sw[2]:''}">`
-    +`<span class="pv-h" style="background:${t.sw[1]};border-radius:${rb}"></span>`
-    +`<span class="pv-b" style="background:${t.sw[1]};border-radius:${rb}"></span>`
-    +`<span class="pv-seal" style="background:${t.sw[2]};border-radius:${t.ss}"></span></span>`
-    +`<span class="set-meta"><span class="pv-jp">${t.jp}</span><span class="pv-name">${t.name}</span><span class="pv-note">${t.note}</span></span>`
-    +`</button>`;
-  }).join("");
-}
-function settingsOpen(){return setOv.classList.contains("show");}
-function openSettings(){renderThemes();setOv.classList.add("show");setOv.setAttribute("aria-hidden","false");}
-function closeSettings(){setOv.classList.remove("show");setOv.setAttribute("aria-hidden","true");}
-setOv.addEventListener("click",e=>{
-  if(e.target===setOv||e.target.closest("[data-setclose]")){closeSettings();return;}
-  const p=e.target.closest("[data-pick]");if(p){applySkin(p.dataset.pick);renderThemes();}
-});
 document.documentElement.dataset.skin=currentSkin();setBarColor();   /* apply saved skin on load */
-/* Esc anywhere: close settings → close item modal → otherwise open settings */
-document.addEventListener("keydown",e=>{
-  if(e.key!=="Escape")return;
-  if(settingsOpen()){closeSettings();return;}
-  if(modalId){closeModal();return;}
-  openSettings();
-});
+
+const cogBtn=$("#cogBtn"),cogMenu=$("#cogMenu"),cogScheme=$("#cogScheme"),cogSchemeBg=$("#cogSchemeBg"),
+      cogSel=$("#cogSel"),cogSw=$("#cogSw"),cogPrev=$("#cogPrev"),cogNext=$("#cogNext");
+/* color-scheme segmented control (System / Light / Dark) — same logic as the payer control */
+function renderCogScheme(){
+  const cur=state.scheme||"system";
+  cogScheme.querySelectorAll(".segopt").forEach(o=>o.classList.toggle("on",o.dataset.scheme===cur));
+  slideSegBg(cogScheme,cogSchemeBg,cogScheme.querySelector(`[data-scheme="${cur}"]`));
+}
+cogScheme.addEventListener("click",e=>{const o=e.target.closest("[data-scheme]");if(!o)return;
+  state.scheme=o.dataset.scheme;save();applyScheme();renderCogScheme();});
+/* theme (colours) dropdown + prev/next cycler */
+function renderCogTheme(){
+  const cur=currentSkin(),t=THEMES.find(x=>x.id===cur)||THEMES[0];
+  cogSel.innerHTML=THEMES.map(x=>`<option value="${x.id}"${x.id===cur?" selected":""}>${x.jp}  ${x.name}</option>`).join("");
+  cogSw.style.background=t.sw[0];
+  cogSw.innerHTML=`<span class="cog-sw-dot" style="background:${t.sw[2]}"></span>`;
+}
+cogSel.addEventListener("change",()=>{applySkin(cogSel.value);renderCogTheme();});
+function cycleTheme(dir){const ids=THEMES.map(t=>t.id);let i=(ids.indexOf(currentSkin())+dir+ids.length)%ids.length;applySkin(ids[i]);renderCogTheme();}
+cogPrev.addEventListener("click",()=>cycleTheme(-1));
+cogNext.addEventListener("click",()=>cycleTheme(1));
+/* open / close the cog dropdown */
+cogBtn.addEventListener("click",e=>{e.stopPropagation();const opening=cogMenu.hidden;cogMenu.hidden=!opening;
+  if(opening){renderCogScheme();renderCogTheme();}});
+document.addEventListener("click",e=>{if(!e.target.closest("#cogWrap"))cogMenu.hidden=true;});
+/* Esc still closes an open item detail (kept minimal; the settings dialog is gone) */
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(!cogMenu.hidden){cogMenu.hidden=true;return;}if(modalId)closeModal();}});
 
 /* ---------------- events ---------------- */
 $("#main").addEventListener("click",e=>{
@@ -1404,11 +1412,13 @@ const lgdrawer=$("#lgdrawer"),lgBackdrop=$("#lgBackdrop"),
 let lgPayer=(state.lgPayer==="spencer")?"spencer":"hans",lgYenOn=false,lgYenManual=false;
 
 /* segmented payer — JS positions the sliding bg */
-function positionSegBg(){
-  const opt=lgPayerSeg.querySelector(`[data-who="${lgPayer}"]`);if(!opt)return;
-  const sr=lgPayerSeg.getBoundingClientRect(),or=opt.getBoundingClientRect();
-  lgPsegBg.style.cssText=`left:${or.left-sr.left}px;top:${or.top-sr.top}px;width:${or.width}px;height:${or.height}px`;
+/* slide a segmented control's background pill under its active option (shared by payer + scheme) */
+function slideSegBg(seg,bg,activeEl){
+  if(!seg||!bg||!activeEl)return;
+  const sr=seg.getBoundingClientRect(),or=activeEl.getBoundingClientRect();
+  bg.style.cssText=`left:${or.left-sr.left}px;top:${or.top-sr.top}px;width:${or.width}px;height:${or.height}px`;
 }
+function positionSegBg(){slideSegBg(lgPayerSeg,lgPsegBg,lgPayerSeg.querySelector(`[data-who="${lgPayer}"]`));}
 function refreshPayerSeg(){
   lgPayerSeg.querySelectorAll(".lg-pseg-opt").forEach(o=>o.classList.toggle("on",o.dataset.who===lgPayer));
   positionSegBg();
