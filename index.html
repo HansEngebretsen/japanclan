@@ -14,6 +14,9 @@
 <link rel="manifest" href="favicon/site.webmanifest">
 <meta name="apple-mobile-web-app-title" content="一族">
 <meta name="application-name" content="一族">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;600;700&family=Noto+Serif+JP:wght@400;700;900&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
     --paper:#f6f3ed; --card:#fffdf9; --ink:#1a1611; --ink-2:#5c554a; --muted:#9c9486;
@@ -26,6 +29,11 @@
     --coin-a:#f0b78a; --coin-b:#c2492c; --coin-c:#8f2f1c;
     --pos:#3f7a33;
     --barseal:#a53e25; /* solid ~ the ledger drawer's top colour, for the mobile status bar */
+    /* structural skin vars (defaults = Sumi) */
+    --radius:3px; --card-radius:11px; --card-shadow:none;
+    --stamp-shape:3px; --chip-radius:99px;
+    --head-font:var(--serif); --head-weight:600; --head-tracking:0em;
+    --bg-pattern:none;
   }
   [data-theme="dark"]{
     --paper:#141312; --card:#1c1a18; --ink:#ece7df; --ink-2:#a7a094; --muted:#7d7669;
@@ -44,12 +52,17 @@
     --line:#dbd9d4; --line-2:#c6c4bf; --seal:#e0534a; --seal-2:#ee685d; --soft:#eceae6;
     --glow:radial-gradient(120% 70% at 50% -8%, #fbfbfa 0%, transparent 58%);
     --map-filter:grayscale(1) contrast(.96) brightness(1.02); --coin-b:#e0534a; --barseal:#c33d33;
+    --radius:2px; --card-radius:5px; --card-shadow:0 2px 12px rgba(0,0,0,.07);
+    --stamp-shape:2px; --chip-radius:4px;
+    --head-font:var(--sans); --head-weight:700; --head-tracking:.06em;
+    --bg-pattern:linear-gradient(180deg,transparent 50%,rgba(22,22,26,.08) 100%);
   }
   [data-skin="samurai"][data-theme="dark"]{
     --paper:#121213; --card:#1c1c1e; --ink:#f1f0ed; --ink-2:#a6a6a9; --muted:#76767a;
     --line:#292a2c; --line-2:#3a3a3d; --seal:#ec5b4e; --seal-2:#f2746a; --soft:#202022;
     --glow:radial-gradient(110% 45% at 50% -12%, #242426 0%, transparent 46%);
     --map-filter:grayscale(1) invert(.93) contrast(.85) brightness(.95); --coin-b:#ec5b4e; --barseal:#c94a3e;
+    --bg-pattern:linear-gradient(180deg,transparent 40%,rgba(0,0,0,.18) 100%);
   }
   /* 藍 Indigo — cool washi, deep Japanese blue */
   [data-skin="ai"]{
@@ -57,12 +70,17 @@
     --line:#dde2e8; --line-2:#c7cdd7; --seal:#2c4d84; --seal-2:#3d5f9a; --soft:#e5e9ef;
     --glow:radial-gradient(120% 70% at 50% -8%, #ffffff 0%, transparent 58%);
     --map-filter:grayscale(.35) sepia(.12) hue-rotate(178deg) contrast(.95) brightness(1.02); --coin-b:#2c4d84; --barseal:#243f6e;
+    --radius:6px; --card-radius:10px; --card-shadow:none;
+    --stamp-shape:4px; --chip-radius:8px;
+    --head-font:"Noto Serif JP",var(--serif); --head-weight:600; --head-tracking:.01em;
+    --bg-pattern:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Cpath d='M0 16L16 0M-4 4L4-4M12 20L20 12' fill='none' stroke='%232c4d84' stroke-opacity='.06' stroke-width='.5'/%3E%3C/svg%3E");
   }
   [data-skin="ai"][data-theme="dark"]{
     --paper:#0e111a; --card:#161b25; --ink:#e6eaf2; --ink-2:#9aa3b5; --muted:#6a7285;
     --line:#232936; --line-2:#333b4a; --seal:#5c81c2; --seal-2:#7493ce; --soft:#1b212c;
     --glow:radial-gradient(110% 45% at 50% -12%, #1a2130 0%, transparent 46%);
     --map-filter:grayscale(.5) invert(.9) hue-rotate(190deg) contrast(.85) brightness(.95); --coin-b:#5c81c2; --barseal:#3f5f9e;
+    --bg-pattern:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Cpath d='M0 16L16 0M-4 4L4-4M12 20L20 12' fill='none' stroke='%235c81c2' stroke-opacity='.06' stroke-width='.5'/%3E%3C/svg%3E");
   }
   /* 抹茶 Matcha — warm cream, green tea */
   [data-skin="matcha"]{
@@ -70,6 +88,9 @@
     --line:#e0e3d5; --line-2:#cbcfbd; --seal:#5a7d3f; --seal-2:#6f954f; --soft:#e7ebdc;
     --glow:radial-gradient(120% 70% at 50% -8%, #ffffff 0%, transparent 58%);
     --map-filter:grayscale(.35) sepia(.22) hue-rotate(55deg) contrast(.95) brightness(1.02); --coin-b:#5a7d3f; --barseal:#4a6a34;
+    --radius:14px; --card-radius:16px; --card-shadow:0 1px 8px rgba(0,0,0,.04);
+    --stamp-shape:50%; --chip-radius:99px;
+    --head-font:"Outfit",var(--sans); --head-weight:600; --head-tracking:-.01em;
   }
   [data-skin="matcha"][data-theme="dark"]{
     --paper:#101210; --card:#181b14; --ink:#e9ecdf; --ink-2:#a0a691; --muted:#717763;
@@ -83,12 +104,17 @@
     --line:#4d46c9; --line-2:#5f59d2; --seal:#ee5a22; --seal-2:#f47139; --soft:#443dc5;
     --glow:radial-gradient(120% 70% at 50% -8%, #4a44cf 0%, transparent 60%);
     --map-filter:grayscale(.45) sepia(.35) hue-rotate(185deg) saturate(1.1) contrast(.95) brightness(1.02); --coin-b:#ee5a22; --barseal:#d64e18;
+    --radius:18px; --card-radius:20px; --card-shadow:0 4px 18px rgba(56,50,190,.10);
+    --stamp-shape:50%; --chip-radius:99px;
+    --head-font:"DM Sans",var(--sans); --head-weight:700; --head-tracking:-.01em;
+    --bg-pattern:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='20'%3E%3Ccircle cx='0' cy='20' r='9' fill='none' stroke='white' stroke-opacity='.06' stroke-width='.5'/%3E%3Ccircle cx='0' cy='20' r='18' fill='none' stroke='white' stroke-opacity='.04' stroke-width='.5'/%3E%3Ccircle cx='20' cy='20' r='9' fill='none' stroke='white' stroke-opacity='.06' stroke-width='.5'/%3E%3Ccircle cx='20' cy='20' r='18' fill='none' stroke='white' stroke-opacity='.04' stroke-width='.5'/%3E%3Ccircle cx='40' cy='20' r='9' fill='none' stroke='white' stroke-opacity='.06' stroke-width='.5'/%3E%3Ccircle cx='40' cy='20' r='18' fill='none' stroke='white' stroke-opacity='.04' stroke-width='.5'/%3E%3C/svg%3E");
   }
   [data-skin="sushi"][data-theme="dark"]{
     --paper:#1b1856; --card:#262178; --ink:#f2f1ff; --ink-2:#b9b6e8; --muted:#827ec0;
     --line:#2c2874; --line-2:#3c3789; --seal:#f26a30; --seal-2:#f78048; --soft:#231e6c;
     --glow:radial-gradient(110% 45% at 50% -12%, #241f70 0%, transparent 48%);
     --map-filter:grayscale(.5) invert(.9) hue-rotate(200deg) saturate(1.1) contrast(.85) brightness(.95); --coin-b:#f26a30; --barseal:#d9541c;
+    --card-shadow:0 4px 18px rgba(27,24,86,.18);
   }
   /* 紅 Red Red — ivory washi & vivid crimson (fashion editorial) */
   [data-skin="beni"]{
@@ -96,6 +122,9 @@
     --line:#ecdcc4; --line-2:#e0cbae; --seal:#d81f18; --seal-2:#e8352b; --soft:#f3e5d1;
     --glow:radial-gradient(120% 70% at 50% -8%, #fffaf0 0%, transparent 58%);
     --map-filter:grayscale(.3) sepia(.4) hue-rotate(-14deg) saturate(1.1) contrast(.95) brightness(1.02); --coin-b:#d81f18; --barseal:#b81810;
+    --radius:2px; --card-radius:3px; --card-shadow:none;
+    --stamp-shape:3px; --chip-radius:3px;
+    --head-font:"Noto Serif JP",var(--serif); --head-weight:900; --head-tracking:-.02em;
   }
   [data-skin="beni"][data-theme="dark"]{
     --paper:#190b09; --card:#241210; --ink:#f3e7df; --ink-2:#c99b90; --muted:#8f6258;
@@ -103,12 +132,16 @@
     --glow:radial-gradient(110% 45% at 50% -12%, #2a1310 0%, transparent 46%);
     --map-filter:grayscale(.4) invert(.9) hue-rotate(-10deg) saturate(1.05) contrast(.85) brightness(.95); --coin-b:#e8352b; --barseal:#c2211a;
   }
+  /* ===== skin-specific decorative rules ===== */
+  [data-skin="beni"] .card{border-top:3px solid var(--seal)}
+  [data-skin="ai"] .sectitle::after{height:3px;border-top:1px solid var(--line-2);border-bottom:1px solid var(--line-2);background:transparent}
+  [data-skin="matcha"] .sectitle::after{border-style:dashed}
 
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html{-webkit-text-size-adjust:100%}
   body{margin:0;font-family:var(--sans);color:var(--ink);background:var(--paper);line-height:1.4;
     -webkit-font-smoothing:antialiased;padding-bottom:calc(env(safe-area-inset-bottom) + 30px);
-    background-image:var(--glow);background-attachment:fixed}
+    background-image:var(--bg-pattern),var(--glow);background-attachment:fixed}
   button,input{font-family:inherit;color:inherit}
   a{color:inherit}
   .wrap{max-width:660px;margin:0 auto;padding:0 13px;container-type:inline-size;container-name:leftcol}
@@ -120,7 +153,7 @@
   @media(max-width:745px){.hd{padding-right:56px}}
   .wm{display:flex;align-items:baseline;gap:8px;min-width:0}
   .wm .jp{font-family:var(--serif);font-size:19px;color:var(--seal);line-height:1}
-  .wm .en{font-family:var(--serif);font-size:16px;font-weight:600;white-space:nowrap}
+  .wm .en{font-family:var(--head-font);font-size:16px;font-weight:600;white-space:nowrap}
   .wm .dt{font-family:var(--mono);font-size:9.5px;color:var(--muted);letter-spacing:.03em;white-space:nowrap}
   .hbtns{display:flex;align-items:center;gap:7px;flex:0 0 auto}
   .purse{font-family:var(--mono);font-size:11px;color:var(--ink-2);display:inline-flex;align-items:center;gap:5px}
@@ -140,7 +173,7 @@
   [data-theme="dark"] .th-rays{opacity:0;transform:scale(.3)}
 
   /* calendar — printed-page style, read-only feel */
-  .cal{margin-top:14px;border:1px solid var(--line-2);border-radius:3px;overflow:hidden}
+  .cal{margin-top:14px;border:1px solid var(--line-2);border-radius:var(--radius);overflow:hidden}
   .calgrid{display:grid;grid-template-columns:repeat(7,1fr)}
   .cwd{font-family:var(--mono);font-size:7.5px;color:var(--muted);text-align:center;letter-spacing:.1em;padding:5px 0 4px;border-bottom:1px solid var(--line-2);border-right:1px solid var(--line);background:var(--paper)}
   .cwd:last-child{border-right:none}
@@ -222,12 +255,12 @@
 
   /* section title between the calendar and the browse section */
   .sectitle{display:flex;align-items:center;gap:10px;margin:22px 0 2px;
-    font-family:var(--serif);font-size:16px;font-weight:600;color:var(--ink);white-space:nowrap}
+    font-family:var(--head-font);font-size:16px;font-weight:var(--head-weight);color:var(--ink);white-space:nowrap;letter-spacing:var(--head-tracking)}
   .sectitle::after{content:"";flex:1;height:1px;background:var(--line-2)}
 
   /* clan = top key + city filters */
   .clan{margin-top:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:7px}
-  .vault{border:1px solid var(--line);border-radius:10px;background:var(--card);padding:8px 9px;cursor:pointer;transition:.12s}
+  .vault{border:1px solid var(--line);border-radius:var(--card-radius);background:var(--card);padding:8px 9px;cursor:pointer;transition:.12s;box-shadow:var(--card-shadow)}
   .vault.sel{border-color:var(--seal);background:color-mix(in srgb,var(--seal) 8%,var(--card));box-shadow:inset 0 0 0 1px var(--seal)}
   .vault .vh{display:flex;align-items:baseline;gap:6px}
   .vault .ve{font-size:12.5px;font-weight:700;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -247,7 +280,7 @@
   .filters{margin-top:12px;display:flex;align-items:flex-start;gap:10px}
   .filt-left{flex:1;min-width:0}
   .chiprow{display:flex;gap:5px;flex-wrap:wrap}
-  .chip{border:1px solid var(--line-2);background:var(--card);border-radius:99px;padding:4px 13px;font-size:12.5px;font-weight:600;color:var(--ink-2);cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+  .chip{border:1px solid var(--line-2);background:var(--card);border-radius:var(--chip-radius);padding:4px 13px;font-size:12.5px;font-weight:600;color:var(--ink-2);cursor:pointer;display:inline-flex;align-items:center;gap:5px}
   .chip b{font-family:var(--mono);font-size:9px;font-weight:600;color:var(--muted)}
   .chip.cat[aria-pressed="true"]{background:var(--seal);border-color:var(--seal);color:#fff}
   .chip.cat[aria-pressed="true"] b{color:#fff;opacity:.75}
@@ -260,7 +293,7 @@
   .filt-tools{flex:0 0 auto;display:flex;align-items:center;gap:10px}
   /* Stamp token — click to hide/show collected; no chrome */
   .stamptog{position:relative;border:0;background:0;padding:2px;cursor:pointer;display:grid;place-items:center}
-  .stamptog-mark{width:21px;height:21px;border-radius:3px;display:grid;place-items:center;
+  .stamptog-mark{width:21px;height:21px;border-radius:var(--stamp-shape);display:grid;place-items:center;
     font-family:var(--serif);font-size:13px;color:#fff;background:var(--seal);transition:background .2s,color .2s,opacity .2s}
   /* pressed = collected are hidden: faded neutral token with a line through it */
   .stamptog[aria-pressed="true"] .stamptog-mark{background:var(--line-2);color:var(--muted);opacity:.7}
@@ -281,11 +314,11 @@
   /* grid */
   main{max-width:660px;margin:0 auto;padding:12px 13px 0}
   .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:start}
-  .card{border:1px solid var(--line);border-radius:11px;background:var(--card);overflow:hidden;transition:border-color .15s}
+  .card{border:1px solid var(--line);border-radius:var(--card-radius);background:var(--card);overflow:hidden;transition:border-color .15s;box-shadow:var(--card-shadow)}
   .card.has{border-color:color-mix(in srgb,var(--seal) 38%,var(--line))}
   .ctop{padding:9px 10px;cursor:pointer;display:flex;flex-direction:column;gap:5px}
   .crow1{display:flex;align-items:flex-start;gap:8px}
-  .coin{flex:0 0 auto;width:26px;height:26px;border-radius:3px;cursor:pointer;border:1px solid var(--line-2);background:transparent;
+  .coin{flex:0 0 auto;width:26px;height:26px;border-radius:var(--stamp-shape);cursor:pointer;border:1px solid var(--line-2);background:transparent;
     display:grid;place-items:center;color:var(--muted);font-family:var(--serif);font-size:11px;transition:.12s}
   .card.has .coin{border-color:transparent;color:#fff;
     background:var(--seal)}
@@ -293,7 +326,7 @@
   /* brief pop when a token is collected, so it's clear it was added (before the deferred re-sort) */
   .coin.pulse{animation:coinpop .42s cubic-bezier(.34,1.56,.64,1)}
   @keyframes coinpop{0%{transform:scale(1)}45%{transform:scale(1.3)}100%{transform:scale(1)}}
-  .cname{font-size:13px;font-weight:600;line-height:1.22;letter-spacing:-.003em;flex:1;min-width:0;padding-top:1px}
+  .cname{font-size:13px;font-weight:600;line-height:1.22;letter-spacing:-.003em;flex:1;min-width:0;padding-top:1px;font-family:var(--head-font)}
   .cdesc{font-size:11.5px;color:var(--ink-2);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
   .card.open .cdesc{-webkit-line-clamp:unset;overflow:visible}
   .more{display:none}
@@ -331,10 +364,10 @@
   .ov.show .sheet{transform:translateY(0)}
   @media(min-width:560px){.ov{align-items:center}.sheet{border-radius:14px;max-height:82vh}}
   .sh-top{display:flex;align-items:flex-start;gap:11px}
-  .sh-coin{flex:0 0 auto;width:30px;height:30px;border-radius:3px;cursor:pointer;border:1px solid var(--line-2);background:transparent;
+  .sh-coin{flex:0 0 auto;width:30px;height:30px;border-radius:var(--stamp-shape);cursor:pointer;border:1px solid var(--line-2);background:transparent;
     display:grid;place-items:center;color:var(--muted);font-family:var(--serif);font-size:13px}
   .sh-coin.has{border-color:transparent;color:#fff;background:var(--seal)}
-  .sh-name{font-family:var(--serif);font-size:18px;font-weight:600;line-height:1.25;flex:1;min-width:0;padding-top:2px}
+  .sh-name{font-family:var(--head-font);font-size:18px;font-weight:var(--head-weight);line-height:1.25;flex:1;min-width:0;padding-top:2px}
   .sh-x{flex:0 0 auto;border:0;background:0;cursor:pointer;color:var(--muted);width:28px;height:28px;display:grid;place-items:center;font-size:20px;line-height:1}
   .sh-meta{display:flex;align-items:center;gap:7px;margin-top:10px;flex-wrap:wrap}
   .sh-desc{font-size:13.5px;color:var(--ink-2);line-height:1.5;margin-top:12px}
@@ -1208,23 +1241,27 @@ $("#ov").addEventListener("click",e=>{
 });
 /* ===== settings dialog (Esc) + secret theme skins ===== */
 const THEMES=[
-  {id:"sumi",jp:"墨",name:"Sumi",note:"Ink on washi",sw:["#f6f3ed","#1a1611","#c2492c"]},
-  {id:"samurai",jp:"侍",name:"Samurai",note:"Rising-sun red",sw:["#e8e6e2","#16161a","#e0534a"]},
-  {id:"ai",jp:"藍",name:"Indigo",note:"Deep blue",sw:["#eceef1","#141a26","#2c4d84"]},
-  {id:"matcha",jp:"抹茶",name:"Matcha",note:"Green tea",sw:["#edefe4","#1c211a","#5a7d3f"]},
-  {id:"sushi",jp:"寿",name:"Sushi",note:"Cobalt & orange",sw:["#3832be","#ffffff","#ee5a22"]},
-  {id:"beni",jp:"紅",name:"Red Red",note:"Ivory & crimson",sw:["#f5eede","#d81f18","#d81f18"]}
+  {id:"sumi",jp:"墨",name:"Sumi",note:"Ink on washi · sharp",sw:["#f6f3ed","#1a1611","#c2492c"],cr:"11px",pr:"3px",ss:"3px"},
+  {id:"samurai",jp:"侍",name:"Samurai",note:"Fog & shadow",sw:["#e8e6e2","#16161a","#e0534a"],cr:"5px",pr:"2px",ss:"2px"},
+  {id:"ai",jp:"藍",name:"Indigo",note:"Sashiko blue",sw:["#eceef1","#141a26","#2c4d84"],cr:"10px",pr:"6px",ss:"4px"},
+  {id:"matcha",jp:"抹茶",name:"Matcha",note:"Zen garden",sw:["#edefe4","#1c211a","#5a7d3f"],cr:"16px",pr:"14px",ss:"50%"},
+  {id:"sushi",jp:"寿",name:"Sushi",note:"Izakaya waves",sw:["#3832be","#ffffff","#ee5a22"],cr:"20px",pr:"18px",ss:"50%"},
+  {id:"beni",jp:"紅",name:"Red Red",note:"Bold editorial",sw:["#f5eede","#d81f18","#d81f18"],cr:"3px",pr:"2px",ss:"3px",ac:true}
 ];
 const setOv=$("#setOv");
 function currentSkin(){return state.skin||"sumi";}
 function applySkin(id){document.documentElement.dataset.skin=id;state.skin=id;save();setBarColor();}
 function renderThemes(){
-  $("#setThemes").innerHTML=THEMES.map(t=>
-    `<button class="set-card" type="button" data-pick="${t.id}" aria-pressed="${currentSkin()===t.id}">`
-    +`<span class="set-prev" style="background:${t.sw[0]}"><span class="pv-h" style="background:${t.sw[1]}"></span>`
-    +`<span class="pv-b" style="background:${t.sw[1]}"></span><span class="pv-seal" style="background:${t.sw[2]}"></span></span>`
+  $("#setThemes").innerHTML=THEMES.map(t=>{
+    const rb=parseInt(t.pr)>8?"4px":"2px";
+    return `<button class="set-card" type="button" data-pick="${t.id}" aria-pressed="${currentSkin()===t.id}" style="border-radius:${t.cr}">`
+    +`<span class="set-prev" style="background:${t.sw[0]};border-radius:${t.pr}${t.ac?';border-top:3px solid '+t.sw[2]:''}">`
+    +`<span class="pv-h" style="background:${t.sw[1]};border-radius:${rb}"></span>`
+    +`<span class="pv-b" style="background:${t.sw[1]};border-radius:${rb}"></span>`
+    +`<span class="pv-seal" style="background:${t.sw[2]};border-radius:${t.ss}"></span></span>`
     +`<span class="set-meta"><span class="pv-jp">${t.jp}</span><span class="pv-name">${t.name}</span><span class="pv-note">${t.note}</span></span>`
-    +`</button>`).join("");
+    +`</button>`;
+  }).join("");
 }
 function settingsOpen(){return setOv.classList.contains("show");}
 function openSettings(){renderThemes();setOv.classList.add("show");setOv.setAttribute("aria-hidden","false");}
