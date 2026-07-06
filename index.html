@@ -182,7 +182,8 @@
   .purse{font-family:var(--mono);font-size:11px;color:var(--ink-2);display:inline-flex;align-items:center;gap:5px}
   .purse .pc{width:13px;height:13px;border-radius:2px;background:var(--seal);display:grid;place-items:center;color:#fff;font-family:var(--serif);font-size:8px;line-height:1}
   .purse b{color:var(--seal);font-size:12px}
-  .ibtn{border:0;background:0;width:28px;height:28px;display:grid;place-items:center;cursor:pointer;color:var(--ink-2)}
+  .ibtn{border:0;background:0;width:28px;height:28px;display:grid;place-items:center;cursor:pointer;color:var(--ink-2);transition:color .12s}
+  .ibtn:hover{color:var(--seal)}
   .ibtn svg{width:17px;height:17px}
   /* theme icon — sun that rotates into a red japanese moon in dark mode */
   .thicon{transition:transform .55s cubic-bezier(.4,0,.2,1)}
@@ -640,6 +641,9 @@
   <div class="hd">
     <div class="wm"><span class="jp">一族</span><span class="en">Japan Clan</span></div>
     <div class="hbtns">
+      <a href="https://docs.google.com/document/d/1-jccafbZFzifdpOfkJt6z2TDBRb_i6nRuN08KsGikk8/edit?tab=t.116vmxasik2y#heading=h.rryhsrm594zj" target="_blank" rel="noreferrer" class="ibtn" aria-label="Google doc for planning" title="Google doc for planning">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      </a>
       <button class="authbtn" id="authBtnTop" type="button" hidden>Sign in</button>
       <div class="cogwrap" id="cogWrap">
         <button class="ibtn" id="cogBtn" type="button" aria-label="Settings" title="Settings" aria-haspopup="true">
@@ -753,7 +757,6 @@
 <div class="lg-tip-pop" id="lgTip" popover="manual"></div>
 
 <footer>
-  <div><a href="https://docs.google.com/document/d/1-jccafbZFzifdpOfkJt6z2TDBRb_i6nRuN08KsGikk8/edit?tab=t.116vmxasik2y#heading=h.rryhsrm594zj" target="_blank" rel="noreferrer">Google doc for planning ↗</a></div>
   <div class="ss" id="ss">Coins save on this device</div>
 </footer>
 
