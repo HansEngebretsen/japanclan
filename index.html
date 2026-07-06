@@ -586,7 +586,9 @@
     box-shadow:0 0 0 1px var(--line-2);transition:box-shadow .12s}
   .ibtn.pic:hover{box-shadow:0 0 0 2px var(--seal)}
   .ibtn .av{width:100%;height:100%;border-radius:50%;object-fit:cover;background:var(--soft);
-    display:grid;place-items:center;font-family:var(--serif);font-size:11px;font-weight:700;color:var(--seal);overflow:hidden;line-height:1}
+    font-family:var(--serif);font-size:11px;font-weight:700;color:var(--seal);overflow:hidden;line-height:1}
+  span.av{display:grid;place-items:center}
+  img.av{display:block}
   .am-name{font-size:13px;font-weight:700;color:var(--ink);line-height:1.2}
   .am-email{font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:3px;word-break:break-all;line-height:1.3}
   .am-out{margin-top:6px;width:100%;text-align:left;
@@ -1208,7 +1210,7 @@ function priceMark(lvl){if(!lvl)return"";return`<span class="lvl"><b>${"¥".repe
 /* small badge shown on a token when other people have collected it (only meaningful when signed in) */
 function othersBadge(id){
   const list=othersByItem[id];if(!list||!list.length)return"";
-  const f=list[0], face=f.photo?`<img src="${esc(f.photo)}" alt="">`:esc((f.name||"?").slice(0,1).toUpperCase());
+  const f=list[0], face=f.photo?`<span class="av"><img src="${esc(f.photo)}" alt="" referrerpolicy="no-referrer"></span>`:esc((f.name||"?").slice(0,1).toUpperCase());
   const label=list.map(o=>o.name||"someone").join(", ");
   return `<span class="others show" title="Also collected by ${esc(label)}">${list.length>1?list.length:face}</span>`;
 }
@@ -1693,7 +1695,7 @@ function paintAuthBtn(){
   if(me){
     if(topB)topB.hidden=true;
     b.classList.add("pic");b.setAttribute("aria-label","Account");b.title=me.name||"Account";
-    b.innerHTML=me.photo?`<img class="av" src="${esc(me.photo)}" alt="">`:`<span class="av">${esc(initials(me.name))}</span>`;
+    b.innerHTML=me.photo?`<img class="av" src="${esc(me.photo)}" alt="" referrerpolicy="no-referrer">`:`<span class="av">${esc(initials(me.name))}</span>`;
     $("#amName").textContent=me.name||"Traveler";
     $("#amEmail").textContent=me.email||"";
     $("#amProfile").style.display="block";
