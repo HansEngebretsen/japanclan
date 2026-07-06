@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#f6f3ed">
 <meta name="robots" content="noindex, nofollow">
 <title>Japan Clan · Jul 14–24</title>
 <!-- favicons / touch icons (一族 seal) -->
@@ -615,13 +614,11 @@
   .cogseg+.cog-lbl{margin-top:11px}
   /* scheme segmented control — same sliding-bg logic as the payer control */
   .cogseg{position:relative;display:flex;background:var(--soft);border-radius:99px;padding:3px;margin-top:4px}
-  .cogseg .segbg{position:absolute;border-radius:99px;background:var(--card);box-shadow:0 1px 4px rgba(0,0,0,.16),0 0 0 1px var(--line);pointer-events:none;
+  .cogseg .segbg{position:absolute;border-radius:99px;background:var(--seal);pointer-events:none;
     transition:left .2s cubic-bezier(.4,0,.2,1),top .2s,width .2s,height .2s}
   .cogseg .segopt{position:relative;z-index:1;flex:1;border:0;background:0;cursor:pointer;padding:5px 0;border-radius:99px;
     font-family:var(--sans);font-size:11.5px;font-weight:600;color:var(--muted);transition:color .18s}
-  .cogseg .segopt.on{color:var(--seal)}
-  [data-theme="dark"] .cogseg .segbg{background:var(--seal);box-shadow:none}
-  [data-theme="dark"] .cogseg .segopt.on{color:#fff}
+  .cogseg .segopt.on{color:#fff}
   /* theme cycler: bare prev/next icon buttons + select */
   .cogthemerow{display:flex;align-items:center;gap:3px;margin-top:5px}
   .cog-it{flex:0 0 auto;width:18px;height:28px;border:0;background:0;padding:0;
@@ -786,22 +783,11 @@ state.coins=state.coins||{}; state.cal=state.cal||{};
 const save=()=>Store.save(state);
 
 /* ---------------- theme ---------------- */
-/* keep the mobile-Safari status/URL bar in sync with what's on screen:
-   the orange ledger colour while the drawer is open, paper otherwise (and it resets on close) */
-function setBarColor(){
-  const m=document.querySelector('meta[name=theme-color]');if(!m)return;
-  const dark=document.documentElement.getAttribute("data-theme")==="dark";
-  if(document.body.classList.contains("drawer-open")){
-    m.setAttribute("content",(getComputedStyle(document.documentElement).getPropertyValue("--barseal").trim())||(dark?"#b35134":"#a53e25"));
-  }else{
-    m.setAttribute("content",dark?"#141312":"#f6f3ed");
-  }
-}
 /* color scheme: "system" (follow OS), "light", or "dark" */
 const mqDark=(window.matchMedia?matchMedia("(prefers-color-scheme: dark)"):{matches:false});
 if(!state.scheme)state.scheme=(state.theme==="light"||state.theme==="dark")?state.theme:"system";  /* migrate old toggle */
 function resolveScheme(){const s=state.scheme||"system";return s==="system"?(mqDark.matches?"dark":"light"):s;}
-function applyScheme(){document.documentElement.setAttribute("data-theme",resolveScheme());setBarColor();}
+function applyScheme(){document.documentElement.setAttribute("data-theme",resolveScheme());}
 applyScheme();
 mqDark.addEventListener&&mqDark.addEventListener("change",()=>{if((state.scheme||"system")==="system")applyScheme();});
 
@@ -1311,8 +1297,8 @@ const THEMES=[
   {id:"mono",jp:"無",name:"Mono",sw:["#fbfbfb","#141414","#1a1a1a"]}
 ];
 function currentSkin(){return state.skin||"sumi";}
-function applySkin(id){document.documentElement.dataset.skin=id;state.skin=id;save();setBarColor();}
-document.documentElement.dataset.skin=currentSkin();setBarColor();   /* apply saved skin on load */
+function applySkin(id){document.documentElement.dataset.skin=id;state.skin=id;save();}
+document.documentElement.dataset.skin=currentSkin();   /* apply saved skin on load */
 
 const cogBtn=$("#cogBtn"),cogMenu=$("#cogMenu"),cogScheme=$("#cogScheme"),cogSchemeBg=$("#cogSchemeBg"),
       cogSel=$("#cogSel"),cogPrev=$("#cogPrev"),cogNext=$("#cogNext");
@@ -1512,7 +1498,6 @@ function openDrawer(){
   lgdrawer.classList.add("open");
   document.body.classList.add("drawer-open");
   if(window.innerWidth<720)lgBackdrop.classList.add("show");
-  setBarColor();
   renderLedger();
   setTimeout(()=>{lgAmt.focus();refreshPayerSeg();},310);
 }
@@ -1521,7 +1506,6 @@ function closeDrawer(){
   lgBackdrop.classList.remove("show");
   document.body.classList.remove("drawer-open");
   document.body.classList.remove("drawer-peek");
-  setBarColor();
 }
 /* peek when the pointer nears the right edge (<=30px), or is over the tab/drawer */
 let lgPeek=false;
