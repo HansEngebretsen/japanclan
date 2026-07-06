@@ -229,29 +229,30 @@
   .itin-stay .snm{font-weight:600;color:var(--ink-2)}
   .itin-stay.link:hover .snm{color:var(--seal)}
   /* circular map thumbnail across from an itinerary entry — edges fade softly into the page */
-  .itin-map{flex:0 0 auto;width:60px;height:60px;overflow:hidden;position:relative;display:block;margin-top:1px;
+  .itin-map{flex:0 0 auto;width:60px;height:60px;overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center;margin-top:1px;
     background:var(--soft);border-radius:50%;
     -webkit-mask:radial-gradient(circle at 50% 50%, #000 56%, rgba(0,0,0,.45) 78%, transparent 100%);
             mask:radial-gradient(circle at 50% 50%, #000 56%, rgba(0,0,0,.45) 78%, transparent 100%)}
-  .itin-map iframe, .itin-map img{width:100%;height:100%;border:0;display:block;filter:var(--map-filter);pointer-events:none;object-fit:cover}
+  .itin-map iframe, .itin-map img{width:140px;height:140px;max-width:none;flex:0 0 auto;border:0;display:block;filter:var(--map-filter);pointer-events:none;object-fit:cover}
   /* header row: nav + expand + close, all top-right */
   .itin-arrows{justify-content:flex-end}
   .itin-expand svg{width:15px;height:15px}
-  /* timeline (View all) — every day on one connected rail */
+  /* timeline (View all) — every trip day on one connected timeline */
   .itin-tl{padding-top:2px}
-  .tl-row{display:flex;gap:11px;align-items:flex-start;position:relative}
+  .tl-day-hdr{background:var(--soft);padding:8px 12px;font-size:11.5px;font-weight:700;color:var(--ink-2);border-radius:4px;margin:24px 0 16px 0}
+  .tl-day-hdr:first-child{margin-top:4px}
+  .tl-row{display:flex;gap:12px;align-items:flex-start;position:relative;margin-bottom:24px}
+  .tl-time-col{flex:0 0 65px;text-align:right;padding-top:6px}
+  .tl-time{font-size:11.5px;font-weight:700;color:var(--ink)}
+  .tl-tz{font-size:9.5px;font-weight:600;color:var(--muted);margin-top:2px}
   .tl-rail{flex:0 0 auto;width:30px;align-self:stretch;position:relative;display:flex;justify-content:center}
-  .tl-rail::before{content:"";position:absolute;top:0;bottom:0;left:50%;width:2px;margin-left:-1px;background:var(--line-2)}
-  .tl-row.first .tl-rail::before{top:15px}
-  .tl-row.last .tl-rail::before{bottom:auto;height:15px}
-  .tl-dot{position:relative;z-index:1;width:30px;height:30px;border-radius:8px;flex:0 0 auto;display:grid;place-items:center;
-    background:color-mix(in srgb,var(--seal) 12%,var(--card));color:var(--seal)}
+  .tl-rail::before{content:"";position:absolute;top:0;bottom:-24px;left:50%;width:2px;margin-left:-1px;background:var(--line-2)}
+  .tl-row.day-first .tl-rail::before{top:15px}
+  .tl-row.day-last .tl-rail::before{bottom:auto;height:15px}
+  .tl-dot{position:relative;z-index:1;width:30px;height:30px;border-radius:50%;flex:0 0 auto;display:grid;place-items:center;
+    background:color-mix(in srgb,var(--seal) 12%,var(--card));color:var(--seal);margin-top:2px}
   .tl-dot svg{width:16px;height:16px}
-  .tl-dot.free{background:var(--soft);color:var(--muted)}
-  .tl-main{flex:1;min-width:0;padding-bottom:16px}
-  .tl-row.last .tl-main{padding-bottom:2px}
-  .tl-date{font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--seal);font-weight:700}
-  .tl-time{font-family:var(--mono);font-size:10px;letter-spacing:.05em;color:var(--muted);text-transform:uppercase;margin-top:2px}
+  .tl-main{flex:1;min-width:0;padding-top:6px}
 
   /* section title between the calendar and the browse section */
   .sectitle{display:flex;align-items:center;gap:10px;margin:22px 0 2px;
@@ -816,26 +817,31 @@ const ICONS={
   collapse:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14h6v6"/><path d="M20 10h-6V4"/><path d="M14 10l7-7"/><path d="M3 21l7-7"/></svg>'
 };
 /* one headline per day (flight/train > hotel check-in > event) + where you sleep that night */
+const STAYS={
+  shibuya:{title:"all day place shibuya",addr:"150-0002 Tokyo-to, 1-17-1 Shibuya, Shibuya-ku, Japan",in:"3:00 PM",out:"11:00 AM",tz:"GMT+9",day:15},
+  hakodate:{title:"Premier Hotel - Cabin President - Hakodate",addr:"14-10 Wakamatsucho Hakodate 040-0063 JP",in:"3:00 PM",out:"11:00 AM",tz:"GMT+9",day:19},
+  sapporo:{title:"Onsen Ryokan Yuen Sapporo",addr:"7-6, Kita 1 jo Nishi, Chuo-ku, Sapporo, Hokkaido Prefecture",in:"3:00 PM",out:"11:00 AM",tz:"GMT+9",day:20},
+  otaru:{title:"Otaru Kourakuen",addr:"8-1, Shinko 5-chome, Otaru, Hokkaido Prefecture",in:"3:00 PM",out:"11:00 AM",tz:"GMT+9",day:22},
+  bellustar:{title:"Bellustar Tokyo, a Pan Pacific Hotel",addr:"1-39-1, Kabukicho Shinjuku-ku Tokyo 00 160-0021 JP",in:"3:00 PM",out:"12:00 PM",tz:"GMT+9",day:23}
+};
 const ITIN={
-  14:{main:{t:"1:30 PM",ic:"flight",title:"SEA → NRT",wp:"Narita International Airport",sub:["Alaska AS 823 · seats 14G, 14E","Conf QMCZLP","Arrives Narita Jul 15, 4:00 PM"]}},
-  15:{main:{t:"3:00 PM",ic:"hotel",title:"all day place shibuya",wp:"all day place shibuya",sub:["Check-in"]}},
-  16:{main:{t:"6:00 PM",ic:"event",title:"Swallows game",wp:"Meiji Jingu Stadium",sub:["Ends 7:00 PM"]},stay:{title:"all day place shibuya",wp:"all day place shibuya",day:15}},
-  17:{stay:{title:"all day place shibuya",wp:"all day place shibuya",day:15}},
-  18:{main:{t:"9:00 AM",ic:"event",title:"Disney SEA",wp:"Tokyo DisneySea",sub:["Ends 9:00 PM"]},stay:{title:"all day place shibuya",wp:"all day place shibuya",day:15}},
-  19:{main:{t:"12:20 PM",ic:"train",title:"Tokyo → Shin-Hakodate-Hokuto",wp:"Shin-Hakodate-Hokuto Station",sub:["JR East · train 23 · coach 10","Seats 4-B, 4-C, 5-B, 5-C","Arrives 4:30 PM"]},stay:{title:"Premier Hotel Cabin President Hakodate",wp:"Premier Hotel Cabin President Hakodate",day:19}},
-  20:{main:{t:"3:00 PM",ic:"hotel",title:"Onsen Ryokan Yuen Sapporo",wp:"Onsen Ryokan Yuen Sapporo",sub:["Check-in"]}},
-  21:{stay:{title:"Onsen Ryokan Yuen Sapporo",wp:"Onsen Ryokan Yuen Sapporo",day:20}},
-  22:{main:{t:"3:00 PM",ic:"hotel",title:"Otaru Kourakuen",wp:"Otaru Kourakuen",sub:["Check-in"]}},
-  23:{main:{t:"2:40 PM",ic:"flight",title:"CTS → HND",wp:"Haneda Airport",sub:["AIRDO BC SKY 716 · conf 1031","Arrives Haneda 4:20 PM"]},stay:{title:"Bellustar Tokyo, a Pan Pacific Hotel",wp:"Bellustar Tokyo Pan Pacific Hotel",day:23}},
-  24:{main:{t:"6:00 PM",ic:"flight",title:"NRT → SEA",wp:"Narita International Airport",sub:["Alaska AS 824 · seats 18H, 18J","Conf QNBHHA","Arrives Seattle Jul 24, 11:15 AM"]}}
+  14:{main:{t:"1:30 PM",tz:"PDT",ic:"flight",title:"SEA → NRT",wp:"Narita International Airport",sub:["Flight Number AS 823","Confirmation QMCZLP","Seat(s) 14G, 14E","Arrive 7/15/2026 4:00 PM GMT+9"]}},
+  15:{stay:STAYS.shibuya},
+  16:{main:{t:"6:00 PM",tz:"GMT+9",ic:"event",title:"Swallows game",wp:"Meiji Jingu Stadium",sub:["Meiji Jingu Baseball Stadium","3-1 Kasumigaokamachi, Shinjuku City, Tokyo 160-0013, Japan","Ends 7:00 PM"]},stay:STAYS.shibuya},
+  17:{stay:STAYS.shibuya},
+  18:{main:{t:"9:00 AM",tz:"GMT+9",ic:"event",title:"Disney SEA TICKETS",wp:"Tokyo DisneySea",sub:["Tokyo DisneySea","1-13 Maihama, Urayasu, Chiba 279-8511, Japan","Ends 9:00 PM"]},stay:STAYS.shibuya},
+  19:{main:{t:"12:20 PM",tz:"GMT+9",ic:"train",title:"TOKYO → SHIN HAKODATE-HOKUTO",wp:"Shin-Hakodate-Hokuto Station",sub:["East Japan Railway Company Train 23","Coach 10, Seat(s) 4-B, 4-C, 5-B, 5-C","Confirmation E47543","Arrive 7/19/2026 4:30 PM GMT+9"]},stay:STAYS.hakodate},
+  20:{stay:STAYS.sapporo},
+  21:{stay:STAYS.sapporo},
+  22:{stay:STAYS.otaru},
+  23:{main:{t:"2:40 PM",tz:"GMT+9",ic:"flight",title:"CTS → HND",wp:"Haneda Airport",sub:["Flight Number BC SKY 716","Confirmation 1031","Arrive 7/23/2026 4:20 PM GMT+9"]},stay:STAYS.bellustar},
+  24:{main:{t:"6:00 PM",tz:"GMT+9",ic:"flight",title:"NRT → SEA",wp:"Narita International Airport",sub:["Flight Number AS 824","Confirmation QNBHHA","Seat(s) 18H, 18J","Arrive 7/24/2026 11:15 AM PDT"]}}
 };
 function mapsLink(wp){return "https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(wp);}
 /* wider for airports/stations, closer for hotels & venues */
-function mapZoom(ic){return ic==="flight"?11:ic==="train"?12:15;}
+function mapZoom(ic){return ic==="flight"?9:ic==="train"?10:12;}
 function mapThumb(wp,z){
-  const key = window.JC_FB_CONFIG.apiKey;
-  const url = `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(wp)}&zoom=${z}&size=60x60&scale=2&maptype=roadmap&markers=color:0xa53e25%7C${encodeURIComponent(wp)}&key=${key}`;
-  return `<a class="itin-map" href="${mapsLink(wp)}" target="_blank" rel="noopener" aria-label="Open map"><img loading="lazy" src="${url}" alt="${esc(wp)}"></a>`;
+  return `<a class="itin-map" href="${mapsLink(wp)}" target="_blank" rel="noopener" aria-label="Open map"><img loading="lazy" src="maps/${encodeURIComponent(wp)}.png" alt="${esc(wp)}"></a>`;
 }
 function getDisplayTime(m) {
   if (!m.t) return "";
@@ -866,7 +872,7 @@ function renderItinDay(d){
   const first=DAYS[0], last=DAYS[DAYS.length-1];
   let mainHTML="";
   if(it.main){
-    const m=it.main, subs=(m.sub||[]).map(esc).join("<br>");
+    const m=it.main, subs=(m.sub||[]).filter(s=>!/^Ends\s/i.test(s)).map(esc).join("<br>");
     mainHTML=`<div class="itin-main"><div class="itin-ic">${ICONS[m.ic]||ICONS.event}</div>`
       +`<div class="itin-mn"><div class="itin-time">${esc(getDisplayTime(m))}</div>${ttlHTML(m)}${subs?`<div class="itin-sub">${subs}</div>`:""}</div>`
       +`${m.wp?mapThumb(m.wp,mapZoom(m.ic)):""}</div>`;
@@ -887,22 +893,40 @@ function renderItinDay(d){
 
 /* View all — every trip day on one connected timeline */
 function renderItinAll(){
-  const rows=DAYS.map((d,i)=>{
-    const it=ITIN[d]||{}, free=!it.main;
-    const m=it.main||(it.stay?{t:"",ic:"hotel",title:it.stay.title,wp:it.stay.wp,sub:["Free day"]}
-                             :{t:"",ic:"event",title:cityOf(d),wp:cityOf(d)+" Japan",sub:["Free day"]});
-    const subs=(m.sub||[]).map(esc).join("<br>");
-    const cls="tl-row"+(i===0?" first":"")+(i===DAYS.length-1?" last":"");
-    return `<div class="${cls}">`
-      +`<div class="tl-rail"><span class="tl-dot${free?" free":""}">${ICONS[m.ic]||ICONS.event}</span></div>`
-      +`<div class="tl-main"><div class="tl-date">${dowOf(d)} · Jul ${d}</div>`
-      +`${m.t?`<div class="tl-time">${esc(getDisplayTime(m))}</div>`:""}${ttlHTML(m)}${subs?`<div class="itin-sub">${subs}</div>`:""}</div>`
-      +`${m.wp?mapThumb(m.wp,mapZoom(m.ic)):""}</div>`;
-  }).join("");
+  let html = "";
+  let prevStay = null;
+  DAYS.forEach(d => {
+    const it = ITIN[d] || {};
+    const currStay = it.stay || null;
+    let evts = [];
+    if (prevStay && prevStay !== currStay) {
+      evts.push({ic:"hotel", title:prevStay.title, sub:[`Check out ${prevStay.out} ${prevStay.tz}`, prevStay.addr]});
+    }
+    if (it.main) evts.push(it.main);
+    if (currStay && prevStay !== currStay) {
+      evts.push({ic:"hotel", title:currStay.title, sub:[`Check in ${currStay.in} ${currStay.tz}`, currStay.addr]});
+    }
+    if (evts.length > 0) {
+      html += `<div class="tl-day-hdr">${dowOf(d)}, Jul ${d}</div>`;
+      evts.forEach((m, i) => {
+        const cls = "tl-row" + (i===0?" day-first":"") + (i===evts.length-1?" day-last":"");
+        const subs = (m.sub||[]).filter(s=>!/^Ends\s/i.test(s)).map(esc).join("<br>");
+        html += `<div class="${cls}"><div class="tl-time-col">`
+          + (m.t ? `<div class="tl-time">${esc(m.t)}</div><div class="tl-tz">${esc(m.tz||"GMT+9")}</div>` : "")
+          + `</div><div class="tl-rail"><span class="tl-dot">${ICONS[m.ic]||ICONS.event}</span></div>`
+          + `<div class="tl-main"><div class="itin-ttl-row">${ttlHTML(m)}</div>`
+          + (subs ? `<div class="itin-sub">${subs}</div>` : "")
+          + `</div>`
+          + (m.wp ? mapThumb(m.wp, mapZoom(m.ic)) : "")
+          + `</div>`;
+      });
+    }
+    prevStay = currStay;
+  });
   return `<div class="itin"><div class="itin-arrows">`
     +`<button class="itin-arrow itin-expand" data-viewall type="button" aria-label="Collapse" title="Collapse">${ICONS.collapse}</button>`
     +`<button class="itin-arrow itin-close" data-close aria-label="Back">${ICONS.x}</button>`
-    +`</div><div class="itin-tl">${rows}</div></div>`;
+    +`</div><div class="itin-tl">${html}</div></div>`;
 }
 
 let itinDay=null, itinAll=false, itinRAF=0;
