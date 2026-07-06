@@ -170,8 +170,8 @@
   a{color:inherit}
   .wrap{max-width:660px;margin:0 auto;padding:0 13px;container-type:inline-size;container-name:leftcol}
 
-  /* header — scrolls away with the page */
-  header{background:var(--paper)}
+  /* header — scrolls away with the page, transparent so it blends with page background */
+  header{background:transparent}
   .hd{max-width:660px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 9px) 13px 9px;display:flex;align-items:center;justify-content:space-between;gap:10px}
   /* reserve room for the fixed ¥ tab (46px, viewport-right) so the header buttons never hide under it */
   @media(max-width:745px){.hd{padding-right:56px}}
@@ -1721,6 +1721,10 @@ function signIn(){
 }
 function signOut(){if(fbAuth)fbAuth.signOut();}
 
+/* cache / restore signed-in user to avoid auth flash on reload */
+function cacheMe(){if(me)localStorage.setItem("_me",JSON.stringify(me));else localStorage.removeItem("_me");}
+function restoreMe(){const cached=localStorage.getItem("_me");if(cached)try{me=JSON.parse(cached);}catch(e){}}
+
 /* boot Firebase if the SDK + config are present ------------------------- */
 (function bootFirebase(){
   if(!window.firebase||!window.JC_FB_CONFIG||!firebase.initializeApp){console.warn("[sync] Firebase SDK not loaded — running local-only");return;}
@@ -1734,7 +1738,7 @@ function signOut(){if(fbAuth)fbAuth.signOut();}
     fbRoster=trip.collection("roster").doc("list");
   }catch(e){console.warn("[sync] init failed",e);return;}
   window.fbReady=true;
-  paintAuthBtn();
+  restoreMe();paintAuthBtn();   /* restore cached user to avoid auth flash on reload */
 
   /* signed out → sign in; signed in → toggle the profile dropdown */
   $("#authBtn").addEventListener("click",e=>{
@@ -1748,6 +1752,7 @@ function signOut(){if(fbAuth)fbAuth.signOut();}
   fbAuth.onAuthStateChanged(async user=>{
     if(user){
       me={uid:user.uid,name:user.displayName||user.email||"Traveler",email:user.email||"",photo:user.photoURL||null};
+      cacheMe();   /* cache to avoid flash on next reload */
       /* join the roster (rules cap it at 13, self-add only) */
       try{await fbRoster.set({members:{[me.uid]:{email:me.email,name:me.name,photo:me.photo||null,ts:Date.now()}}},{merge:true});}
       catch(e){fbErr(e);if(e&&e.code==="permission-denied"){alert("This trip is full (13 people max) or sign-in isn't allowed for this account.");await fbAuth.signOut();return;}}
@@ -1760,6 +1765,7 @@ function signOut(){if(fbAuth)fbAuth.signOut();}
       paintAuthBtn();
     }else{
       me=null;
+      cacheMe();   /* clear the cache on sign-out */
       if(ledgerUnsub){ledgerUnsub();ledgerUnsub=null;}
       if(pinsUnsub){pinsUnsub();pinsUnsub=null;}
       othersByItem=Object.create(null);
