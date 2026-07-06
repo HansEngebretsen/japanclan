@@ -13,6 +13,8 @@
 <link rel="manifest" href="favicon/site.webmanifest">
 <meta name="apple-mobile-web-app-title" content="一族">
 <meta name="application-name" content="一族">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;600;700&family=Noto+Serif+JP:wght@400;700;900&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
@@ -439,11 +441,11 @@
     --dline:rgba(255,255,255,.16);--dline2:rgba(255,255,255,.30);--dsurf:rgba(255,255,255,.10);--dsurf2:rgba(255,255,255,.17);
     position:fixed;right:0;top:0;bottom:0;width:var(--lgw);max-width:100%;z-index:40;
     background:var(--dseal);color:var(--dtext);
-    transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);
+    visibility:hidden;transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1), visibility 0s linear .3s;
     overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;
     padding:calc(env(safe-area-inset-top) + 22px) 26px calc(env(safe-area-inset-bottom) + 30px)}
-  body.drawer-peek .lgdrawer{transform:translateX(calc(100% - var(--nbpeek)))}
-  .lgdrawer.open{transform:translateX(0)}
+  body.drawer-peek .lgdrawer{visibility:visible;transform:translateX(calc(100% - var(--nbpeek)));transition:transform .3s cubic-bezier(.4,0,.2,1), visibility 0s linear 0s}
+  .lgdrawer.open{visibility:visible;transform:translateX(0);transition:transform .3s cubic-bezier(.4,0,.2,1), visibility 0s linear 0s}
   /* peeking panel: resize-style cursor + big click target to pull it open */
   .lgdrawer:not(.open){cursor:w-resize}
   /* mobile backdrop */
@@ -1737,6 +1739,7 @@ function restoreMe(){const cached=localStorage.getItem("_me");if(cached)try{me=J
     firebase.initializeApp(window.JC_FB_CONFIG);
     fbAuth=firebase.auth();
     const db=firebase.firestore();
+    db.enablePersistence({synchronizeTabs:true}).catch(e=>{console.warn("Offline persistence error:",e);});
     const trip=db.collection("trips").doc(TRIP_ID);
     fbLedger=trip.collection("ledger");
     fbPins=trip.collection("pins");
@@ -1785,6 +1788,7 @@ function restoreMe(){const cached=localStorage.getItem("_me");if(cached)try{me=J
     }
   });
 })();
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(e=>console.warn('SW reg failed:',e));
 </script>
 </body>
 </html>
