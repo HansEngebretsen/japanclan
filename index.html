@@ -1577,7 +1577,9 @@ function showTip(el){
   if(left<pad)left=pad;
   if(left+tr.width>window.innerWidth-pad)left=window.innerWidth-tr.width-pad;
   lgTip.style.left=left+"px";
-  lgTip.style.top=Math.round(r.top-tr.height-6)+"px";
+  let top=Math.round(r.top-tr.height-6);
+  if(top<pad)top=Math.round(r.bottom+6);
+  lgTip.style.top=top+"px";
 }
 function hideTip(){if(!lgTipEl)return;lgTipEl=null;try{lgTip.hidePopover();}catch(_){}}
 [lgdrawer,$(".filt-tools"),$("header")].forEach(root=>{
