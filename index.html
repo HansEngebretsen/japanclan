@@ -117,6 +117,33 @@
   .itin-stay .sic svg{width:17px;height:17px}
   .itin-stay .snm{font-weight:600;color:var(--ink-2)}
   .itin-stay.link:hover .snm{color:var(--seal)}
+  /* small circular map thumbnail shown across from an itinerary entry */
+  .itin-map{flex:0 0 auto;width:58px;height:58px;border-radius:50%;overflow:hidden;position:relative;
+    border:1px solid var(--line-2);display:block;margin-top:1px;
+    background:var(--soft) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%239c9486' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z'/><circle cx='12' cy='10' r='3'/></svg>") center/22px no-repeat}
+  .itin-map iframe{width:100%;height:100%;border:0;display:block;filter:var(--map-filter);pointer-events:none}
+  .itin-map::after{content:"";position:absolute;inset:0;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06)}
+  /* header row: View all / Hide on the left, nav + close on the right */
+  .itin-arrows{justify-content:space-between}
+  .itin-navgrp{display:flex;align-items:center;gap:2px}
+  .itin-viewall{border:0;background:0;padding:2px;cursor:pointer;color:var(--muted);
+    font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;transition:color .12s}
+  .itin-viewall:hover{color:var(--seal)}
+  /* timeline (View all) — every day on one connected rail */
+  .itin-tl{padding-top:2px}
+  .tl-row{display:flex;gap:11px;align-items:flex-start;position:relative}
+  .tl-rail{flex:0 0 auto;width:30px;align-self:stretch;position:relative;display:flex;justify-content:center}
+  .tl-rail::before{content:"";position:absolute;top:0;bottom:0;left:50%;width:2px;margin-left:-1px;background:var(--line-2)}
+  .tl-row.first .tl-rail::before{top:15px}
+  .tl-row.last .tl-rail::before{bottom:auto;height:15px}
+  .tl-dot{position:relative;z-index:1;width:30px;height:30px;border-radius:8px;flex:0 0 auto;display:grid;place-items:center;
+    background:color-mix(in srgb,var(--seal) 12%,var(--card));color:var(--seal)}
+  .tl-dot svg{width:16px;height:16px}
+  .tl-dot.free{background:var(--soft);color:var(--muted)}
+  .tl-main{flex:1;min-width:0;padding-bottom:16px}
+  .tl-row.last .tl-main{padding-bottom:2px}
+  .tl-date{font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--seal);font-weight:700}
+  .tl-time{font-family:var(--mono);font-size:10px;letter-spacing:.05em;color:var(--muted);text-transform:uppercase;margin-top:2px}
 
   /* section title between the calendar and the browse section */
   .sectitle{display:flex;align-items:center;gap:10px;margin:22px 0 2px;
@@ -293,6 +320,9 @@
     .lgdrawer{width:100%;border-left:none}
     body.drawer-open .nobori{opacity:0;pointer-events:none}
     .lgdrawer .lg-x{display:grid}
+    /* IOU tab scrolls with the page (not sticky) and sits BELOW the status bar,
+       so the paper header colour fills the dynamic-island area instead of orange */
+    .nobori{position:absolute;top:env(safe-area-inset-top);height:44px}
   }
 
   /* drawer header — small "IOU Ledger" label with the en coin; × only at full-screen */
@@ -626,7 +656,7 @@ const ICONS={
 };
 /* one headline per day (flight/train > hotel check-in > event) + where you sleep that night */
 const ITIN={
-  14:{main:{t:"1:30 PM",ic:"flight",title:"SEA → NRT",wp:"Seattle-Tacoma International Airport",sub:["Alaska AS 823 · seats 14G, 14E","Conf QMCZLP","Arrives Narita Jul 15, 4:00 PM"]}},
+  14:{main:{t:"1:30 PM",ic:"flight",title:"SEA → NRT",wp:"Narita International Airport",sub:["Alaska AS 823 · seats 14G, 14E","Conf QMCZLP","Arrives Narita Jul 15, 4:00 PM"]}},
   15:{main:{t:"3:00 PM",ic:"hotel",title:"all day place shibuya",wp:"all day place shibuya",sub:["Check-in"]}},
   16:{main:{t:"6:00 PM",ic:"event",title:"Swallows game",wp:"Meiji Jingu Stadium",sub:["Ends 7:00 PM"]},stay:{title:"all day place shibuya",wp:"all day place shibuya",day:15}},
   17:{stay:{title:"all day place shibuya",wp:"all day place shibuya",day:15}},
@@ -635,19 +665,26 @@ const ITIN={
   20:{main:{t:"3:00 PM",ic:"hotel",title:"Onsen Ryokan Yuen Sapporo",wp:"Onsen Ryokan Yuen Sapporo",sub:["Check-in"]}},
   21:{stay:{title:"Onsen Ryokan Yuen Sapporo",wp:"Onsen Ryokan Yuen Sapporo",day:20}},
   22:{main:{t:"3:00 PM",ic:"hotel",title:"Otaru Kourakuen",wp:"Otaru Kourakuen",sub:["Check-in"]}},
-  23:{main:{t:"2:40 PM",ic:"flight",title:"CTS → HND",wp:"New Chitose Airport",sub:["AIRDO BC SKY 716 · conf 1031","Arrives Haneda 4:20 PM"]},stay:{title:"Bellustar Tokyo, a Pan Pacific Hotel",wp:"Bellustar Tokyo Pan Pacific Hotel",day:23}},
+  23:{main:{t:"2:40 PM",ic:"flight",title:"CTS → HND",wp:"Haneda Airport",sub:["AIRDO BC SKY 716 · conf 1031","Arrives Haneda 4:20 PM"]},stay:{title:"Bellustar Tokyo, a Pan Pacific Hotel",wp:"Bellustar Tokyo Pan Pacific Hotel",day:23}},
   24:{main:{t:"6:00 PM",ic:"flight",title:"NRT → SEA",wp:"Narita International Airport",sub:["Alaska AS 824 · seats 18H, 18J","Conf QNBHHA","Arrives Seattle Jul 24, 11:15 AM"]}}
 };
 function mapsLink(wp){return "https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(wp);}
+/* wider for airports/stations, closer for hotels & venues */
+function mapZoom(ic){return ic==="flight"?11:ic==="train"?12:15;}
+function mapThumb(wp,z){return `<a class="itin-map" href="${mapsLink(wp)}" target="_blank" rel="noopener" aria-label="Open map"><iframe loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=${encodeURIComponent(wp)}&z=${z}&output=embed" title="${esc(wp)}"></iframe></a>`;}
+const DOW3=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+function dowOf(d){return DOW3[new Date(2026,6,d).getDay()];}
+function ttlHTML(m){return m.wp?`<a class="itin-ttl" href="${mapsLink(m.wp)}" target="_blank" rel="noopener">${esc(m.title)}</a>`:`<span class="itin-ttl">${esc(m.title)}</span>`;}
+
 function renderItinDay(d){
   const it=ITIN[d]||{};
   const first=DAYS[0], last=DAYS[DAYS.length-1];
   let mainHTML="";
   if(it.main){
-    const m=it.main;
-    const ttl=m.wp?`<a class="itin-ttl" href="${mapsLink(m.wp)}" target="_blank" rel="noopener">${esc(m.title)}</a>`:`<span class="itin-ttl">${esc(m.title)}</span>`;
-    const subs=(m.sub||[]).map(esc).join("<br>");
-    mainHTML=`<div class="itin-main"><div class="itin-ic">${ICONS[m.ic]||ICONS.event}</div><div class="itin-mn"><div class="itin-time">${esc(m.t||"")}</div>${ttl}${subs?`<div class="itin-sub">${subs}</div>`:""}</div></div>`;
+    const m=it.main, subs=(m.sub||[]).map(esc).join("<br>");
+    mainHTML=`<div class="itin-main"><div class="itin-ic">${ICONS[m.ic]||ICONS.event}</div>`
+      +`<div class="itin-mn"><div class="itin-time">${esc(m.t||"")}</div>${ttlHTML(m)}${subs?`<div class="itin-sub">${subs}</div>`:""}</div>`
+      +`${m.wp?mapThumb(m.wp,mapZoom(m.ic)):""}</div>`;
   }
   let stayHTML="";
   if(it.stay){
@@ -656,14 +693,38 @@ function renderItinDay(d){
       +`<span class="sic">${ICONS.hotel}</span><span class="snm">${esc(s.title)}</span></button>`;
   }
   return `<div class="itin"><div class="itin-arrows">`
+    +`<button class="itin-viewall" data-viewall type="button">View all</button>`
+    +`<div class="itin-navgrp">`
     +`<button class="itin-arrow" data-prev ${d>first?"":"disabled"} aria-label="Previous day">${ICONS.chevL}</button>`
     +`<button class="itin-arrow" data-next ${d<last?"":"disabled"} aria-label="Next day">${ICONS.chevR}</button>`
     +`<button class="itin-arrow itin-close" data-close aria-label="Close">${ICONS.x}</button>`
-    +`</div><div class="itin-body">${mainHTML}${stayHTML}</div></div>`;
+    +`</div></div><div class="itin-body">${mainHTML}${stayHTML}</div></div>`;
 }
-let itinDay=null, itinRAF=0;
+
+/* View all — every trip day on one connected timeline */
+function renderItinAll(){
+  const rows=DAYS.map((d,i)=>{
+    const it=ITIN[d]||{}, free=!it.main;
+    const m=it.main||(it.stay?{t:"",ic:"hotel",title:it.stay.title,wp:it.stay.wp,sub:["Free day"]}
+                             :{t:"",ic:"event",title:cityOf(d),wp:cityOf(d)+" Japan",sub:["Free day"]});
+    const subs=(m.sub||[]).map(esc).join("<br>");
+    const cls="tl-row"+(i===0?" first":"")+(i===DAYS.length-1?" last":"");
+    return `<div class="${cls}">`
+      +`<div class="tl-rail"><span class="tl-dot${free?" free":""}">${ICONS[m.ic]||ICONS.event}</span></div>`
+      +`<div class="tl-main"><div class="tl-date">${dowOf(d)} · Jul ${d}</div>`
+      +`${m.t?`<div class="tl-time">${esc(m.t)}</div>`:""}${ttlHTML(m)}${subs?`<div class="itin-sub">${subs}</div>`:""}</div>`
+      +`${m.wp?mapThumb(m.wp,mapZoom(m.ic)):""}</div>`;
+  }).join("");
+  return `<div class="itin"><div class="itin-arrows">`
+    +`<button class="itin-viewall" data-viewall type="button">Hide</button>`
+    +`<button class="itin-arrow itin-close" data-close aria-label="Back">${ICONS.x}</button>`
+    +`</div><div class="itin-tl">${rows}</div></div>`;
+}
+
+let itinDay=null, itinAll=false, itinRAF=0;
 const itinWin=document.getElementById("itinWin");
-function markPicked(){document.querySelectorAll("#days .cell").forEach(c=>c.classList.toggle("picked",+c.dataset.d===itinDay));}
+function itinOpen(){return itinAll||itinDay!==null;}
+function markPicked(){document.querySelectorAll("#days .cell").forEach(c=>{const d=+c.dataset.d;c.classList.toggle("picked",itinAll?TRIP.has(d):d===itinDay);});}
 /* animate the panel from its current height to whatever the new content needs.
    we measure the target with height:auto (scrollHeight can't shrink) so grow/shrink both glide. */
 function animItin(html){
@@ -671,24 +732,27 @@ function animItin(html){
   const start=itinWin.getBoundingClientRect().height;
   itinWin.style.height="auto";
   if(html!==null){itinWin.innerHTML=html;markPicked();}
-  const end=itinDay===null?0:itinWin.getBoundingClientRect().height;
+  const end=itinOpen()?itinWin.getBoundingClientRect().height:0;
   itinWin.style.height=start+"px";
   itinWin.getBoundingClientRect();
   itinRAF=requestAnimationFrame(()=>{itinWin.style.height=end+"px";});
 }
 itinWin.addEventListener("transitionend",e=>{
   if(e.propertyName!=="height")return;
-  if(itinDay!==null)itinWin.style.height="auto"; else itinWin.innerHTML="";
+  if(itinOpen())itinWin.style.height="auto"; else itinWin.innerHTML="";
 });
-function selectDay(d){itinDay=d;animItin(renderItinDay(d));}
-function closeItin(){if(itinDay===null)return;itinDay=null;markPicked();animItin(null);}
+function selectDay(d){itinAll=false;itinDay=d;animItin(renderItinDay(d));}
+function showAllDays(){itinAll=true;animItin(renderItinAll());}
+function closeItin(){if(!itinOpen())return;itinDay=null;itinAll=false;markPicked();animItin(null);}
 document.getElementById("days").addEventListener("click",e=>{
   const cell=e.target.closest(".cell.active");if(!cell)return;
   const d=+cell.dataset.d;
+  if(itinAll){selectDay(d);return;}            /* clicking a date exits the timeline into that day */
   if(itinDay===d)closeItin();else selectDay(d);
 });
 itinWin.addEventListener("click",e=>{
-  if(e.target.closest("[data-close]")){closeItin();return;}
+  if(e.target.closest("[data-viewall]")){itinAll?selectDay(itinDay||DAYS[0]):showAllDays();return;}
+  if(e.target.closest("[data-close]")){itinAll?selectDay(itinDay||DAYS[0]):closeItin();return;}
   if(e.target.closest("[data-prev]")){if(itinDay>DAYS[0])selectDay(itinDay-1);return;}
   if(e.target.closest("[data-next]")){if(itinDay<DAYS[DAYS.length-1])selectDay(itinDay+1);return;}
   const go=e.target.closest("[data-goto]");if(go)selectDay(+go.dataset.goto);
