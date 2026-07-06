@@ -49,19 +49,19 @@ Reference these line ranges for targeted edits:
 
 | Section                | Lines       | What it is                                                    |
 |------------------------|-------------|---------------------------------------------------------------|
-| `<head>` / meta        | 1 – 16      | Charset, viewport, favicon links, manifest link               |
-| CSS variables / skins   | 17 – 106    | `:root` vars + 6 named skins (sumi, samurai, ai, matcha, sushi, beni), each with light+dark |
-| CSS layout              | 107 – 582   | All component styles (calendar, itinerary, cards, filters, ledger, settings dialog, modals) |
-| HTML body               | 583 – 702   | Header, calendar, itinerary panel, filters, grid, modals, ledger drawer, footer |
-| Firebase SDK scripts    | 704 – 717   | CDN `<script>` tags + `JC_FB_CONFIG` object                  |
-| JS: Store / state       | 719 – 729   | localStorage wrapper, state init                              |
-| JS: Theme               | 731 – 745   | Light/dark toggle, status-bar color sync                      |
-| JS: Calendar            | 747 – 886   | `DAYS`, `CAL_DAYS`, `ITIN{}`, day rendering, itinerary panel  |
-| JS: ITEMS data          | 894 – 1026  | The 125+ item catalog (`ITEMS` array)                         |
-| JS: Runtime / render    | 1028 – 1260 | Filters, card rendering, coin toggle, modal                   |
-| JS: Ledger (warikan)    | 1263 – 1530 | IOU drawer, expense CRUD, inline editing, paste-to-add        |
-| JS: Settings / skins    | 1185 – 1219 | Esc-triggered settings dialog, skin picker                    |
-| JS: Firebase sync       | 1535 – 1654 | Auth UI, Firestore subscriptions (pins, ledger, roster)       |
+| `<head>` / meta        | 1 – 19      | Charset, viewport, favicon links, manifest link, Google Fonts |
+| CSS variables / skins   | 20 – 138    | `:root` vars + 6 named skins (sumi, samurai, ai, matcha, sushi, beni), each with light+dark, structural vars, decorative rules |
+| CSS layout              | 140 – 619   | All component styles (calendar, itinerary, cards, filters, ledger, settings dialog, modals) |
+| HTML body               | 620 – 739   | Header, calendar, itinerary panel, filters, grid, modals, ledger drawer, footer |
+| Firebase SDK scripts    | 741 – 754   | CDN `<script>` tags + `JC_FB_CONFIG` object                  |
+| JS: Store / state       | 756 – 766   | localStorage wrapper, state init                              |
+| JS: Theme               | 768 – 782   | Light/dark toggle, status-bar color sync                      |
+| JS: Calendar            | 784 – 923   | `DAYS`, `CAL_DAYS`, `ITIN{}`, day rendering, itinerary panel  |
+| JS: ITEMS data          | 931 – 1063  | The 125+ item catalog (`ITEMS` array)                         |
+| JS: Runtime / render    | 1065 – 1297 | Filters, card rendering, coin toggle, modal                   |
+| JS: Ledger (warikan)    | 1300 – 1567 | IOU drawer, expense CRUD, inline editing, paste-to-add        |
+| JS: Settings / skins    | 1241 – 1275 | Esc-triggered settings dialog, skin picker, THEMES array      |
+| JS: Firebase sync       | 1572 – 1691 | Auth UI, Firestore subscriptions (pins, ledger, roster)       |
 
 ## Editing Guidelines
 
