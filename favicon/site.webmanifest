@@ -2,7 +2,7 @@
   "name": "Japan Clan",
   "short_name": "一族",
   "description": "Japan trip planner — collect only-in-Japan things and split the bill.",
-  "start_url": "./",
+  "start_url": "../",
   "display": "standalone",
   "theme_color": "#f6f3ed",
   "background_color": "#f6f3ed",

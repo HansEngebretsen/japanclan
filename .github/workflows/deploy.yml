@@ -29,9 +29,9 @@ jobs:
           rsync -a \
             --exclude='.git' --exclude='.github' --exclude='_site' \
             --exclude='node_modules' \
-            --exclude='firebase.json' --exclude='.firebaserc' \
-            --exclude='firestore.rules' --exclude='firestore.indexes.json' \
-            --exclude='README.md' \
+            --exclude='firebase.json' --exclude='.firebaserc' --exclude='.agents' \
+            --exclude='.claude' --exclude='config' \
+            --exclude='README.md' --exclude='*.md' \
             ./ _site/
 
       - name: Setup Pages
