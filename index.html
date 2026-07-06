@@ -641,7 +641,7 @@
   <div class="hd">
     <div class="wm"><span class="jp">一族</span><span class="en">Japan Clan</span></div>
     <div class="hbtns">
-      <a href="https://docs.google.com/document/d/1-jccafbZFzifdpOfkJt6z2TDBRb_i6nRuN08KsGikk8/edit?tab=t.116vmxasik2y#heading=h.rryhsrm594zj" target="_blank" rel="noreferrer" class="ibtn" aria-label="Google doc for planning" title="Google doc for planning">
+      <a href="https://docs.google.com/document/d/1-jccafbZFzifdpOfkJt6z2TDBRb_i6nRuN08KsGikk8/edit?tab=t.116vmxasik2y#heading=h.rryhsrm594zj" target="_blank" rel="noreferrer" class="ibtn" aria-label="Google doc for planning" data-tip="Google doc for planning">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
       </a>
       <button class="authbtn" id="authBtnTop" type="button" hidden>Sign in</button>
@@ -1572,11 +1572,16 @@ function showTip(el){
   try{lgTip.hidePopover();}catch(_){}
   lgTip.showPopover();
   const r=el.getBoundingClientRect(),tr=lgTip.getBoundingClientRect();
-  lgTip.style.left=Math.round(r.left+r.width/2-tr.width/2)+"px";
+  let left=Math.round(r.left+r.width/2-tr.width/2);
+  const pad=8;
+  if(left<pad)left=pad;
+  if(left+tr.width>window.innerWidth-pad)left=window.innerWidth-tr.width-pad;
+  lgTip.style.left=left+"px";
   lgTip.style.top=Math.round(r.top-tr.height-6)+"px";
 }
 function hideTip(){if(!lgTipEl)return;lgTipEl=null;try{lgTip.hidePopover();}catch(_){}}
-[lgdrawer,$(".filt-tools")].forEach(root=>{
+[lgdrawer,$(".filt-tools"),$("header")].forEach(root=>{
+  if(!root)return;
   root.addEventListener("mouseover",e=>{const el=e.target.closest?.("[data-tip]");el?showTip(el):hideTip();});
   root.addEventListener("mouseleave",hideTip);
   root.addEventListener("focusin",e=>{const el=e.target.closest?.("[data-tip]");el?showTip(el):hideTip();});
