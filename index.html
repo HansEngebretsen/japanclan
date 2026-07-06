@@ -118,24 +118,48 @@
   }
   /* 紅 Red Red — ivory washi & vivid crimson (fashion editorial) */
   [data-skin="beni"]{
-    --paper:#f6efde; --card:#fdf9ee; --ink:#3a120d; --ink-2:#7d2b22; --muted:#a97264;
-    --line:#ecdcc4; --line-2:#e0cbae; --seal:#d81f18; --seal-2:#e8352b; --soft:#f3e5d1;
-    --glow:radial-gradient(120% 70% at 50% -8%, #fffaf0 0%, transparent 58%);
-    --map-filter:grayscale(.3) sepia(.4) hue-rotate(-14deg) saturate(1.1) contrast(.95) brightness(1.02); --coin-b:#d81f18; --barseal:#b81810;
-    --radius:2px; --card-radius:3px; --card-shadow:none;
-    --stamp-shape:3px; --chip-radius:3px;
+    --paper:#f7f1e2; --card:#fdfaf0; --ink:#1c1613; --ink-2:#6e5a52; --muted:#a8988c;
+    --line:#eaddc7; --line-2:#ddccb0; --seal:#e01b18; --seal-2:#f0332c; --soft:#f4ecda;
+    --glow:radial-gradient(120% 70% at 50% -8%, #fffcf4 0%, transparent 60%);
+    --map-filter:grayscale(.2) sepia(.35) hue-rotate(-16deg) saturate(1.15) contrast(.96) brightness(1.03); --coin-b:#e01b18; --barseal:#bf1712;
+    --radius:2px; --card-radius:2px; --card-shadow:none;
+    --stamp-shape:2px; --chip-radius:2px;
     --head-font:"Noto Serif JP",var(--serif); --head-weight:900; --head-tracking:-.02em;
   }
   [data-skin="beni"][data-theme="dark"]{
-    --paper:#190b09; --card:#241210; --ink:#f3e7df; --ink-2:#c99b90; --muted:#8f6258;
-    --line:#2e1714; --line-2:#412420; --seal:#e8352b; --seal-2:#f04d40; --soft:#221310;
-    --glow:radial-gradient(110% 45% at 50% -12%, #2a1310 0%, transparent 46%);
-    --map-filter:grayscale(.4) invert(.9) hue-rotate(-10deg) saturate(1.05) contrast(.85) brightness(.95); --coin-b:#e8352b; --barseal:#c2211a;
+    --paper:#17100e; --card:#221512; --ink:#f4ece2; --ink-2:#c3a096; --muted:#8a675d;
+    --line:#2c1c18; --line-2:#3f2823; --seal:#ef3b30; --seal-2:#f4544a; --soft:#20130f;
+    --glow:radial-gradient(110% 45% at 50% -12%, #2a1611 0%, transparent 48%);
+    --map-filter:grayscale(.3) invert(.9) hue-rotate(-12deg) saturate(1.1) contrast(.85) brightness(.95); --coin-b:#ef3b30; --barseal:#c9251d;
   }
-  /* ===== skin-specific decorative rules ===== */
-  [data-skin="beni"] .card{border-top:3px solid var(--seal)}
+  /* 無 Mono — just black & white, nothing else */
+  [data-skin="mono"]{
+    --paper:#fbfbfb; --card:#ffffff; --ink:#141414; --ink-2:#565656; --muted:#969696;
+    --line:#ededed; --line-2:#dadada; --seal:#1a1a1a; --seal-2:#333333; --soft:#f3f3f3;
+    --glow:none; --map-filter:grayscale(1) contrast(.98); --coin-b:#1a1a1a; --barseal:#000000;
+    --radius:4px; --card-radius:8px; --card-shadow:none;
+    --stamp-shape:3px; --chip-radius:4px;
+    --head-font:var(--sans); --head-weight:600; --head-tracking:0em; --bg-pattern:none;
+  }
+  [data-skin="mono"][data-theme="dark"]{
+    --paper:#0e0e0e; --card:#191919; --ink:#f0f0f0; --ink-2:#a0a0a0; --muted:#6c6c6c;
+    --line:#242424; --line-2:#383838; --seal:#5a5a5a; --seal-2:#6e6e6e; --soft:#1c1c1c;
+    --glow:none; --map-filter:grayscale(1) invert(.92) contrast(.9); --coin-b:#5a5a5a; --barseal:#444444;
+  }
+  /* ===== skin-specific signatures — one clean accent each ===== */
+  /* Samurai: a single hard red rule under the section title */
+  [data-skin="samurai"] .sectitle::after{background:var(--seal)}
+  /* Indigo: sashiko double-stitch rule */
   [data-skin="ai"] .sectitle::after{height:3px;border-top:1px solid var(--line-2);border-bottom:1px solid var(--line-2);background:transparent}
+  /* Matcha: soft dashed rule */
   [data-skin="matcha"] .sectitle::after{border-style:dashed}
+  /* Sushi: bold orange rule */
+  [data-skin="sushi"] .sectitle::after{background:var(--seal);height:2px}
+  /* Red Red: editorial — crimson section headings + rule */
+  [data-skin="beni"] .sectitle{color:var(--seal)}
+  [data-skin="beni"] .sectitle::after{background:var(--seal);height:2px}
+  /* Mono: hairline neutral rule */
+  [data-skin="mono"] .sectitle::after{background:var(--line-2)}
 
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html{-webkit-text-size-adjust:100%}
@@ -194,6 +218,10 @@
   .cell.picked{background:color-mix(in srgb,var(--seal) 11%,var(--card));box-shadow:inset 0 0 0 1.5px var(--seal)}
   .cell.picked.out{background:color-mix(in srgb,var(--seal) 8%,var(--paper))}
   .cell.picked .dn{color:var(--seal);font-weight:600}
+  /* expanded (View all) — one outline around the whole calendar + a soft band on the trip days, no per-date rings */
+  .cal.allmode{box-shadow:0 0 0 1.6px var(--seal)}
+  .cal.allmode .cell.active{background:color-mix(in srgb,var(--seal) 8%,var(--card))}
+  .cal.allmode .cell.active .dn{color:var(--seal);font-weight:600}
 
   /* itinerary day panel — bare content on the page, animates its own height */
   .itin-win{height:0;overflow:hidden;transition:height .32s cubic-bezier(.4,0,.2,1)}
@@ -932,7 +960,12 @@ function renderItinAll(){
 let itinDay=null, itinAll=false, itinRAF=0;
 const itinWin=document.getElementById("itinWin");
 function itinOpen(){return itinAll||itinDay!==null;}
-function markPicked(){document.querySelectorAll("#days .cell").forEach(c=>{const d=+c.dataset.d;c.classList.toggle("picked",itinAll?TRIP.has(d):d===itinDay);});}
+function markPicked(){
+  const cal=document.querySelector(".cal");
+  if(cal)cal.classList.toggle("allmode",itinAll);
+  /* individual date ring only in single-day mode; expanded mode outlines the whole calendar instead */
+  document.querySelectorAll("#days .cell").forEach(c=>{const d=+c.dataset.d;c.classList.toggle("picked",!itinAll&&d===itinDay);});
+}
 /* animate the panel from its current height to whatever the new content needs.
    we measure the target with height:auto (scrollHeight can't shrink) so grow/shrink both glide. */
 function animItin(html){
@@ -1265,12 +1298,13 @@ $("#ov").addEventListener("click",e=>{
 });
 /* ===== settings dialog (Esc) + secret theme skins ===== */
 const THEMES=[
-  {id:"sumi",jp:"墨",name:"Sumi",note:"Ink on washi · sharp",sw:["#f6f3ed","#1a1611","#c2492c"],cr:"11px",pr:"3px",ss:"3px"},
-  {id:"samurai",jp:"侍",name:"Samurai",note:"Fog & shadow",sw:["#e8e6e2","#16161a","#e0534a"],cr:"5px",pr:"2px",ss:"2px"},
+  {id:"sumi",jp:"墨",name:"Sumi",note:"Ink on washi",sw:["#f6f3ed","#1a1611","#c2492c"],cr:"11px",pr:"3px",ss:"3px"},
+  {id:"samurai",jp:"侍",name:"Samurai",note:"Fog & red sun",sw:["#e8e6e2","#16161a","#e0534a"],cr:"5px",pr:"2px",ss:"2px"},
   {id:"ai",jp:"藍",name:"Indigo",note:"Sashiko blue",sw:["#eceef1","#141a26","#2c4d84"],cr:"10px",pr:"6px",ss:"4px"},
   {id:"matcha",jp:"抹茶",name:"Matcha",note:"Zen garden",sw:["#edefe4","#1c211a","#5a7d3f"],cr:"16px",pr:"14px",ss:"50%"},
-  {id:"sushi",jp:"寿",name:"Sushi",note:"Izakaya waves",sw:["#3832be","#ffffff","#ee5a22"],cr:"20px",pr:"18px",ss:"50%"},
-  {id:"beni",jp:"紅",name:"Red Red",note:"Bold editorial",sw:["#f5eede","#d81f18","#d81f18"],cr:"3px",pr:"2px",ss:"3px",ac:true}
+  {id:"sushi",jp:"寿",name:"Sushi",note:"Cobalt waves",sw:["#3832be","#ffffff","#ee5a22"],cr:"20px",pr:"18px",ss:"50%"},
+  {id:"beni",jp:"紅",name:"Red Red",note:"Ivory & crimson",sw:["#f7f1e2","#e01b18","#e01b18"],cr:"2px",pr:"2px",ss:"2px"},
+  {id:"mono",jp:"無",name:"Mono",note:"Black & white",sw:["#fbfbfb","#141414","#1a1a1a"],cr:"8px",pr:"3px",ss:"3px"}
 ];
 const setOv=$("#setOv");
 function currentSkin(){return state.skin||"sumi";}
