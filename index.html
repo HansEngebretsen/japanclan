@@ -1568,7 +1568,10 @@ document.addEventListener("paste",e=>{
 
 /* tooltips via the Popover API — shared by ledger row actions + filter tools */
 const lgTip=$("#lgTip");let lgTipEl=null;
+/* skip tooltips on touch / no-hover devices — they just flash annoyingly on tap */
+const canHover=!(window.matchMedia&&window.matchMedia("(hover:none)").matches);
 function showTip(el){
+  if(!canHover)return;
   if(el===lgTipEl)return;lgTipEl=el;
   lgTip.textContent=el.getAttribute("data-tip");
   try{lgTip.hidePopover();}catch(_){}
