@@ -1,4 +1,4 @@
-const CACHE_NAME = "jc-cache-v1";
+const CACHE_NAME = "jc-cache-v2";
 const ASSETS = [
   "./",
   "index.html",
@@ -30,7 +30,17 @@ self.addEventListener("activate", e => {
 });
 
 self.addEventListener("fetch", e => {
+  const req = e.request;
+  // Only ever cache-serve GET requests. Auth/API calls (Firebase sign-in, Firestore,
+  // token refresh) are POSTs — leave them, and every other method, untouched so they
+  // always hit the live network. Intercepting them was causing auth/network-request-failed.
+  if (req.method !== "GET") return;
+  const url = new URL(req.url);
+  // Never intercept Google/Firebase API traffic, even GETs — always go straight to the
+  // network so auth and data stay live and are never served stale from cache.
+  if (url.hostname.endsWith("googleapis.com") ||
+      url.hostname.endsWith("firebaseio.com")) return;
   e.respondWith(
-    caches.match(e.request).then(res => res || fetch(e.request))
+    caches.match(req).then(res => res || fetch(req))
   );
 });
