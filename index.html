@@ -775,6 +775,12 @@
     messagingSenderId:"186574298020",
     appId:"1:186574298020:web:f4dd9c0c412542de1d7f31"
   };
+  /* OAuth 2.0 Web client ID — used ONLY by the installed iOS PWA sign-in path
+     (browser tabs keep the normal Firebase popup). Find it in the Firebase
+     Console → Authentication → Sign-in method → Google → "Web SDK configuration",
+     it starts with 186574298020- and ends in .apps.googleusercontent.com.
+     Paste it here (it's a public client ID, safe to commit). */
+  window.JC_GIS_CLIENT_ID="";
 </script>
 
 <script>
@@ -1722,20 +1728,54 @@ function paintAuthBtn(){
   }
 }
 
-/* installed/home-screen PWA (standalone) can't open a working OAuth popup —
-   iOS in particular fails it as auth/network-request-failed — so use a full-page
-   redirect there and keep the popup for normal browser tabs. */
 function isStandalonePWA(){
   return (window.matchMedia&&window.matchMedia("(display-mode: standalone)").matches)
     ||window.navigator.standalone===true;
 }
+
+/* --- installed iOS PWA sign-in ---------------------------------------------
+   A home-screen PWA can't complete Firebase's popup/redirect flow because that
+   hops through the third-party firebaseapp.com domain, which iOS blocks (storage
+   partitioning + isolated cookie jar). Instead we redirect the whole page
+   straight to Google's OpenID endpoint — a first-party navigation iOS allows —
+   ask for an id_token, and hand that token to Firebase directly. No popup, no
+   cross-domain frame. Only the installed PWA uses this; browser tabs keep the
+   normal popup flow below. */
+function pwaSignIn(){
+  const cid=window.JC_GIS_CLIENT_ID;
+  if(!cid){alert("PWA sign-in isn't configured yet (missing Google client ID).");return;}
+  const nonce=Math.random().toString(36).slice(2)+Date.now().toString(36);
+  const stateTok=Math.random().toString(36).slice(2);
+  try{sessionStorage.setItem("_gState",stateTok);}catch(e){}
+  const params=new URLSearchParams({
+    client_id:cid,
+    redirect_uri:location.origin+location.pathname,   /* e.g. https://haaans.com/japanclan/ */
+    response_type:"id_token",
+    scope:"openid email profile",
+    nonce:nonce,
+    state:stateTok,
+    prompt:"select_account"
+  });
+  location.href="https://accounts.google.com/o/oauth2/v2/auth?"+params.toString();
+}
+/* Called on boot: if we came back from Google with an id_token in the URL
+   fragment, exchange it with Firebase. Success flows through onAuthStateChanged. */
+function handlePwaAuthReturn(){
+  if(!location.hash||location.hash.indexOf("id_token=")<0)return;
+  const h=new URLSearchParams(location.hash.slice(1));
+  const idToken=h.get("id_token"),retState=h.get("state");
+  let wantState=null;try{wantState=sessionStorage.getItem("_gState");sessionStorage.removeItem("_gState");}catch(e){}
+  history.replaceState(null,"",location.pathname+location.search);   /* strip token from the URL */
+  if(!idToken)return;
+  if(wantState&&retState&&retState!==wantState){fbErr({code:"state-mismatch"});return;}
+  const cred=firebase.auth.GoogleAuthProvider.credential(idToken);
+  fbAuth.signInWithCredential(cred).catch(e=>{fbErr(e);if(e&&e.code)alert("Sign-in failed: "+e.code);});
+}
+
 function signIn(){
   if(!fbAuth)return;
-  const provider=new firebase.auth.GoogleAuthProvider();
-  const flow=isStandalonePWA()
-    ?fbAuth.signInWithRedirect(provider)
-    :fbAuth.signInWithPopup(provider);
-  flow.catch(e=>{
+  if(isStandalonePWA()){pwaSignIn();return;}   /* installed PWA: first-party Google redirect */
+  fbAuth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(e=>{
     fbErr(e);
     if(e&&e.code&&e.code!=="auth/popup-closed-by-user")alert("Sign-in failed: "+e.code);
   });
@@ -1752,12 +1792,7 @@ function restoreMe(){const cached=localStorage.getItem("_me");if(cached)try{me=J
   try{
     firebase.initializeApp(window.JC_FB_CONFIG);
     fbAuth=firebase.auth();
-    /* standalone PWA sign-in returns via redirect — surface any failure (success
-       flows through onAuthStateChanged below) */
-    fbAuth.getRedirectResult().catch(e=>{
-      fbErr(e);
-      if(e&&e.code)alert("Sign-in failed: "+e.code);
-    });
+    handlePwaAuthReturn();   /* complete installed-PWA sign-in if we just came back from Google */
     const db=firebase.firestore();
     db.enablePersistence({synchronizeTabs:true}).catch(e=>{console.warn("Offline persistence error:",e);});
     const trip=db.collection("trips").doc(TRIP_ID);
