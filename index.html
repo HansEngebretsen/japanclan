@@ -1722,9 +1722,20 @@ function paintAuthBtn(){
   }
 }
 
+/* installed/home-screen PWA (standalone) can't open a working OAuth popup —
+   iOS in particular fails it as auth/network-request-failed — so use a full-page
+   redirect there and keep the popup for normal browser tabs. */
+function isStandalonePWA(){
+  return (window.matchMedia&&window.matchMedia("(display-mode: standalone)").matches)
+    ||window.navigator.standalone===true;
+}
 function signIn(){
   if(!fbAuth)return;
-  fbAuth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(e=>{
+  const provider=new firebase.auth.GoogleAuthProvider();
+  const flow=isStandalonePWA()
+    ?fbAuth.signInWithRedirect(provider)
+    :fbAuth.signInWithPopup(provider);
+  flow.catch(e=>{
     fbErr(e);
     if(e&&e.code&&e.code!=="auth/popup-closed-by-user")alert("Sign-in failed: "+e.code);
   });
@@ -1741,6 +1752,12 @@ function restoreMe(){const cached=localStorage.getItem("_me");if(cached)try{me=J
   try{
     firebase.initializeApp(window.JC_FB_CONFIG);
     fbAuth=firebase.auth();
+    /* standalone PWA sign-in returns via redirect — surface any failure (success
+       flows through onAuthStateChanged below) */
+    fbAuth.getRedirectResult().catch(e=>{
+      fbErr(e);
+      if(e&&e.code)alert("Sign-in failed: "+e.code);
+    });
     const db=firebase.firestore();
     db.enablePersistence({synchronizeTabs:true}).catch(e=>{console.warn("Offline persistence error:",e);});
     const trip=db.collection("trips").doc(TRIP_ID);
