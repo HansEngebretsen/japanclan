@@ -1,4 +1,4 @@
-const CACHE_NAME = "jc-cache-v2";
+const CACHE_NAME = "jc-cache-v3";
 const ASSETS = [
   "./",
   "index.html",
@@ -41,6 +41,22 @@ self.addEventListener("fetch", e => {
   // network so auth and data stay live and are never served stale from cache.
   if (url.hostname.endsWith("googleapis.com") ||
       url.hostname.endsWith("firebaseio.com")) return;
+  // App shell is network-first: every launch gets the freshest index.html and the
+  // cache is only the offline fallback. Cache-first here would pin installed PWAs
+  // to whatever shell was cached when the worker installed, so deploys that touch
+  // only index.html would never reach them.
+  if (req.mode === "navigate") {
+    e.respondWith(
+      fetch(req).then(res => {
+        const copy = res.clone();
+        caches.open(CACHE_NAME).then(c => c.put(req, copy));
+        return res;
+      }).catch(() =>
+        caches.match(req).then(r => r || caches.match("index.html"))
+      )
+    );
+    return;
+  }
   e.respondWith(
     caches.match(req).then(res => res || fetch(req))
   );
