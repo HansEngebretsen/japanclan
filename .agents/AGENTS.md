@@ -43,7 +43,8 @@ README.md
 - Access is allowlisted: `trips/japan-2026/config/allowlist` holds an `emails` array; the rules `get()` it and deny everything (roster join included) to accounts not on it. **The emails live only in Firestore — never put them in the repo.** Edit the list via the Firebase console or MCP tools.
 - **The itinerary (calendar details: flights, hotels, confirmation numbers) is private data** stored at `trips/japan-2026/config/itinerary` (`{defaultCity, stays, itin}`; `itin[day].stay` is a string key into `stays`). It is NOT in `index.html` — the client hydrates it after sign-in (`hydrateItin()`), caches it in localStorage (`_itin`), and shows a blurred "Sign in to view calendar" overlay (`#calLock`) when signed out. Never hardcode itinerary details back into the repo.
 - Both `config/*` docs are client-read-only (`allowlist` not even readable); write them with admin tooling only.
-- The `firestore.rules` enforce a 13-person roster cap and self-only writes.
+- Pins are per-user but **shown clan-wide**: `pins/{uid}` docs hold `{coins, name, photo}` and you only ever write your own. `pinInfo(id)` derives three display tiers — `mine` (primary token, sorts first), `othersOnly` (someone else pinned it → muted/secondary token + their avatar stack, sorts second), plain (sorts last). Clicking a secondary token just adds your own pin (your avatar joins the stack); unpinning only removes yours. No shared/removal state.
+- The `firestore.rules` enforce a 13-person roster cap; pins/ledger/items writes are all member-scoped (own doc for pins).
 - Deploy rules: `npx firebase-tools deploy --only firestore:rules`
 
 ## Code Map (index.html)

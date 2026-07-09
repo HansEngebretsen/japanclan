@@ -49,7 +49,9 @@ service cloud.firestore {
         allow read, write: if isMember();
       }
 
-      // pins — members read all; you write only your own doc
+      // pins — members read everyone's pins (to show who collected what);
+      // you write only your own doc. Pins are additive per-user, so nobody ever
+      // needs to modify another member's pins.
       match /pins/{uid} {
         allow read: if isMember();
         allow write: if request.auth != null && request.auth.uid == uid && isMember();
