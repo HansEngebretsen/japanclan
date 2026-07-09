@@ -390,11 +390,12 @@
   .ov{position:fixed;inset:0;z-index:50;background:rgba(20,16,10,.42);
     display:flex;align-items:flex-end;justify-content:center;
     opacity:0;pointer-events:none;transition:opacity .2s ease}
-  .ov.show{opacity:1;pointer-events:auto}
+  .ov.show{opacity:1;pointer-events:auto;overscroll-behavior:none;touch-action:none}
   .sheet{background:var(--card);width:100%;max-width:520px;border:1px solid var(--line-2);
     border-radius:14px 14px 0 0;max-height:86vh;overflow-y:auto;
     -webkit-overflow-scrolling:touch;padding:16px 16px calc(env(safe-area-inset-bottom) + 18px);
-    transform:translateY(14px);transition:transform .24s cubic-bezier(.4,0,.2,1)}
+    transform:translateY(14px);transition:transform .24s cubic-bezier(.4,0,.2,1);
+    touch-action:pan-y}
   .ov.show .sheet{transform:translateY(0)}
   @media(min-width:560px){.ov{align-items:center}.sheet{border-radius:14px;max-height:82vh}}
   .sh-grip{width:38px;height:5px;border-radius:3px;background:var(--line-2);opacity:.7;margin:-6px auto 12px;flex:0 0 auto;touch-action:none}
@@ -893,15 +894,15 @@ function scrimOver(hex){
   return `rgb(${mix(ch(0),SCRIM[0])},${mix(ch(2),SCRIM[1])},${mix(ch(4),SCRIM[2])})`;
 }
 function syncThemeColor(){
+  /* In standalone PWA there's no Safari toolbar to tint — skip entirely */
+  if(typeof isStandalonePWA==="function"&&isStandalonePWA())return;
   const cs=getComputedStyle(document.documentElement);
   /* mobile ledger takes over the whole screen → tint the browser chrome to the drawer colour */
   const drawerOpen=document.body.classList.contains("drawer-open")&&window.innerWidth<720;
   /* detail sheet is up → dark scrim covers the page, incl. behind the toolbar */
   const sheetOpen=document.getElementById("ov").classList.contains("show");
-  /* base = the bright top of the page (the --glow peak), not flat --paper */
-  const glow=cs.getPropertyValue("--glow");
-  const gm=glow&&glow.match(/#[0-9a-fA-F]{3,8}/);
-  const top=(gm&&gm[0])||cs.getPropertyValue("--paper").trim();
+  /* base = solid --paper hex (always reliable, unlike --glow gradient regex) */
+  const top=cs.getPropertyValue("--paper").trim();
   let c;
   if(drawerOpen)      c=cs.getPropertyValue("--barseal").trim();
   else if(sheetOpen)  c=/^#/.test(top)?scrimOver(top):top;   /* match the scrimmed page */
@@ -1417,7 +1418,8 @@ function closeModal(){
   const ov=$("#ov");ov.classList.remove("show");ov.setAttribute("aria-hidden","true");
   modalId=null;
   unlockScroll();
-  syncThemeColor();
+  /* Let Safari settle the viewport after scroll-lock removal before reading styles */
+  requestAnimationFrame(()=>syncThemeColor());
 }
 $("#ov").addEventListener("click",e=>{
   const act=e.target.closest("[data-act]");
@@ -1472,6 +1474,8 @@ $("#ov").addEventListener("click",e=>{
   /* swipe down on the dimmed area above the sheet also dismisses */
   const ov=$("#ov");let bStartY=null;
   ov.addEventListener("touchstart",e=>{if(e.target===ov)bStartY=e.touches[0].clientY;else bStartY=null;},{passive:true});
+  /* Block body scroll when touching the backdrop — iOS needs passive:false + preventDefault */
+  ov.addEventListener("touchmove",e=>{if(e.target===ov)e.preventDefault();},{passive:false});
   ov.addEventListener("touchend",e=>{
     if(bStartY==null)return;
     if(e.changedTouches[0].clientY-bStartY>30&&modalId)closeModal();
@@ -1701,7 +1705,8 @@ function closeDrawer(){
   lgBackdrop.classList.remove("show");
   document.body.classList.remove("drawer-open");
   document.body.classList.remove("drawer-peek");
-  syncThemeColor();
+  /* Let Safari settle after drawer transition before reading styles */
+  requestAnimationFrame(()=>syncThemeColor());
 }
 /* peek when the pointer nears the right edge (<=30px), or is over the tab/drawer */
 let lgPeek=false;
