@@ -623,12 +623,14 @@
   .cog-lbl{font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 2px 2px}
   .cogseg+.cog-lbl{margin-top:11px}
   /* "Add to home screen" link — always available even after the tooltip is dismissed */
-  .cog-a2hs-row{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+  /* offline-access / add-to-home is a mobile-only feature — hidden on desktop, shown on touch devices */
+  .cog-a2hs-row{display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
   .cog-a2hs{width:100%;text-align:left;border:0;background:0;cursor:pointer;color:var(--seal);
     font-family:var(--sans);font-size:12.5px;font-weight:600;transition:opacity .12s;
     display:flex;align-items:center;gap:7px;padding:0}
   .cog-a2hs:hover{opacity:.7}
   .cog-a2hs svg{width:15px;height:15px;flex:0 0 auto}
+  @media (hover:none) and (pointer:coarse){.cog-a2hs-row{display:block}}
   @media (display-mode:standalone){.cog-a2hs-row{display:none}}
   /* scheme segmented control — same sliding-bg logic as the payer control */
   .cogseg{position:relative;display:flex;background:var(--soft);border-radius:99px;padding:3px;margin-top:4px}
@@ -721,7 +723,7 @@
           <div class="cog-a2hs-row" id="cogA2hsRow">
             <button type="button" class="cog-a2hs" id="cogA2hs">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><polyline points="8 7 12 3 16 7"/><rect x="4" y="13" width="16" height="8" rx="2"/></svg>
-              Add to home screen
+              Offline access
             </button>
           </div>
         </div>
@@ -816,7 +818,7 @@
   <div class="a2hs-top">
     <img class="a2hs-icon" src="favicon/icon-192.png" alt="Japan Clan app icon">
     <div class="a2hs-txt">
-      <div class="a2hs-title">Add to home</div>
+      <div class="a2hs-title">Offline access</div>
       <div class="a2hs-steps">Tap
         <svg class="a2hs-ic" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="9" fill="currentColor"/><circle class="a2hs-dot" cx="5.6" cy="10" r="1.5"/><circle class="a2hs-dot" cx="10" cy="10" r="1.5"/><circle class="a2hs-dot" cx="14.4" cy="10" r="1.5"/></svg>
         then
@@ -1997,15 +1999,16 @@ function restoreMe(){const cached=localStorage.getItem("_me");if(cached)try{me=J
   });
 })();
 
-/* --- add-to-homescreen hint (iOS Safari only) ---------------------------
+/* --- add-to-homescreen hint (mobile only) -------------------------------
    Auto-appears the first time you engage the ledger to add something —
-   never on plain page load, never inside the installed PWA, and never
-   again after the × is tapped (flag persists in localStorage).
-   Settings → "Add to home screen" re-opens it any time, ignoring dismissal. */
+   never on plain page load, never on desktop, never inside the installed
+   PWA, and never again after the × is tapped (flag persists).
+   Settings → "Offline access" re-opens it any time, ignoring dismissal. */
 (function a2hsHint(){
   const el=$("#a2hs");if(!el)return;
   const isIOS=/iP(hone|ad|od)/.test(navigator.userAgent)
     ||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);   /* iPadOS masquerades as Mac */
+  const isMobile=()=>!!(window.matchMedia&&matchMedia("(hover:none) and (pointer:coarse)").matches);
   const isDismissed=()=>{try{return localStorage.getItem("_a2hs")==="1";}catch(e){return false;}};
   function reveal(){el.hidden=false;requestAnimationFrame(()=>el.classList.add("show"));}
   function hide(persist){
@@ -2013,10 +2016,10 @@ function restoreMe(){const cached=localStorage.getItem("_me");if(cached)try{me=J
     el.classList.remove("show");
     setTimeout(()=>{el.hidden=true;el.classList.remove("expanded");},300);
   }
-  /* auto trigger from the ledger: iOS only, and only until the user dismisses it */
-  window.a2hsAuto=()=>{if(isIOS&&!isStandalonePWA()&&!isDismissed())reveal();};
-  /* manual trigger from Settings: always shows the instructions, ignores dismissal */
-  window.a2hsOpen=()=>{if(!isStandalonePWA())reveal();};
+  /* auto trigger from the ledger: iOS mobile only, and only until the user dismisses it */
+  window.a2hsAuto=()=>{if(isIOS&&isMobile()&&!isStandalonePWA()&&!isDismissed())reveal();};
+  /* manual trigger from Settings: mobile only, always shows the instructions, ignores dismissal */
+  window.a2hsOpen=()=>{if(isMobile()&&!isStandalonePWA())reveal();};
 
   $("#a2hsX").addEventListener("click",()=>hide(true));
   $("#a2hsWut").addEventListener("click",()=>el.classList.add("expanded"));
