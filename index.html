@@ -3657,12 +3657,19 @@
     if (!state.scheme) state.scheme = (state.theme === "light" || state.theme === "dark") ? state.theme : "system";  /* migrate old toggle */
     function resolveScheme() { const s = state.scheme || "system"; return s === "system" ? (mqDark.matches ? "dark" : "light") : s; }
     function syncThemeColor() {
-      const meta = document.getElementById("themeColorMeta");
-      if (!meta) return;
-      const cs = getComputedStyle(document.documentElement);
-      const isLedgerOpen = document.body.classList.contains("drawer-open") && window.innerWidth < 720;
-      meta.setAttribute("content", isLedgerOpen ? cs.getPropertyValue("--barseal").trim() : cs.getPropertyValue("--paper").trim());
-    }
+       const meta = document.getElementById("themeColorMeta");
+       if (!meta) return;
+       const cs = getComputedStyle(document.documentElement);
+       const isLedgerOpen = document.body.classList.contains("drawer-open") && window.innerWidth < 720;
+       const isModalOpen = document.body.classList.contains("modal-open");
+       if (isLedgerOpen) {
+         meta.setAttribute("content", cs.getPropertyValue("--barseal").trim());
+       } else if (isModalOpen) {
+         meta.setAttribute("content", "rgb(20, 16, 10)");
+       } else {
+         meta.setAttribute("content", cs.getPropertyValue("--paper").trim());
+       }
+     }
     function applyScheme() { document.documentElement.setAttribute("data-theme", resolveScheme()); syncThemeColor(); }
     applyScheme();
     mqDark.addEventListener && mqDark.addEventListener("change", () => { if ((state.scheme || "system") === "system") applyScheme(); });
@@ -4185,8 +4192,6 @@
     }
 
     /* ---------------- detail modal ---------------- */
-    /* item photos live at img/items/{id}.jpg except these five */
-    const PNG_ITEMS = new Set(["b_stationery", "d_akihabara", "d_themedcafe", "e_hakodateramen", "j_otaru_ushio"]);
     let modalId = null;
     function buildSheet(i) {
       const has = !!state.coins[i.id], loc = i.area !== "jp";
@@ -4211,7 +4216,7 @@
       </button>
     </div>
     <div class="sh-meta">${vbadge}${when}${flag}${price}</div>
-    ${i.custom ? "" : `<img class="sh-photo" src="img/items/${i.id}.${PNG_ITEMS.has(i.id) ? "png" : "jpg"}" alt="" loading="lazy" onerror="this.remove()">`}
+    ${i.custom ? "" : `<img class="sh-photo" src="img/items/${i.id}.jpg" alt="" onerror="this.remove()">`}
     <div class="sh-desc">${esc(i.note)}</div>
     ${i.vt ? `<div class="sh-vt">${esc(i.vt)}</div>` : ""}
     ${i.tip ? `<div class="sh-tip">${esc(i.tip)}</div>` : ""}
@@ -4245,11 +4250,13 @@
       lockMobileScroll();
       const ov = $("#ov"); ov.setAttribute("aria-hidden", "false");
       requestAnimationFrame(() => ov.classList.add("show"));
+      if (typeof syncThemeColor === "function") syncThemeColor();
     }
     function closeModal() {
       const ov = $("#ov"); ov.classList.remove("show"); ov.setAttribute("aria-hidden", "true");
       modalId = null;
       unlockMobileScroll();
+      if (typeof syncThemeColor === "function") syncThemeColor();
     }
     $("#ov").addEventListener("click", e => {
       const act = e.target.closest("[data-act]");
