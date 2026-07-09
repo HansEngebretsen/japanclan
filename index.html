@@ -642,21 +642,38 @@
   @media(prefers-reduced-motion:reduce){*{transition-duration:.001ms!important}}
   /* ===== add-to-homescreen tooltip (iOS Safari, first visit only) ===== */
   .a2hs{position:fixed;left:12px;right:12px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:45;
-    display:flex;align-items:center;gap:12px;max-width:420px;margin-left:auto;
-    background:var(--ink);color:var(--paper);border-radius:14px;padding:12px 40px 12px 12px;
+    display:flex;flex-direction:column;max-width:420px;margin-left:auto;
+    background:var(--ink);color:var(--paper);border-radius:14px;padding:12px;
     box-shadow:0 10px 30px rgba(0,0,0,.30);
     opacity:0;transform:translateY(12px);transition:opacity .3s ease,transform .3s ease}
   .a2hs.show{opacity:1;transform:none}
   .a2hs::after{content:"";position:absolute;bottom:-9px;right:26px;
     border-left:9px solid transparent;border-right:9px solid transparent;border-top:10px solid var(--ink)}
+  .a2hs-top{display:flex;align-items:center;gap:12px;padding-right:26px}
   .a2hs-icon{width:46px;height:46px;border-radius:10px;flex:0 0 auto;box-shadow:0 1px 5px rgba(0,0,0,.35)}
   .a2hs-title{font-weight:700;font-size:.9rem;letter-spacing:.01em}
-  .a2hs-steps{font-size:.78rem;line-height:1.6;margin-top:2px;opacity:.85}
+  .a2hs-steps{font-size:.78rem;line-height:1.6;margin-top:2px;opacity:.9}
   .a2hs-ic{width:15px;height:15px;vertical-align:-2.5px}
   .a2hs-dot{fill:var(--ink)}
-  .a2hs-chip{display:inline-flex;align-items:center;gap:4px;border:1px solid color-mix(in srgb,currentColor 40%,transparent);border-radius:7px;padding:2px 6px;margin:0 1px}
+  .a2hs-b{font-weight:700}
   .a2hs-x{position:absolute;top:5px;right:5px;border:0;background:none;color:inherit;opacity:.65;padding:5px;cursor:pointer;line-height:0}
   .a2hs-x svg{width:14px;height:14px}
+  .a2hs-wut,.a2hs-hide{align-self:center;margin-top:10px;border:0;background:none;color:inherit;
+    opacity:.78;font:inherit;font-size:.8rem;font-weight:600;cursor:pointer;padding:5px 12px;
+    text-decoration:underline;text-underline-offset:3px}
+  /* carousel — hidden until expanded */
+  .a2hs-car,.a2hs-hide{display:none}
+  .a2hs-car{gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;
+    margin-top:12px;flex:1;align-items:center;padding-bottom:4px;scrollbar-width:none}
+  .a2hs-car::-webkit-scrollbar{display:none}
+  .a2hs-car img{flex:0 0 66%;width:66%;height:auto;object-fit:contain;
+    scroll-snap-align:center;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,.35)}
+  /* expanded: grow to almost full screen, swap wut?→hide, reveal carousel */
+  .a2hs.expanded{top:calc(20px + env(safe-area-inset-top))}
+  .a2hs.expanded::after{display:none}
+  .a2hs.expanded .a2hs-wut{display:none}
+  .a2hs.expanded .a2hs-hide{display:block}
+  .a2hs.expanded .a2hs-car{display:flex}
 </style>
 </head>
 <body>
@@ -780,20 +797,30 @@
 <div class="lg-tip-pop" id="lgTip" popover="manual"></div>
 
 <div class="a2hs" id="a2hs" role="dialog" aria-label="Add to home screen" hidden>
-  <img class="a2hs-icon" src="favicon/icon-192.png" alt="Japan Clan app icon">
-  <div class="a2hs-txt">
-    <div class="a2hs-title">Add to home</div>
-    <div class="a2hs-steps">Tap
-      <svg class="a2hs-ic" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="9" fill="currentColor"/><circle class="a2hs-dot" cx="5.6" cy="10" r="1.5"/><circle class="a2hs-dot" cx="10" cy="10" r="1.5"/><circle class="a2hs-dot" cx="14.4" cy="10" r="1.5"/></svg>
-      then
-      <span class="a2hs-chip"><svg class="a2hs-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>Share</span>, then
-      <span class="a2hs-chip">&ldquo;View More&rdquo;</span>, then
-      <span class="a2hs-chip"><svg class="a2hs-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Add to Home Screen</span>
+  <div class="a2hs-top">
+    <img class="a2hs-icon" src="favicon/icon-192.png" alt="Japan Clan app icon">
+    <div class="a2hs-txt">
+      <div class="a2hs-title">Add to home</div>
+      <div class="a2hs-steps">Tap
+        <svg class="a2hs-ic" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="9" fill="currentColor"/><circle class="a2hs-dot" cx="5.6" cy="10" r="1.5"/><circle class="a2hs-dot" cx="10" cy="10" r="1.5"/><circle class="a2hs-dot" cx="14.4" cy="10" r="1.5"/></svg>
+        then
+        <svg class="a2hs-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+        <span class="a2hs-b">Share</span>, then <span class="a2hs-b">View More</span>, then
+        <svg class="a2hs-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        <span class="a2hs-b">Add to Home Screen</span>
+      </div>
     </div>
+    <button class="a2hs-x" id="a2hsX" type="button" aria-label="Dismiss">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
   </div>
-  <button class="a2hs-x" id="a2hsX" type="button" aria-label="Dismiss">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg>
-  </button>
+  <div class="a2hs-car" id="a2hsCar">
+    <img src="img/addtohome-1.png" alt="Step 1: open the Share menu" loading="lazy">
+    <img src="img/addtohome-2.png" alt="Step 2: tap Add to Home Screen" loading="lazy">
+    <img src="img/addtohome-3.png" alt="Step 3: confirm Add" loading="lazy">
+  </div>
+  <button class="a2hs-wut" id="a2hsWut" type="button">wut?</button>
+  <button class="a2hs-hide" id="a2hsHide" type="button">hide</button>
 </div>
 
 <footer>
@@ -1955,6 +1982,8 @@ function restoreMe(){const cached=localStorage.getItem("_me");if(cached)try{me=J
     el.classList.remove("show");
     setTimeout(()=>{el.hidden=true;},300);
   });
+  $("#a2hsWut").addEventListener("click",()=>el.classList.add("expanded"));
+  $("#a2hsHide").addEventListener("click",()=>el.classList.remove("expanded"));
 })();
 
 if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(e=>console.warn('SW reg failed:',e));
