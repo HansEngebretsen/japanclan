@@ -1,4 +1,4 @@
-const CACHE_NAME = "jc-cache-v12";
+const CACHE_NAME = "jc-cache-v13";
 const ASSETS = [
   "./",
   "index.html",

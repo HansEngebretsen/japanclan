@@ -4170,22 +4170,39 @@
       return on;
     })();
     function devOn(key) { return !!DEV[key]; }
-    function devSet(key, on) {
+    function devSet(key, val) {
       const u = new URL(location.href);
-      if (on) u.searchParams.set(key, "1"); else u.searchParams.delete(key);
+      if (val === false) u.searchParams.delete(key);
+      else u.searchParams.set(key, val === true ? "1" : val);
       location.replace(u);   /* reload so the setting applies from boot, same as opening a shared link */
     }
     const devDlg = document.getElementById("devDlg");
     function openDevDlg() {
-      document.getElementById("devRows").innerHTML = DEV_SETTINGS.map(s =>
-        `<div class="dev-row"><div class="dev-txt"><div class="dev-name">${s.label}</div><div class="dev-desc">${s.desc}</div></div>`
-        + `<button type="button" class="dev-sw${DEV[s.key] ? " on" : ""}" role="switch" aria-checked="${DEV[s.key]}" data-key="${s.key}" aria-label="${s.label}"></button></div>`).join("");
+      const q = new URLSearchParams(location.search);
+      const mockPins = q.get("mock_pins") || "40";
+      document.getElementById("devRows").innerHTML = DEV_SETTINGS.map(s => {
+        let html = `<div class="dev-row"><div class="dev-txt"><div class="dev-name">${s.label}</div><div class="dev-desc">${s.desc}</div></div>`
+        + `<button type="button" class="dev-sw${DEV[s.key] ? " on" : ""}" role="switch" aria-checked="${DEV[s.key]}" data-key="${s.key}" aria-label="${s.label}"></button></div>`;
+        if (s.key === "mock" && DEV["mock"]) {
+          html += `<div class="dev-row" style="border-top:1px dashed var(--line); border-bottom:none; margin-top:-1px;">
+            <div class="dev-txt"><div class="dev-name">Mock Pin Volume</div><div class="dev-desc">Target ~${mockPins}% of items pinned</div></div>
+            <input type="range" class="dev-slider" data-key="mock_pins" min="0" max="100" value="${mockPins}" step="10" style="width: 100px; accent-color: var(--seal);">
+          </div>`;
+        }
+        return html;
+      }).join("");
       devDlg.hidden = false;
     }
+    devDlg.addEventListener("change", e => {
+      const el = e.target;
+      if (el.classList.contains("dev-slider")) {
+         devSet(el.dataset.key, el.value);
+      }
+    });
     devDlg.addEventListener("click", e => {
       const sw = e.target.closest(".dev-sw");
       if (sw) { devSet(sw.dataset.key, !DEV[sw.dataset.key]); return; }
-      if (!e.target.closest(".devdlg-card")) devDlg.hidden = true;
+      if (!e.target.closest(".devdlg-card") && !e.target.closest(".dev-slider")) devDlg.hidden = true;
     });
     let devEscAt = 0;
     document.addEventListener("keydown", e => {
@@ -4677,16 +4694,18 @@
       BUCKETS.forEach(([bk, label]) => {
         const items = ITEMS.filter(i => bregOf(i) === bk);
         const got = items.filter(i => pinInfo(i.id).has);
-        const byCat = {}; got.forEach(i => { (byCat[i.cat] = byCat[i.cat] || []).push(i); });
+        const myPins = got.filter(i => pinInfo(i.id).mine);
+        const otherPins = got.filter(i => pinInfo(i.id).othersOnly);
         let stacks = "";
-        ["eat", "do", "buy", "july"].forEach(c => {
-          const list = byCat[c]; if (!list || !list.length) return;
-          const coins = list.slice(0, 5).map(i => {
-            const oo = pinInfo(i.id).othersOnly;
-            return `<span class="mc${oo ? " oth" : ""}" style="${oo ? "" : coinStyle(i.id)}">${CATJP[c]}</span>`;
-          }).join("");
-          stacks += `<span class="stack">${coins}<span class="sct">${list.length}</span></span>`;
-        });
+        
+        if (myPins.length) {
+          const coins = myPins.slice(0, 5).map(i => `<span class="mc" style="${coinStyle(i.id)}">${CATJP[i.cat]}</span>`).join("");
+          stacks += `<span class="stack">${coins}<span class="sct">${myPins.length}</span></span>`;
+        }
+        if (otherPins.length) {
+          const coins = otherPins.slice(0, 5).map(i => `<span class="mc oth" style="${coinStyle(i.id)}">${CATJP[i.cat]}</span>`).join("");
+          stacks += `<span class="stack">${coins}<span class="sct">${otherPins.length}</span></span>`;
+        }
         const count = got.length ? `${got.length}/${items.length}` : `${items.length}<span class="vc-lbl"> available</span>`;
         const v = document.createElement("div");
         v.className = "vault" + (selBucket === bk ? " sel" : ""); v.dataset.bk = bk;
@@ -5474,7 +5493,27 @@
 
     /* init */
     updateStampTog();
-    if (devOn("mock")) hydrateItin(null);   /* dev: unlock the calendar with the anonymized itinerary, no sign-in needed */
+    if (devOn("mock")) {
+      hydrateItin(null);   /* dev: unlock the calendar with the anonymized itinerary, no sign-in needed */
+      
+      /* inject mock pins and profiles for layout testing */
+      if (!me) me = { uid: "m_me", name: "Demo User", photo: "https://i.pravatar.cc/150?img=33" };
+      const mockProfiles = [
+        { uid: "m1", name: "Akira", photo: "https://i.pravatar.cc/150?img=11" },
+        { uid: "m2", name: "Naomi", photo: "https://i.pravatar.cc/150?img=9" },
+        { uid: "m3", name: "Kenji", photo: "https://i.pravatar.cc/150?img=68" }
+      ];
+      const q = new URLSearchParams(location.search);
+      const mockPinsPct = parseInt(q.get("mock_pins") || "40", 10);
+      ITEMS.forEach((it, i) => {
+        const hash = (it.id.charCodeAt(it.id.length - 1) + i * 13) % 100;
+        if (hash < mockPinsPct) {
+          const p = [...mockProfiles];
+          for (let j = 0; j < hash % 10; j++) p.push(p.shift()); /* rotate slightly */
+          othersByItem[it.id] = p.slice(0, (hash % 3) + 1);
+        }
+      });
+    }
     renderCal(); renderBuckets(); renderChips(); renderGrid(); refreshEntry(); renderLedger();
 
     /* ================= Firebase sync (optional layer — app works fully without it) ================= */
@@ -5485,11 +5524,13 @@
 
     /* first sign-in: union my local pins into the cloud (merge keeps any pins made on other devices) */
     function mergeMyPins() {
+      if (devOn("mock")) return;
       if (!me || !fbPins) return;
       fbPins.doc(me.uid).set({ coins: state.coins || {}, name: me.name, photo: me.photo || null, updatedAt: Date.now() }, { merge: true }).catch(fbErr);
     }
     /* per-toggle: touch only the one key so concurrent devices don't clobber each other */
     function syncPin(id, on) {
+      if (devOn("mock")) return;
       if (!me || !fbPins) return;
       const ref = fbPins.doc(me.uid);
       if (on) ref.set({ coins: { [id]: true }, name: me.name, photo: me.photo || null, updatedAt: Date.now() }, { merge: true }).catch(fbErr);
@@ -5497,6 +5538,7 @@
     }
 
     function subscribePins() {
+      if (devOn("mock")) return;
       if (pinsUnsub) pinsUnsub();
       pinsUnsub = fbPins.onSnapshot(snap => {
         const others = Object.create(null); let mine = null;
