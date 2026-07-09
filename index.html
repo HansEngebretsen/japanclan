@@ -842,6 +842,15 @@
       margin-top: 3px
     }
 
+    .itin-sub a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .itin-sub a:hover {
+      text-decoration: underline;
+    }
+
     /* where you sleep — just a hotel icon + name, links back to check-in day */
     .itin-stay {
       display: flex;
@@ -3912,9 +3921,30 @@
       }
       let stayHTML = "";
       if (it.stay) {
-        const s = it.stay, isLink = s.day !== d;
-        stayHTML = `<button class="itin-stay${isLink ? " link" : ""}${it.main ? "" : " solo"}" ${isLink ? `data-goto="${s.day}"` : "disabled"}>`
-          + `<span class="sic">${ICONS.hotel}</span><span class="snm">${esc(s.title)}</span></button>`;
+        const s = it.stay;
+        const isCheckIn = s.day === d;
+        if (isCheckIn) {
+          const mHTML = s.addr ? `<a class="itin-ttl" href="${mapsLink(s.addr)}" target="_blank" rel="noopener">${esc(s.title)}</a>` : `<span class="itin-ttl">${esc(s.title)}</span>`;
+          const sHTML = s.addr ? `<div class="itin-sub"><a href="${mapsLink(s.addr)}" target="_blank" rel="noopener">${esc(s.addr)}</a></div>` : "";
+          const tHTML = s.in ? `<div class="itin-time">Check in: ${esc(s.in)}</div>` : "";
+          stayHTML = `<div class="itin-main" style="margin-top: ${it.main ? '16px' : '0'};"><div class="itin-ic">${ICONS.hotel}</div>`
+            + `<div class="itin-mn">${tHTML}${mHTML}${sHTML}</div>`
+            + `${s.addr ? mapThumb(s.addr, 12) : ""}</div>`;
+        } else {
+          let stayDaysCount = 0;
+          for (let i = 0; i < DAYS.length; i++) {
+            if (ITIN[DAYS[i]] && ITIN[DAYS[i]].stay === s) stayDaysCount++;
+          }
+          const currentDayOfStay = d - s.day + 1;
+          const dayText = `Day ${currentDayOfStay} / ${stayDaysCount}`;
+
+          stayHTML = `<button class="itin-stay link${it.main ? "" : " solo"}" data-goto="${s.day}">`
+            + `<span class="sic">${ICONS.hotel}</span>`
+            + `<div style="display:flex; flex-direction:column; align-items:flex-start; line-height:1.2;">`
+            + `<span style="font-size:9px; font-family:var(--mono); color:var(--muted); text-transform:uppercase; margin-bottom:2px;">${dayText}</span>`
+            + `<span class="snm">${esc(s.title)}</span>`
+            + `</div></button>`;
+        }
       }
       return `<div class="itin"><div class="itin-arrows">`
         + `<button class="itin-arrow" data-prev ${d > first ? "" : "disabled"} aria-label="Previous day">${ICONS.chevL}</button>`
