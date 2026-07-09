@@ -402,8 +402,7 @@
       -webkit-font-smoothing: antialiased;
       padding-bottom: calc(env(safe-area-inset-bottom) + 30px);
       background-image: var(--bg-pattern), var(--glow);
-      background-attachment: fixed;
-      transition: background-color 0s linear
+      background-attachment: fixed
     }
 
     button,
@@ -1606,8 +1605,7 @@
       background-color: var(--paper);
       z-index: 99999;
       pointer-events: none;
-      opacity: 0.01;
-      transition: background-color 0s linear
+      opacity: 0.01
     }
 
     .safari-toolbar-fix-top {
@@ -1619,16 +1617,14 @@
       background-color: var(--paper);
       z-index: 99999;
       pointer-events: none;
-      opacity: 0.01;
-      transition: background-color 0s linear
+      opacity: 0.01
     }
 
     @media(max-width:719px) {
 
       body.drawer-open .safari-toolbar-fix,
       body.drawer-open .safari-toolbar-fix-top {
-        background-color: var(--barseal);
-        transition: background-color 0s linear 0.3s
+        background-color: var(--barseal)
       }
     }
 
@@ -3114,7 +3110,6 @@
       body.drawer-open {
         background-color: var(--barseal);
         background-image: none;
-        transition: background-color 0s linear 0.3s;
       }
 
       /* Make ledger drawer background seamless solid var(--barseal) */
@@ -3214,8 +3209,8 @@
 
       /* Ledger Entry alignment & sizing */
       .lg-amtrow { align-items: center; margin-top: 10px; padding-bottom: 0; }
-      .lg-cur { font-size: 28px; height: 38px; line-height: 38px; margin-bottom: 0; }
-      #lgAmt { font-size: 36px; height: 50px; padding: 0; }
+      .lg-cur { font-size: 30px; height: 48px; line-height: 48px; margin-bottom: 0; }
+      #lgAmt { font-size: 38px; height: 60px; padding: 0; }
       .lg-payer { position: relative; margin-bottom: 0; }
       .lg-payer-lbl {
         position: absolute;
@@ -4335,7 +4330,7 @@
         lockMobileScroll();
       }
       renderLedger();
-      if (typeof syncThemeColor === "function") setTimeout(syncThemeColor, 300);
+      if (typeof syncThemeColor === "function") syncThemeColor();
       setTimeout(() => { lgAmt.focus(); refreshPayerSeg(); }, 310);
     }
     function closeDrawer() {
