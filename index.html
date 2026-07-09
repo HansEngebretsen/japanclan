@@ -1602,7 +1602,7 @@
       left: 10%;
       width: 80%;
       height: 4px;
-      background-color: var(--paper);
+      background-color: transparent;
       z-index: 99999;
       pointer-events: none;
       opacity: 0.01
@@ -1614,7 +1614,7 @@
       left: 10%;
       width: 80%;
       height: 4px;
-      background-color: var(--paper);
+      background-color: transparent;
       z-index: 99999;
       pointer-events: none;
       opacity: 0.01
@@ -3198,6 +3198,11 @@
       /* Shuffle & Hide Token (stamp toggle) */
       .fbtn { width: 28px; height: 28px; }
       .fbtn svg { width: 21px; height: 21px; }
+
+      /* Add-your-own sheet */
+      .sh-catopt { font-size: 11px; padding: 8px 14px; }
+      .sh-catopt .cj { font-size: 13px; }
+      .sh-add { font-size: 12.5px; padding: 14px; }
       .stamptog-mark { width: 26px; height: 26px; font-size: 16px; }
       .stamptog::after { width: 26px; }
       
@@ -3349,6 +3354,13 @@
             <path d="M21 16v5h-5" />
             <path d="m15 15 6 6" />
             <path d="M4 4l5 5" />
+          </svg>
+        </button>
+        <button class="fbtn" id="addItemBtn" type="button" aria-label="Add your own item" data-tip="Add your own">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
           </svg>
         </button>
       </div>
@@ -3924,11 +3936,17 @@
       { id: "j_racecourse_fireworks", cat: "july", reg: "tokyo", area: "tokyo", lvl: 0, name: "Tokyo Racecourse Fireworks", note: "A spectacular pyrotechnic exhibition launching 14,000 shells synchronized perfectly to energetic J-Pop music — this high-tech show utilizes the racetrack's massive, unobstructed field of view to create an immersive dome of light and sound.", tip: "This is a strictly ticket-only event with no free public viewing areas on the grounds, so secure your seat online through Lawson Ticket exactly one month prior.", flag: "Summer", when: "JUL 1", vd: "maybe", vt: "A thrilling and comfortable musical fireworks show, though the early July date and paid-only seating require precise planning." },
     ];
 
+    /* clan-added custom items — cached locally so they render instantly (and offline);
+       the shared Firestore collection is authoritative once someone signs in */
+    state.customItems = Array.isArray(state.customItems) ? state.customItems : [];
+    state.customItems.forEach(c => { if (c && c.id && !ITEMS.some(i => i.id === c.id)) ITEMS.push(c); });
+    function saveCustoms() { state.customItems = ITEMS.filter(i => i.custom); save(); }
+
     /* ---------------- runtime ---------------- */
     let catF = "all", selBucket = null, shuffleRank = null, showStamped = (state.showStamped !== false), sortPending = false;
     /* sync state: `me` = signed-in user (null when signed out); othersByItem[id] = [{uid,name,photo}] who else pinned it */
     let me = null, othersByItem = Object.create(null);
-    let fbAuth = null, fbLedger = null, fbPins = null, fbRoster = null; /* Firestore refs, set once Firebase loads */
+    let fbAuth = null, fbLedger = null, fbPins = null, fbRoster = null, fbItems = null; /* Firestore refs, set once Firebase loads */
     const open = new Set();
     const $ = (s, e = document) => e.querySelector(s);
     const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -4052,6 +4070,10 @@
       const src = loc ? `https://maps.google.com/maps?q=${encodeURIComponent(i.name + " " + i.area + " Japan")}&z=14&output=embed` : "";
       const link = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(i.name + " " + (loc ? i.area : "Japan"))}`;
       const when = i.when ? `<span class="flag">${esc(i.when)}</span>` : "";
+      /* clan-added items carry a byline; the person who added one can remove it */
+      const mine = i.custom && (!i.byUid || (me && me.uid === i.byUid));
+      const by = i.custom ? `<div class="sh-by">Added by ${esc(mine ? "you" : (i.byName || "the clan"))}</div>` : "";
+      const del = mine ? `<div class="sh-act"><button type="button" class="da sh-del" data-act="del-custom">Remove item</button></div>` : "";
       return `<div class="sh-top">
       <button class="sh-coin ${has ? "has" : ""}" data-act="coin" aria-label="${has ? "Remove" : "Collect"} coin">${has ? CATJP[i.cat] : "＋"}${othersBadge(i.id)}</button>
       <div class="sh-name">${esc(i.name)}</div>
@@ -4067,7 +4089,8 @@
     ${i.vt ? `<div class="sh-vt">${esc(i.vt)}</div>` : ""}
     ${i.tip ? `<div class="sh-tip">${esc(i.tip)}</div>` : ""}
     ${loc ? `<div class="sh-map"><iframe loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="${src}"></iframe></div>
-      <div class="sh-act"><a class="da" href="${link}" target="_blank" rel="noreferrer">Directions in Maps ↗</a></div>` : ""}`;
+      <div class="sh-act"><a class="da" href="${link}" target="_blank" rel="noreferrer">Directions in Maps ↗</a></div>` : ""}
+    ${by}${del}`;
     }
     let lockedY = 0;
     function lockMobileScroll() {
@@ -4103,14 +4126,114 @@
     }
     $("#ov").addEventListener("click", e => {
       const act = e.target.closest("[data-act]");
-      if (e.target === $("#ov") || (act && act.dataset.act === "close")) { closeModal(); return; }
-      if (act && act.dataset.act === "coin" && modalId) {
+      if (e.target === $("#ov")) {
+        if (modalId === COMPOSE_ID && composeDirty()) return;   /* a stray backdrop tap never eats a half-written item */
+        closeModal(); return;
+      }
+      if (act && act.dataset.act === "close") { closeModal(); return; }
+      if (act && act.dataset.act === "ccat" && modalId === COMPOSE_ID) {
+        composeCat = act.dataset.cat;
+        $("#sheet").querySelectorAll(".sh-catopt").forEach(b => b.classList.toggle("on", b.dataset.cat === composeCat));
+        const cc = $("#cCoin"); if (cc) cc.textContent = CATJP[composeCat];
+        return;
+      }
+      if (act && act.dataset.act === "add-custom" && modalId === COMPOSE_ID) { addCustomItem(); return; }
+      if (act && act.dataset.act === "del-custom" && modalId && modalId !== COMPOSE_ID) {
+        if (!act.classList.contains("arm")) { act.classList.add("arm"); act.textContent = "Tap again to remove"; return; }
+        deleteCustomItem(modalId); return;
+      }
+      if (act && act.dataset.act === "coin" && modalId && modalId !== COMPOSE_ID) {
         toggleCoin(modalId);
         const c = $("#sheet").querySelector(".sh-coin");
         c.className = "sh-coin" + (state.coins[modalId] ? " has" : "");
         c.innerHTML = (state.coins[modalId] ? CATJP[ITEMS.find(x => x.id === modalId).cat] : "＋") + othersBadge(modalId);
       }
     });
+
+    /* ---------------- add-your-own item (compose mode of the same sheet) ---------------- */
+    const COMPOSE_ID = "__compose";
+    const CUSTOM_CATS = [["eat", "Eat"], ["do", "Do"], ["buy", "Buy"]];
+    let composeCat = "do";
+    function composeHTML() {
+      const chips = CUSTOM_CATS.map(([k, l]) =>
+        `<button type="button" class="sh-catopt${k === composeCat ? " on" : ""}" data-act="ccat" data-cat="${k}"><span class="cj">${CATJP[k]}</span>${l}</button>`).join("");
+      return `<div class="sh-top">
+      <span class="sh-coin has" id="cCoin" aria-hidden="true">${CATJP[composeCat]}</span>
+      <input class="sh-name sh-in" id="cName" placeholder="Name it…" maxlength="80" autocomplete="off" enterkeyhint="next" aria-label="Item name">
+      <button class="sh-x" data-act="close" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+    <div class="sh-catrow" role="group" aria-label="Category">${chips}</div>
+    <textarea class="sh-desc sh-in" id="cNote" rows="2" maxlength="400" aria-label="Description"
+      placeholder="What is it — and why is it worth a coin? Paste a description here."></textarea>
+    <div class="sh-tip"><input class="sh-in" id="cTip" maxlength="200" autocomplete="off" enterkeyhint="done" aria-label="Tip" placeholder="Pro tip (optional)"></div>
+    <div class="sh-act"><button type="button" class="sh-add" id="cAdd" data-act="add-custom" disabled>Add to the list</button></div>
+    <div class="sh-by">${me ? "Shared with the whole clan · stamped as yours" : "Saves on this device — sign in to share it with the clan"}</div>`;
+    }
+    function composeDirty() {
+      return ["cName", "cNote", "cTip"].some(id => { const el = document.getElementById(id); return el && el.value.trim(); });
+    }
+    function composeValid() {
+      const n = document.getElementById("cName"), d = document.getElementById("cNote");
+      return !!(n && d && n.value.trim() && d.value.trim());
+    }
+    function openCompose() {
+      modalId = COMPOSE_ID;
+      $("#sheet").innerHTML = composeHTML();
+      lockMobileScroll();
+      const ov = $("#ov"); ov.setAttribute("aria-hidden", "false");
+      requestAnimationFrame(() => ov.classList.add("show"));
+      const n = $("#cName"); if (n) n.focus({ preventScroll: true });
+    }
+    { const aib = $("#addItemBtn"); if (aib) aib.addEventListener("click", openCompose); }
+    $("#sheet").addEventListener("input", e => {
+      if (modalId !== COMPOSE_ID) return;
+      if (e.target.id === "cNote") { e.target.style.height = "auto"; e.target.style.height = e.target.scrollHeight + "px"; }
+      const b = $("#cAdd"); if (b) b.disabled = !composeValid();
+    });
+    $("#sheet").addEventListener("keydown", e => {
+      if (modalId !== COMPOSE_ID || e.key !== "Enter") return;
+      if ((e.metaKey || e.ctrlKey) && composeValid()) { e.preventDefault(); addCustomItem(); return; }
+      if (e.target.id === "cName") { e.preventDefault(); $("#cNote").focus(); }
+      else if (e.target.id === "cNote" && !e.shiftKey) { e.preventDefault(); $("#cTip").focus(); }
+      else if (e.target.id === "cTip" && composeValid()) { e.preventDefault(); addCustomItem(); }
+    });
+    function addCustomItem() {
+      const name = $("#cName").value.trim(), note = $("#cNote").value.trim(), tip = $("#cTip").value.trim();
+      if (!name || !note) return;
+      const id = "c_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      const item = { id, cat: composeCat, reg: "either", area: "jp", lvl: 0, name, note, tip, flag: "", custom: true, byUid: me ? me.uid : null, byName: me ? me.name : null, ts: Date.now() };
+      ITEMS.push(item); saveCustoms();
+      if (me && fbItems) fbItems.doc(id).set({ name, note, tip, cat: item.cat, byUid: me.uid, byName: me.name, ts: item.ts }).catch(fbErr);
+      state.coins[id] = 1; save();                 /* auto-collect: it's your token from the moment it exists */
+      if (me) syncPin(id, true);
+      /* relax any filter that would hide the brand-new card */
+      if (!showStamped) { showStamped = true; state.showStamped = true; save(); updateStampTog(); }
+      if (catF !== "all" && catF !== item.cat) catF = item.cat;
+      if (selBucket && selBucket !== "any") selBucket = null;
+      renderChips(); renderBuckets(); renderGrid();
+      closeModal();
+      setTimeout(() => {                           /* after the scroll unlock, bring the new card into view */
+        const card = document.querySelector(`.card[data-id="${CSS.escape(id)}"]`);
+        if (!card) return;
+        card.scrollIntoView({ behavior: "smooth", block: "center" });
+        const coin = card.querySelector(".coin");
+        if (coin) { coin.classList.remove("pulse"); void coin.offsetWidth; coin.classList.add("pulse"); }
+      }, 320);
+    }
+    function deleteCustomItem(id) {
+      const ix = ITEMS.findIndex(x => x.id === id); if (ix < 0) return;
+      ITEMS.splice(ix, 1);
+      delete state.coins[id];
+      saveCustoms();
+      if (me) { syncPin(id, false); if (fbItems) fbItems.doc(id).delete().catch(fbErr); }
+      renderChips(); renderBuckets(); renderGrid();
+      closeModal();
+    }
     $("#ov").addEventListener("touchmove", e => {
       if (!e.target.closest(".sheet")) e.preventDefault();
     }, { passive: false });
@@ -4510,7 +4633,7 @@
     const TRIP_ID = "japan-2026";
     function fbErr(e) { console.warn("[sync]", e && e.code || e); }
     let localExpensesBackup = null;                 /* the signed-out (local) ledger, restored on sign-out */
-    let ledgerUnsub = null, pinsUnsub = null;
+    let ledgerUnsub = null, pinsUnsub = null, itemsUnsub = null;
 
     /* first sign-in: union my local pins into the cloud (merge keeps any pins made on other devices) */
     function mergeMyPins() {
@@ -4538,6 +4661,31 @@
         if (mine) { state.coins = Object.assign({}, mine); save(); }   /* my cloud pins are authoritative; cache locally */
         renderBuckets(); renderGrid();
         if (modalId) { const c = $("#sheet").querySelector(".sh-coin"); if (c) { c.className = "sh-coin" + (state.coins[modalId] ? " has" : ""); c.innerHTML = (state.coins[modalId] ? CATJP[ITEMS.find(x => x.id === modalId).cat] : "＋") + othersBadge(modalId); } }
+      }, fbErr);
+    }
+
+    /* clan-added items — one shared collection everyone reads; the snapshot is authoritative */
+    function mergeMyCustomItems() {
+      if (!me || !fbItems) return;
+      /* upload items I created (incl. ones added while signed out, which have no byUid yet) */
+      ITEMS.filter(i => i.custom && (!i.byUid || i.byUid === me.uid)).forEach(i => {
+        fbItems.doc(i.id).set({ name: i.name, note: i.note, tip: i.tip || "", cat: i.cat, byUid: me.uid, byName: i.byName || me.name, ts: i.ts || Date.now() }, { merge: true }).catch(fbErr);
+      });
+    }
+    function subscribeItems() {
+      if (itemsUnsub) itemsUnsub();
+      itemsUnsub = fbItems.onSnapshot(snap => {
+        const cloud = [];
+        snap.forEach(doc => {
+          const d = doc.data() || {};
+          cloud.push({ id: doc.id, cat: CATJP[d.cat] ? d.cat : "do", reg: "either", area: "jp", lvl: 0, name: d.name || "?", note: d.note || "", tip: d.tip || "", flag: "", custom: true, byUid: d.byUid || null, byName: d.byName || null, ts: d.ts || 0 });
+        });
+        cloud.sort((a, b) => a.ts - b.ts);
+        for (let i = ITEMS.length - 1; i >= 0; i--) if (ITEMS[i].custom) ITEMS.splice(i, 1);
+        cloud.forEach(c => ITEMS.push(c));
+        saveCustoms();
+        renderChips(); renderBuckets(); renderGrid();
+        if (modalId && modalId !== COMPOSE_ID && !ITEMS.some(x => x.id === modalId)) closeModal();   /* the open item was removed elsewhere */
       }, fbErr);
     }
 
@@ -4641,6 +4789,7 @@
         const trip = db.collection("trips").doc(TRIP_ID);
         fbLedger = trip.collection("ledger");
         fbPins = trip.collection("pins");
+        fbItems = trip.collection("items");
         fbRoster = trip.collection("roster").doc("list");
       } catch (e) { console.warn("[sync] init failed", e); return; }
       window.fbReady = true;
@@ -4665,9 +4814,11 @@
           /* join the roster (rules cap it at 13, self-add only) */
           try { await fbRoster.set({ members: { [me.uid]: { email: me.email, name: me.name, photo: me.photo || null, ts: Date.now() } } }, { merge: true }); }
           catch (e) { fbErr(e); if (e && e.code === "permission-denied") { alert("This trip is full (13 people max) or sign-in isn't allowed for this account."); await fbAuth.signOut(); return; } }
-          /* merge local pins up, then subscribe (snapshot makes cloud authoritative) */
+          /* merge local pins + custom items up, then subscribe (snapshots make cloud authoritative) */
           mergeMyPins();
           subscribePins();
+          mergeMyCustomItems();
+          subscribeItems();
           /* swap the local ledger out for the shared one */
           localExpensesBackup = state.expenses;
           subscribeLedger();
@@ -4677,6 +4828,7 @@
           cacheMe();   /* clear the cache on sign-out */
           if (ledgerUnsub) { ledgerUnsub(); ledgerUnsub = null; }
           if (pinsUnsub) { pinsUnsub(); pinsUnsub = null; }
+          if (itemsUnsub) { itemsUnsub(); itemsUnsub = null; }   /* customs stay visible from the local cache */
           othersByItem = Object.create(null);
           if (localExpensesBackup) { state.expenses = localExpensesBackup; localExpensesBackup = null; }
           else { state.expenses = Array.isArray(Store.load().expenses) ? Store.load().expenses : []; }
