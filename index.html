@@ -3116,13 +3116,6 @@
         background-color: var(--barseal);
         background-image: none;
       }
-      body.drawer-open header,
-      body.drawer-open .wrap,
-      body.drawer-open footer {
-        background-color: var(--paper);
-        background-image: var(--bg-pattern), var(--glow);
-        background-attachment: fixed;
-      }
 
       /* Make ledger drawer background seamless solid var(--barseal) */
       .lgdrawer {
@@ -4106,9 +4099,7 @@
     function closeModal() {
       const ov = $("#ov"); ov.classList.remove("show"); ov.setAttribute("aria-hidden", "true");
       modalId = null;
-      setTimeout(() => {
-        unlockMobileScroll();
-      }, 250);
+      unlockMobileScroll();
     }
     $("#ov").addEventListener("click", e => {
       const act = e.target.closest("[data-act]");
@@ -4361,14 +4352,12 @@
       setTimeout(() => { lgAmt.focus(); refreshPayerSeg(); }, 310);
     }
     function closeDrawer() {
+      if (document.body.classList.contains("modal-open")) unlockMobileScroll();
       lgdrawer.classList.remove("open");
       lgBackdrop.classList.remove("show");
       document.body.classList.remove("drawer-open");
       document.body.classList.remove("drawer-peek");
       if (typeof syncThemeColor === "function") syncThemeColor();
-      setTimeout(() => {
-        if (document.body.classList.contains("modal-open")) unlockMobileScroll();
-      }, 300);
     }
     /* peek when the pointer nears the right edge (<=30px), or is over the tab/drawer */
     let lgPeek = false;
