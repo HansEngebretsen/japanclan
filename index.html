@@ -928,7 +928,7 @@
       height: 60px;
       overflow: hidden;
       position: relative;
-      display: flex;
+      display: none;
       align-items: center;
       justify-content: center;
       margin-top: 1px;
@@ -1639,6 +1639,7 @@
       body.modal-open .safari-toolbar-fix-top {
         background-color: rgb(20, 16, 10)
       }
+
       body.drawer-open .safari-toolbar-fix,
       body.drawer-open .safari-toolbar-fix-top {
         background-color: var(--barseal)
@@ -1718,6 +1719,7 @@
       padding: 0 0 16px;
       cursor: grab;
     }
+
     .sh-handle::before {
       content: '';
       width: 36px;
@@ -1726,8 +1728,11 @@
       background: var(--line);
       opacity: .45;
     }
+
     @media(min-width:560px) {
-      .sh-handle { display: none; }
+      .sh-handle {
+        display: none;
+      }
     }
 
     .sh-top {
@@ -1884,7 +1889,7 @@
       background: var(--soft);
       overflow: hidden;
     }
-    
+
     .sh-photo {
       display: block;
       width: 100%;
@@ -1893,7 +1898,7 @@
       opacity: 0;
       transition: opacity .4s ease;
     }
-    
+
     .sh-photo.loaded {
       opacity: 1;
     }
@@ -1951,7 +1956,7 @@
       opacity: 0;
       transition: opacity .4s ease;
     }
-    
+
     .sh-map iframe.loaded {
       opacity: 1;
     }
@@ -3409,6 +3414,7 @@
 
     /* mobile size overrides to make interactive elements larger */
     @media (max-width: 719px) {
+
       /* Safari Liquid Glass Body Fallback */
       body.drawer-open {
         background-color: var(--barseal);
@@ -3430,6 +3436,7 @@
         padding-right: 0;
         margin-bottom: 20px;
       }
+
       .lgdrawer .lg-x {
         display: grid;
         position: static;
@@ -3442,11 +3449,13 @@
         height: 38px;
         place-items: center;
       }
+
       .lgdrawer .lg-x svg {
         width: 24px;
         height: 24px;
         stroke-width: 2.2px;
       }
+
       .sh-x {
         position: absolute;
         top: 16px;
@@ -3457,98 +3466,274 @@
         display: grid;
         place-items: center;
       }
+
       .sh-x svg {
         width: 24px;
         height: 24px;
         stroke-width: 2.2px;
       }
-      .a2hs-x { top: 10px; right: 10px; }
-      .a2hs-x svg { width: 24px; height: 24px; }
-      
+
+      .a2hs-x {
+        top: 10px;
+        right: 10px;
+      }
+
+      .a2hs-x svg {
+        width: 24px;
+        height: 24px;
+      }
+
       /* Next/prev (theme cycler) and Size up (expand/arrows) */
-      .cog-it { width: 24px; height: 32px; }
-      .cog-it svg { width: 20px; height: 20px; stroke-width: 3.2px; }
-      .itin { padding-bottom: 13px; }
-      .itin-tl { padding-top: 0; }
-      .itin-arrows { height: auto; padding: 11px 0px; margin-bottom: 0; }
-      .itin-arrow { width: 38px; height: 38px; }
-      .itin-arrow svg { width: 20px; height: 20px; stroke-width: 2.2px; }
-      .itin-expand svg { width: 16px; height: 16px; }
-      .itin-close svg { width: 20px; height: 20px; }
-      
+      .cog-it {
+        width: 24px;
+        height: 32px;
+      }
+
+      .cog-it svg {
+        width: 20px;
+        height: 20px;
+        stroke-width: 3.2px;
+      }
+
+      .itin {
+        padding-bottom: 13px;
+      }
+
+      .itin-tl {
+        padding-top: 0;
+      }
+
+      .itin-arrows {
+        height: auto;
+        padding: 11px 0px;
+        margin-bottom: 0;
+      }
+
+      .itin-arrow {
+        width: 38px;
+        height: 38px;
+      }
+
+      .itin-arrow svg {
+        width: 20px;
+        height: 20px;
+        stroke-width: 2.2px;
+      }
+
+      .itin-expand svg {
+        width: 16px;
+        height: 16px;
+      }
+
+      .itin-close svg {
+        width: 20px;
+        height: 20px;
+      }
+
       /* Disable sticky hover states on mobile click elements */
-      .itin-arrow:hover:not(:disabled) { color: var(--ink-2); }
-      .cog-it:hover { color: var(--muted); }
-      .fbtn:hover { color: var(--ink-2); }
-      .ibtn:hover { color: var(--ink-2); }
-      .lg-x:hover { color: var(--dmuted); }
-      .sh-x:hover { color: var(--muted); }
-      .itin-stay.link:hover .snm { border-bottom-color: transparent; }
-      
+      .itin-arrow:hover:not(:disabled) {
+        color: var(--ink-2);
+      }
+
+      .cog-it:hover {
+        color: var(--muted);
+      }
+
+      .fbtn:hover {
+        color: var(--ink-2);
+      }
+
+      .ibtn:hover {
+        color: var(--ink-2);
+      }
+
+      .lg-x:hover {
+        color: var(--dmuted);
+      }
+
+      .sh-x:hover {
+        color: var(--muted);
+      }
+
+      .itin-stay.link:hover .snm {
+        border-bottom-color: transparent;
+      }
+
       /* Payer Split and Dropdown sizing (Hans / Spencer + Dropdowns) */
-      .lg-pseg-opt { padding: 9px 18px; font-size: 14px; }
-      .catsel { padding: 9px 34px 9px 18px; font-size: 14px; }
-      .cog-sel { padding: 9px 30px 9px 14px; font-size: 14px; }
-      
+      .lg-pseg-opt {
+        padding: 9px 18px;
+        font-size: 14px;
+      }
+
+      .catsel {
+        padding: 9px 34px 9px 18px;
+        font-size: 14px;
+      }
+
+      .cog-sel {
+        padding: 9px 30px 9px 14px;
+        font-size: 14px;
+      }
+
       /* Calendar items size (more padding for clickable dates) */
-      .cell { min-height: 44px; padding: 7px 2px 6px; }
-      
+      .cell {
+        min-height: 44px;
+        padding: 7px 2px 6px;
+      }
+
       /* Shuffle & Hide Token (stamp toggle) */
-      .fbtn { width: 28px; height: 28px; }
-      .fbtn svg { width: 21px; height: 21px; }
+      .fbtn {
+        width: 28px;
+        height: 28px;
+      }
+
+      .fbtn svg {
+        width: 21px;
+        height: 21px;
+      }
 
       /* Add-your-own sheet */
-      .sh-catseg .segopt { padding: 8px 0; font-size: 13px; }
-      .sh-catseg .segopt .cj { font-size: 14px; }
-      .sh-field { font-size: 16px; padding: 11px 12px; }
-      .sh-add { font-size: 12.5px; padding: 14px; }
-      .stamptog-mark { width: 26px; height: 26px; font-size: 16px; }
-      .stamptog::after { width: 26px; }
-      
+      .sh-catseg .segopt {
+        padding: 8px 0;
+        font-size: 13px;
+      }
+
+      .sh-catseg .segopt .cj {
+        font-size: 14px;
+      }
+
+      .sh-field {
+        font-size: 16px;
+        padding: 11px 12px;
+      }
+
+      .sh-add {
+        font-size: 12.5px;
+        padding: 14px;
+      }
+
+      .stamptog-mark {
+        width: 26px;
+        height: 26px;
+        font-size: 16px;
+      }
+
+      .stamptog::after {
+        width: 26px;
+      }
+
       /* Google doc & settings cog button */
-      .ibtn { width: 32px; height: 32px; }
-      .ibtn svg { width: 22px; height: 22px; }
-      
+      .ibtn {
+        width: 32px;
+        height: 32px;
+      }
+
+      .ibtn svg {
+        width: 22px;
+        height: 22px;
+      }
+
       /* Yen icon thing (noboriBtn / nb-coin) */
-      .nobori { width: 34px; height: 34px; }
-      .nb-coin { font-size: 20px; }
+      .nobori {
+        width: 34px;
+        height: 34px;
+      }
+
+      .nb-coin {
+        font-size: 20px;
+      }
 
       /* Offline dialogue extra padding */
-      .a2hs { padding: 26px 14px 14px; }
+      .a2hs {
+        padding: 26px 14px 14px;
+      }
 
       /* Ledger Entry alignment & sizing */
-      .lg-amtrow { align-items: center; margin-top: 10px; padding-bottom: 0; }
-      .lg-cur { font-size: 30px; height: 48px; line-height: 48px; margin-bottom: 0; }
-      #lgAmt { font-size: 38px; height: 60px; padding: 0; }
-      .lg-payer { position: relative; margin-bottom: 0; }
+      .lg-amtrow {
+        align-items: center;
+        margin-top: 10px;
+        padding-bottom: 0;
+      }
+
+      .lg-cur {
+        font-size: 30px;
+        height: 48px;
+        line-height: 48px;
+        margin-bottom: 0;
+      }
+
+      #lgAmt {
+        font-size: 38px;
+        height: 60px;
+        padding: 0;
+      }
+
+      .lg-payer {
+        position: relative;
+        margin-bottom: 0;
+      }
+
       .lg-payer-lbl {
         position: absolute;
         top: -6px;
         right: 10px;
         transform: translateY(-100%);
       }
-      .lg-wut { font-size: 16px; padding: 14px 12px; height: 50px; }
-      .lg-plus { width: 50px; height: 50px; display: grid; place-items: center; }
-      .lg-plus svg { width: 24px; height: 24px; stroke-width: 2.2px; }
+
+      .lg-wut {
+        font-size: 16px;
+        padding: 14px 12px;
+        height: 50px;
+      }
+
+      .lg-plus {
+        width: 50px;
+        height: 50px;
+        display: grid;
+        place-items: center;
+      }
+
+      .lg-plus svg {
+        width: 24px;
+        height: 24px;
+        stroke-width: 2.2px;
+      }
 
       /* Row Actions size increase & Larger font for row labels */
-      .lg-actions { gap: 12px; }
-      .lg-swap, .lg-del {
+      .lg-actions {
+        gap: 12px;
+      }
+
+      .lg-swap,
+      .lg-del {
         width: 42px;
         height: 42px;
         font-size: 24px;
         font-weight: 900;
         opacity: .85;
       }
+
       .lg-del svg {
         width: 24px;
         height: 24px;
         stroke-width: 2.2px;
       }
-      .lg-wutn { font-size: 15px; }
-      .lg-total { font-size: 12px; }
-      .lg-cell { font-size: 14px; }
-      .lg-th { font-size: 11px; }
+
+      .lg-wutn {
+        font-size: 15px;
+      }
+
+      .lg-total {
+        font-size: 12px;
+      }
+
+      .lg-cell {
+        font-size: 14px;
+      }
+
+      .lg-th {
+        font-size: 11px;
+      }
     }
   </style>
 </head>
@@ -3684,7 +3869,8 @@
     <div class="lg-hd">
       <span class="lg-hd-title"><span class="nb-coin">¥</span>IOU Ledger</span>
       <button type="button" class="lg-x" id="lgClose" aria-label="Close">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
+          aria-hidden="true">
           <line x1="18" y1="6" x2="6" y2="18"></line>
           <line x1="6" y1="6" x2="18" y2="18"></line>
         </svg>
@@ -3835,19 +4021,19 @@
     if (!state.scheme) state.scheme = (state.theme === "light" || state.theme === "dark") ? state.theme : "system";  /* migrate old toggle */
     function resolveScheme() { const s = state.scheme || "system"; return s === "system" ? (mqDark.matches ? "dark" : "light") : s; }
     function syncThemeColor() {
-       const meta = document.getElementById("themeColorMeta");
-       if (!meta) return;
-       const cs = getComputedStyle(document.documentElement);
-       const isLedgerOpen = document.body.classList.contains("drawer-open") && window.innerWidth < 720;
-       const isModalOpen = document.body.classList.contains("modal-open");
-       if (isLedgerOpen) {
-         meta.setAttribute("content", cs.getPropertyValue("--barseal").trim());
-       } else if (isModalOpen) {
-         meta.setAttribute("content", "rgb(20, 16, 10)");
-       } else {
-         meta.setAttribute("content", cs.getPropertyValue("--paper").trim());
-       }
-     }
+      const meta = document.getElementById("themeColorMeta");
+      if (!meta) return;
+      const cs = getComputedStyle(document.documentElement);
+      const isLedgerOpen = document.body.classList.contains("drawer-open") && window.innerWidth < 720;
+      const isModalOpen = document.body.classList.contains("modal-open");
+      if (isLedgerOpen) {
+        meta.setAttribute("content", cs.getPropertyValue("--barseal").trim());
+      } else if (isModalOpen) {
+        meta.setAttribute("content", "rgb(20, 16, 10)");
+      } else {
+        meta.setAttribute("content", cs.getPropertyValue("--paper").trim());
+      }
+    }
     function applyScheme() { document.documentElement.setAttribute("data-theme", resolveScheme()); syncThemeColor(); }
     applyScheme();
     mqDark.addEventListener && mqDark.addEventListener("change", () => { if ((state.scheme || "system") === "system") applyScheme(); });
@@ -4537,7 +4723,7 @@
     (function setupSwipeDismiss() {
       let startY = 0, currentY = 0, isDragging = false;
       const sheetEl = $("#sheet");
-      
+
       sheetEl.addEventListener("touchstart", e => {
         if (window.innerWidth >= 560) return; /* desktop no swipe */
         if (sheetEl.scrollTop > 0) return; /* only drag if at top of content */
@@ -4815,20 +5001,20 @@
     }
     /* ledger writes: optimistic local update first, then sync to cloud */
     function expAdd(entry) {
-      if (me && window.fbReady) { 
-        entry.by = me.uid; 
+      if (me && window.fbReady) {
+        entry.by = me.uid;
         const docRef = fbLedger.doc();
         entry.id = docRef.id;
-        state.expenses.push(entry); 
+        state.expenses.push(entry);
         renderLedger();
-        docRef.set(entry).catch(fbErr); 
-        return; 
+        docRef.set(entry).catch(fbErr);
+        return;
       }
       entry.id = "x" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
       state.expenses.push(entry); save(); renderLedger();
     }
     function expUpdate(id, patch, noRender) {
-      const e = state.expenses.find(x => x.id === id); 
+      const e = state.expenses.find(x => x.id === id);
       if (e) { Object.assign(e, patch); if (!noRender) renderLedger(); }
       if (me && window.fbReady) { fbLedger.doc(id).update(patch).catch(fbErr); return; }
       save();
