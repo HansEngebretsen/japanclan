@@ -164,7 +164,8 @@
   [data-skin="mono"] .sectitle::after{background:var(--line-2)}
 
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  html{-webkit-text-size-adjust:100%;background:var(--paper);color-scheme:light dark}
+  html{-webkit-text-size-adjust:100%;background:var(--paper);color-scheme:light dark;
+    background-image:var(--bg-pattern),var(--glow);background-attachment:fixed}
   body{margin:0;font-family:var(--sans);color:var(--ink);background:var(--paper);line-height:1.4;
     -webkit-font-smoothing:antialiased;padding-bottom:calc(env(safe-area-inset-bottom) + 30px);
     background-image:var(--bg-pattern),var(--glow);background-attachment:fixed}
@@ -866,7 +867,18 @@ const mqDark=(window.matchMedia?matchMedia("(prefers-color-scheme: dark)"):{matc
 if(!state.scheme)state.scheme=(state.theme==="light"||state.theme==="dark")?state.theme:"system";  /* migrate old toggle */
 function resolveScheme(){const s=state.scheme||"system";return s==="system"?(mqDark.matches?"dark":"light"):s;}
 function syncThemeColor(){
-  const c=getComputedStyle(document.documentElement).getPropertyValue("--paper").trim();
+  const cs=getComputedStyle(document.documentElement);
+  /* mobile ledger takes over the whole screen → tint the browser chrome to the drawer colour */
+  const drawerOpen=document.body.classList.contains("drawer-open")&&window.innerWidth<720;
+  let c;
+  if(drawerOpen){
+    c=cs.getPropertyValue("--barseal").trim();
+  }else{
+    /* match the status bar to the bright top of the page (the --glow peak), not flat --paper */
+    const glow=cs.getPropertyValue("--glow");
+    const m=glow&&glow.match(/#[0-9a-fA-F]{3,8}|rgba?\([^)]*\)/);
+    c=(m&&m[0])||cs.getPropertyValue("--paper").trim();
+  }
   if(c)document.getElementById("themeColorMeta").setAttribute("content",c);
   document.documentElement.style.colorScheme=resolveScheme();
 }
@@ -1634,6 +1646,7 @@ function openDrawer(){
   lgdrawer.classList.add("open");
   document.body.classList.add("drawer-open");
   if(window.innerWidth<720)lgBackdrop.classList.add("show");
+  syncThemeColor();
   renderLedger();
   setTimeout(()=>{lgAmt.focus();refreshPayerSeg();},310);
 }
@@ -1642,6 +1655,7 @@ function closeDrawer(){
   lgBackdrop.classList.remove("show");
   document.body.classList.remove("drawer-open");
   document.body.classList.remove("drawer-peek");
+  syncThemeColor();
 }
 /* peek when the pointer nears the right edge (<=30px), or is over the tab/drawer */
 let lgPeek=false;
