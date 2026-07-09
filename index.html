@@ -4500,6 +4500,7 @@
         if (window.innerWidth >= 560) return; /* desktop no swipe */
         if (sheetEl.scrollTop > 0) return; /* only drag if at top of content */
         startY = e.touches[0].clientY;
+        currentY = startY;
         isDragging = true;
         sheetEl.classList.add("dragging");
       }, { passive: true });
