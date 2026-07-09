@@ -14,7 +14,10 @@ const locations = [
   { wp: "Onsen Ryokan Yuen Sapporo", z: 8 },
   { wp: "Otaru Kourakuen", z: 8 },
   { wp: "Haneda Airport", z: 4 },
-  { wp: "Bellustar Tokyo, a Pan Pacific Hotel", z: 8 }
+  { wp: "Bellustar Tokyo, a Pan Pacific Hotel", z: 8 },
+  // mock-data waypoints (dev setting ?mock=1) — MOCK_ITIN in index.html
+  { wp: "Tokyo Dome", z: 8 },
+  { wp: "Tokyo Disneyland", z: 8 }
 ];
 
 const dir = path.join(__dirname, 'maps');

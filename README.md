@@ -66,3 +66,14 @@ Serve the folder over http (Firebase Auth needs `http://localhost`, not `file://
 ```sh
 npx serve .        # serves index.html at http://localhost:3000
 ```
+
+### Dev settings
+
+Press **Escape twice** to open the dev-settings dialog. Every setting maps 1:1 to a URL query
+param, read at boot before anything renders — so a URL with the params baked in reproduces the
+same view (toggling a setting rewrites the URL and reloads through the same path). Add new
+settings to the `DEV_SETTINGS` registry in `index.html` and gate behavior on `devOn("key")`.
+
+| Setting | Param | What it does |
+| --- | --- | --- |
+| Mock data | `?mock=1` | Replaces the private Firestore itinerary with `MOCK_ITIN` — same shape, but every venue, hotel, flight, seat and confirmation number is a real-but-different stand-in, so screenshots/demos leak nothing. Also unlocks the calendar without sign-in and never touches the `_itin` localStorage cache. |
