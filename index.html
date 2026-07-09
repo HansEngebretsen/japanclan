@@ -386,8 +386,8 @@
   .empty{grid-column:1/-1;text-align:center;color:var(--muted);font-size:13px;padding:30px 12px;line-height:1.6}
 
   /* detail modal — opens over the page, never reflows the grid */
-  .safari-toolbar-fix{position:fixed;bottom:0;left:10%;width:80%;height:4px;background-color:var(--paper);z-index:-9999;pointer-events:none;opacity:0.01}
-  .safari-toolbar-fix-top{position:fixed;top:0;left:10%;width:80%;height:4px;background-color:var(--paper);z-index:-9999;pointer-events:none;opacity:0.01}
+  .safari-toolbar-fix{position:fixed;bottom:0;left:10%;width:80%;height:4px;background-color:var(--paper);z-index:99999;pointer-events:none;opacity:0.01}
+  .safari-toolbar-fix-top{position:fixed;top:0;left:10%;width:80%;height:4px;background-color:var(--paper);z-index:99999;pointer-events:none;opacity:0.01}
   @media(max-width:719px){
     body.drawer-open .safari-toolbar-fix, body.drawer-open .safari-toolbar-fix-top{background-color:var(--barseal)}
   }
@@ -402,12 +402,12 @@
     transform:translateY(14px);transition:transform .24s cubic-bezier(.4,0,.2,1)}
   .ov.show .sheet{transform:translateY(0)}
   @media(min-width:560px){.ov{align-items:center}.sheet{border-radius:14px;max-height:82vh}}
-  .sh-top{display:flex;align-items:flex-start;gap:11px}
+  .sh-top{display:flex;align-items:flex-start;gap:11px;padding-right:32px}
   .sh-coin{flex:0 0 auto;width:30px;height:30px;border-radius:var(--stamp-shape);cursor:pointer;border:1px solid var(--line-2);background:transparent;
     display:grid;place-items:center;color:var(--muted);font-family:var(--serif);font-size:13px}
   .sh-coin.has{border-color:transparent;color:#fff;background:var(--seal)}
   .sh-name{font-family:var(--head-font);font-size:18px;font-weight:var(--head-weight);line-height:1.25;flex:1;min-width:0;padding-top:2px}
-  .sh-x{flex:0 0 auto;border:0;background:0;cursor:pointer;color:var(--muted);width:28px;height:28px;display:grid;place-items:center;font-size:20px;line-height:1}
+  .sh-x{position:absolute;top:16px;right:16px;border:0;background:0;cursor:pointer;color:var(--muted);width:28px;height:28px;display:grid;place-items:center;font-size:22px;font-weight:900;line-height:1}
   .sh-meta{display:flex;align-items:center;gap:7px;margin-top:10px;flex-wrap:wrap}
   .sh-desc{font-size:13.5px;color:var(--ink-2);line-height:1.5;margin-top:12px}
   .sh-vt{font-size:13px;color:var(--ink-2);line-height:1.5;margin-top:12px}
@@ -447,7 +447,7 @@
   .lgdrawer{--dtext:rgba(255,255,255,.94);--dmuted:rgba(255,255,255,.62);--dfaint:rgba(255,255,255,.42);
     --dline:rgba(255,255,255,.16);--dline2:rgba(255,255,255,.30);--dsurf:rgba(255,255,255,.10);--dsurf2:rgba(255,255,255,.17);
     position:fixed;right:0;top:0;bottom:0;width:var(--lgw);max-width:100%;z-index:40;
-    background-color:var(--barseal);background:var(--dseal);color:var(--dtext);
+    background-color:var(--barseal);background-image:var(--dseal);color:var(--dtext);
     visibility:hidden;transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1), visibility 0s linear .3s;
     overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;
     padding:calc(env(safe-area-inset-top) + 22px) 26px calc(env(safe-area-inset-bottom) + 30px)}
@@ -469,7 +469,7 @@
   }
   /* mobile: full width, tab hides once drawer takes over, close button returns */
   @media(max-width:719px){
-    .lgdrawer{width:100%;height:100dvh;border-left:none}
+    .lgdrawer{width:100%;height:100dvh;top:0;left:0;border-left:none}
     body.drawer-open .nobori{opacity:0;pointer-events:none}
     .lgdrawer .lg-x{display:grid}
     .nobori{position:static;width:28px;height:28px;background:transparent;box-shadow:none;border-radius:0;color:var(--ink-2);transform:none!important}
@@ -477,11 +477,11 @@
   }
 
   /* drawer header — small "IOU Ledger" label with the en coin; × only at full-screen */
-  .lg-hd{display:flex;align-items:center;justify-content:space-between;flex-shrink:0;margin-bottom:15px}
+  .lg-hd{display:flex;align-items:center;justify-content:space-between;flex-shrink:0;margin-bottom:15px;padding-right:32px}
   .lg-hd-title{display:flex;align-items:center;gap:9px;font-family:var(--serif);font-size:15px;font-weight:700;color:#fff;letter-spacing:.01em}
   .lg-hd .nb-coin{width:19px;height:19px;font-size:11px}
   .lg-x{display:none;border:0;background:0;color:var(--dmuted);width:32px;height:32px;
-    font-family:var(--serif);font-size:24px;line-height:1;cursor:pointer;place-items:center;transition:color .14s}
+    font-family:var(--serif);font-size:24px;font-weight:900;line-height:1;cursor:pointer;place-items:center;transition:color .14s}
   .lg-x:hover{color:#fff}
 
   /* entry card */
@@ -690,16 +690,27 @@
   /* mobile size overrides to make interactive elements larger */
   @media (max-width: 719px) {
     /* Close buttons */
-    .lgdrawer .lg-x { width: 38px; height: 38px; font-size: 30px; }
-    .sh-x { width: 34px; height: 34px; font-size: 26px; }
+    .lgdrawer .lg-x { display:grid; position: absolute; top: calc(env(safe-area-inset-top) + 16px); right: 20px; font-weight: 900; width: 38px; height: 38px; font-size: 32px; }
+    .sh-x { position: absolute; top: 16px; right: 16px; font-weight: 900; width: 34px; height: 34px; font-size: 28px; }
+    .a2hs-x { top: 10px; right: 10px; }
     .a2hs-x svg { width: 24px; height: 24px; }
     .itin-close svg { width: 22px; height: 22px; }
     
     /* Next/prev (theme cycler) and Size up (expand/arrows) */
     .cog-it { width: 24px; height: 32px; }
     .cog-it svg { width: 20px; height: 20px; }
+    .cog-it svg, .itin-arrow svg { stroke-width: 3.2px; }
     .itin-arrow { width: 28px; height: 26px; }
     .itin-arrow svg { width: 24px; height: 24px; }
+    .itin-expand svg { width: 18px; height: 18px; }
+    
+    /* Payer Split and Dropdown sizing (Hans / Spencer + Dropdowns) */
+    .lg-pseg-opt { padding: 9px 18px; font-size: 14px; }
+    .catsel { padding: 9px 34px 9px 18px; font-size: 14px; }
+    .cog-sel { padding: 9px 30px 9px 14px; font-size: 14px; }
+    
+    /* Calendar items size (more padding for clickable dates) */
+    .cell { min-height: 44px; padding: 7px 2px 6px; }
     
     /* Shuffle & Hide Token (stamp toggle) */
     .fbtn { width: 28px; height: 28px; }
@@ -714,6 +725,9 @@
     /* Yen icon thing (noboriBtn / nb-coin) */
     .nobori { width: 34px; height: 34px; }
     .nb-coin { font-size: 20px; }
+
+    /* Offline dialogue extra padding */
+    .a2hs { padding: 26px 14px 14px; }
   }
 </style>
 </head>
