@@ -2270,6 +2270,11 @@
       transition: transform .12s, opacity .12s
     }
 
+    .lg-plus svg {
+      width: 16px;
+      height: 16px
+    }
+
     .lg-plus:active {
       transform: scale(.92)
     }
@@ -3097,8 +3102,29 @@
         background-image: none !important;
       }
 
-      /* Close buttons */
-      .lgdrawer .lg-x { display: grid; position: absolute; top: calc(env(safe-area-inset-top) + 16px); right: 20px; font-weight: 700; width: 38px; height: 38px; font-size: 32px; }
+      /* Make ledger drawer background seamless solid var(--barseal) */
+      .lgdrawer {
+        background-image: none !important;
+        background-color: var(--barseal) !important;
+      }
+
+      /* Close buttons & Header centering */
+      .lg-hd {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-right: 0 !important;
+        margin-bottom: 20px;
+      }
+      .lgdrawer .lg-x {
+        display: grid;
+        position: static;
+        font-weight: 700;
+        width: 38px;
+        height: 38px;
+        font-size: 32px;
+        margin-right: -8px; /* offset visual whitespace */
+      }
       .sh-x { position: absolute; top: 16px; right: 16px; font-weight: 700; width: 34px; height: 34px; font-size: 28px; }
       .a2hs-x { top: 10px; right: 10px; }
       .a2hs-x svg { width: 24px; height: 24px; }
@@ -3106,11 +3132,20 @@
       /* Next/prev (theme cycler) and Size up (expand/arrows) */
       .cog-it { width: 24px; height: 32px; }
       .cog-it svg { width: 20px; height: 20px; stroke-width: 3.2px; }
-      .itin-arrows { gap: 8px; height: 38px; }
+      .itin-arrows { gap: 8px; height: auto; padding: 12px 14px 12px 14px !important; }
       .itin-arrow { width: 38px; height: 38px; }
       .itin-arrow svg { width: 20px; height: 20px; stroke-width: 2.2px; }
       .itin-expand svg { width: 16px; height: 16px; }
       .itin-close svg { width: 20px; height: 20px; }
+      
+      /* Disable sticky hover states on mobile click elements */
+      .itin-arrow:hover:not(:disabled) { color: var(--ink-2) !important; }
+      .cog-it:hover { color: var(--muted) !important; }
+      .fbtn:hover { color: var(--ink-2) !important; }
+      .ibtn:hover { color: var(--ink-2) !important; }
+      .lg-x:hover { color: var(--dmuted) !important; }
+      .sh-x:hover { color: var(--muted) !important; }
+      .itin-stay.link:hover .snm { border-bottom-color: transparent !important; }
       
       /* Payer Split and Dropdown sizing (Hans / Spencer + Dropdowns) */
       .lg-pseg-opt { padding: 9px 18px; font-size: 14px; }
@@ -3139,9 +3174,11 @@
 
       /* Ledger Entry alignment & sizing */
       .lg-amtrow { align-items: flex-end; padding-bottom: 2px; }
-      .lg-cur { font-size: 28px; margin-bottom: 2px; height: 32px; line-height: 32px; }
-      #lgAmt { font-size: 32px; height: 42px; padding: 0; }
+      .lg-cur { font-size: 28px; margin-bottom: 2px; height: 38px; line-height: 38px; }
+      #lgAmt { font-size: 36px; height: 50px; padding: 0; }
       .lg-payer { margin-bottom: 2px; }
+      .lg-plus { width: 38px; height: 38px; display: grid; place-items: center; }
+      .lg-plus svg { width: 24px; height: 24px; stroke-width: 2.2px; }
     }
   </style>
 </head>
@@ -3286,7 +3323,13 @@
           <div class="lg-wutrow">
             <input id="lgWut" class="lg-wut" autocomplete="off" placeholder="wut? (beef, ramen, taxi…)"
               aria-label="Description">
-            <button type="button" class="lg-plus" id="lgAdd" aria-label="Add expense" disabled>＋</button>
+            <button type="button" class="lg-plus" id="lgAdd" aria-label="Add expense" disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
+                stroke-linejoin="round" aria-hidden="true">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+            </button>
           </div>
           <div class="lg-hint" id="lgHint"></div>
         </div>
