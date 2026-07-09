@@ -33,9 +33,6 @@ jobs:
             --exclude='.claude' --exclude='config' \
             --exclude='README.md' --exclude='*.md' \
             ./ _site/
-          
-          # Inject Firebase API key
-          sed -i "s/__FIREBASE_API_KEY__/${{ secrets.FIREBASE_API_KEY }}/g" _site/index.html
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
