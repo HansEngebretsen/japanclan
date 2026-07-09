@@ -622,6 +622,14 @@
   .cogmenu[hidden]{display:none}
   .cog-lbl{font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 2px 2px}
   .cogseg+.cog-lbl{margin-top:11px}
+  /* "Add to home screen" link — always available even after the tooltip is dismissed */
+  .cog-a2hs-row{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+  .cog-a2hs{width:100%;text-align:left;border:0;background:0;cursor:pointer;color:var(--seal);
+    font-family:var(--sans);font-size:12.5px;font-weight:600;transition:opacity .12s;
+    display:flex;align-items:center;gap:7px;padding:0}
+  .cog-a2hs:hover{opacity:.7}
+  .cog-a2hs svg{width:15px;height:15px;flex:0 0 auto}
+  @media (display-mode:standalone){.cog-a2hs-row{display:none}}
   /* scheme segmented control — same sliding-bg logic as the payer control */
   .cogseg{position:relative;display:flex;background:var(--soft);border-radius:99px;padding:3px;margin-top:4px}
   .cogseg .segbg{position:absolute;border-radius:99px;background:var(--seal);pointer-events:none;
@@ -657,8 +665,9 @@
   .a2hs-ic{width:15px;height:15px;vertical-align:-2.5px}
   .a2hs-dot{fill:var(--ink)}
   .a2hs-b{font-weight:700}
-  .a2hs-x{position:absolute;top:5px;right:5px;border:0;background:none;color:inherit;opacity:.65;padding:5px;cursor:pointer;line-height:0}
-  .a2hs-x svg{width:14px;height:14px}
+  .a2hs-x{position:absolute;top:3px;right:3px;border:0;background:none;color:inherit;opacity:.7;padding:8px;cursor:pointer;line-height:0}
+  .a2hs-x:hover{opacity:1}
+  .a2hs-x svg{width:20px;height:20px}
   .a2hs-wut,.a2hs-hide{align-self:center;margin-top:10px;border:0;background:none;color:inherit;
     opacity:.78;font:inherit;font-size:.8rem;font-weight:600;cursor:pointer;padding:5px 12px;
     text-decoration:underline;text-underline-offset:3px}
@@ -708,6 +717,12 @@
             <div class="am-name" id="amName"></div>
             <div class="am-email" id="amEmail"></div>
             <button class="am-out" id="amOut" type="button">Sign out</button>
+          </div>
+          <div class="cog-a2hs-row" id="cogA2hsRow">
+            <button type="button" class="cog-a2hs" id="cogA2hs">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><polyline points="8 7 12 3 16 7"/><rect x="4" y="13" width="16" height="8" rx="2"/></svg>
+              Add to home screen
+            </button>
           </div>
         </div>
       </div>
@@ -1648,6 +1663,7 @@ function openDrawer(){
   if(window.innerWidth<720)lgBackdrop.classList.add("show");
   syncThemeColor();
   renderLedger();
+  if(window.a2hsAuto)window.a2hsAuto();   /* first ledger engagement → offer add-to-home */
   setTimeout(()=>{lgAmt.focus();refreshPayerSeg();},310);
 }
 function closeDrawer(){
@@ -1982,22 +1998,31 @@ function restoreMe(){const cached=localStorage.getItem("_me");if(cached)try{me=J
 })();
 
 /* --- add-to-homescreen hint (iOS Safari only) ---------------------------
-   Shown once on iPhone/iPad browser tabs; never inside the installed PWA,
-   and never again after the × is tapped (flag persists in localStorage). */
+   Auto-appears the first time you engage the ledger to add something —
+   never on plain page load, never inside the installed PWA, and never
+   again after the × is tapped (flag persists in localStorage).
+   Settings → "Add to home screen" re-opens it any time, ignoring dismissal. */
 (function a2hsHint(){
   const el=$("#a2hs");if(!el)return;
   const isIOS=/iP(hone|ad|od)/.test(navigator.userAgent)
     ||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);   /* iPadOS masquerades as Mac */
-  let dismissed=false;try{dismissed=localStorage.getItem("_a2hs")==="1";}catch(e){}
-  if(!isIOS||isStandalonePWA()||dismissed)return;
-  setTimeout(()=>{el.hidden=false;requestAnimationFrame(()=>el.classList.add("show"));},1200);
-  $("#a2hsX").addEventListener("click",()=>{
-    try{localStorage.setItem("_a2hs","1");}catch(e){}
+  const isDismissed=()=>{try{return localStorage.getItem("_a2hs")==="1";}catch(e){return false;}};
+  function reveal(){el.hidden=false;requestAnimationFrame(()=>el.classList.add("show"));}
+  function hide(persist){
+    if(persist){try{localStorage.setItem("_a2hs","1");}catch(e){}}
     el.classList.remove("show");
-    setTimeout(()=>{el.hidden=true;},300);
-  });
+    setTimeout(()=>{el.hidden=true;el.classList.remove("expanded");},300);
+  }
+  /* auto trigger from the ledger: iOS only, and only until the user dismisses it */
+  window.a2hsAuto=()=>{if(isIOS&&!isStandalonePWA()&&!isDismissed())reveal();};
+  /* manual trigger from Settings: always shows the instructions, ignores dismissal */
+  window.a2hsOpen=()=>{if(!isStandalonePWA())reveal();};
+
+  $("#a2hsX").addEventListener("click",()=>hide(true));
   $("#a2hsWut").addEventListener("click",()=>el.classList.add("expanded"));
   $("#a2hsHide").addEventListener("click",()=>el.classList.remove("expanded"));
+  const cogA2hs=$("#cogA2hs");
+  if(cogA2hs)cogA2hs.addEventListener("click",()=>{cogMenu.hidden=true;window.a2hsOpen();});
 })();
 
 if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(e=>console.warn('SW reg failed:',e));
