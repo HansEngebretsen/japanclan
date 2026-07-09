@@ -1606,7 +1606,8 @@
       background-color: var(--paper);
       z-index: 99999;
       pointer-events: none;
-      opacity: 0.01
+      opacity: 0.01;
+      transition: background-color 0s linear
     }
 
     .safari-toolbar-fix-top {
@@ -1618,7 +1619,8 @@
       background-color: var(--paper);
       z-index: 99999;
       pointer-events: none;
-      opacity: 0.01
+      opacity: 0.01;
+      transition: background-color 0s linear
     }
 
     @media(max-width:719px) {
@@ -1745,6 +1747,11 @@
       font-size: 22px;
       font-weight: 900;
       line-height: 1
+    }
+
+    .sh-x svg {
+      width: 14px;
+      height: 14px
     }
 
     .sh-meta {
@@ -2068,6 +2075,11 @@
       cursor: pointer;
       place-items: center;
       transition: color .14s
+    }
+
+    .lg-x svg {
+      width: 16px;
+      height: 16px
     }
 
     .lg-x:hover {
@@ -3100,16 +3112,16 @@
     @media (max-width: 719px) {
       /* Safari Liquid Glass Body Fallback */
       body.drawer-open {
-        background-color: var(--barseal) !important;
-        background-image: none !important;
-        transition: background-color 0s linear 0.3s !important;
+        background-color: var(--barseal);
+        background-image: none;
+        transition: background-color 0s linear 0.3s;
       }
 
       /* Make ledger drawer background seamless solid var(--barseal) */
       .lgdrawer {
-        background-image: none !important;
-        background-color: var(--barseal) !important;
-        padding: calc(env(safe-area-inset-top) + 16px) 19px calc(env(safe-area-inset-bottom) + 30px) !important;
+        background-image: none;
+        background-color: var(--barseal);
+        padding: calc(env(safe-area-inset-top) + 16px) 19px calc(env(safe-area-inset-bottom) + 30px);
       }
 
       /* Close buttons & Header centering */
@@ -3117,7 +3129,7 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding-right: 0 !important;
+        padding-right: 0;
         margin-bottom: 20px;
       }
       .lgdrawer .lg-x {
@@ -3128,30 +3140,52 @@
         padding: 0;
         border: 0;
         background: 0;
+        width: 38px;
+        height: 38px;
+        place-items: center;
       }
-      .sh-x { position: absolute; top: 16px; right: 16px; font-weight: 700; width: 34px; height: 34px; font-size: 28px; }
+      .lgdrawer .lg-x svg {
+        width: 24px;
+        height: 24px;
+        stroke-width: 2.2px;
+      }
+      .sh-x {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        font-weight: 700;
+        width: 34px;
+        height: 34px;
+        display: grid;
+        place-items: center;
+      }
+      .sh-x svg {
+        width: 24px;
+        height: 24px;
+        stroke-width: 2.2px;
+      }
       .a2hs-x { top: 10px; right: 10px; }
       .a2hs-x svg { width: 24px; height: 24px; }
       
       /* Next/prev (theme cycler) and Size up (expand/arrows) */
       .cog-it { width: 24px; height: 32px; }
       .cog-it svg { width: 20px; height: 20px; stroke-width: 3.2px; }
-      .itin { padding-bottom: 13px !important; }
-      .itin-tl { padding-top: 0 !important; }
-      .itin-arrows { height: auto; padding: 11px 0px !important; margin-bottom: 0 !important; }
+      .itin { padding-bottom: 13px; }
+      .itin-tl { padding-top: 0; }
+      .itin-arrows { height: auto; padding: 11px 0px; margin-bottom: 0; }
       .itin-arrow { width: 38px; height: 38px; }
       .itin-arrow svg { width: 20px; height: 20px; stroke-width: 2.2px; }
       .itin-expand svg { width: 16px; height: 16px; }
       .itin-close svg { width: 20px; height: 20px; }
       
       /* Disable sticky hover states on mobile click elements */
-      .itin-arrow:hover:not(:disabled) { color: var(--ink-2) !important; }
-      .cog-it:hover { color: var(--muted) !important; }
-      .fbtn:hover { color: var(--ink-2) !important; }
-      .ibtn:hover { color: var(--ink-2) !important; }
-      .lg-x:hover { color: var(--dmuted) !important; }
-      .sh-x:hover { color: var(--muted) !important; }
-      .itin-stay.link:hover .snm { border-bottom-color: transparent !important; }
+      .itin-arrow:hover:not(:disabled) { color: var(--ink-2); }
+      .cog-it:hover { color: var(--muted); }
+      .fbtn:hover { color: var(--ink-2); }
+      .ibtn:hover { color: var(--ink-2); }
+      .lg-x:hover { color: var(--dmuted); }
+      .sh-x:hover { color: var(--muted); }
+      .itin-stay.link:hover .snm { border-bottom-color: transparent; }
       
       /* Payer Split and Dropdown sizing (Hans / Spencer + Dropdowns) */
       .lg-pseg-opt { padding: 9px 18px; font-size: 14px; }
@@ -3179,17 +3213,30 @@
       .a2hs { padding: 26px 14px 14px; }
 
       /* Ledger Entry alignment & sizing */
-      .lg-amtrow { align-items: center !important; margin-top: 10px !important; padding-bottom: 0 !important; }
-      .lg-cur { font-size: 28px; height: 38px; line-height: 38px; margin-bottom: 0 !important; }
+      .lg-amtrow { align-items: center; margin-top: 10px; padding-bottom: 0; }
+      .lg-cur { font-size: 28px; height: 38px; line-height: 38px; margin-bottom: 0; }
       #lgAmt { font-size: 36px; height: 50px; padding: 0; }
-      .lg-payer { position: relative !important; margin-bottom: 0 !important; }
-      .lg-payer-lbl { position: absolute !important; top: -3px !important; right: 7px !important; }
+      .lg-payer { position: relative; margin-bottom: 0; }
+      .lg-payer-lbl {
+        position: absolute;
+        top: -6px;
+        right: 10px;
+        transform: translateY(-100%);
+      }
       .lg-plus { width: 38px; height: 38px; display: grid; place-items: center; }
       .lg-plus svg { width: 24px; height: 24px; stroke-width: 2.2px; }
 
-      /* Row Actions size increase */
-      .lg-actions { gap: 8px !important; }
-      .lg-swap, .lg-del { width: 32px !important; height: 32px !important; font-size: 20px !important; opacity: .75 !important; }
+      /* Row Actions size increase & Larger font for row labels */
+      .lg-actions { gap: 12px; }
+      .lg-swap, .lg-del {
+        width: 38px;
+        height: 38px;
+        font-size: 22px;
+        opacity: .75;
+      }
+      .lg-wutn { font-size: 15px; }
+      .lg-total { font-size: 12px; }
+      .lg-cell { font-size: 14px; }
     }
   </style>
 </head>
@@ -3314,7 +3361,12 @@
   <div class="lgdrawer" id="lgdrawer" role="complementary" aria-label="Split the bill">
     <div class="lg-hd">
       <span class="lg-hd-title"><span class="nb-coin">¥</span>IOU Ledger</span>
-      <button type="button" class="lg-x" id="lgClose" aria-label="Close">×</button>
+      <button type="button" class="lg-x" id="lgClose" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
     </div>
     <form class="lg-entry" id="lgEntry" onsubmit="return false">
       <div class="lg-amtrow">
@@ -3995,7 +4047,12 @@
       return `<div class="sh-top">
       <button class="sh-coin ${has ? "has" : ""}" data-act="coin" aria-label="${has ? "Remove" : "Collect"} coin">${has ? CATJP[i.cat] : "＋"}${othersBadge(i.id)}</button>
       <div class="sh-name">${esc(i.name)}</div>
-      <button class="sh-x" data-act="close" aria-label="Close">×</button>
+      <button class="sh-x" data-act="close" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
     </div>
     <div class="sh-meta">${vbadge}${when}${flag}${price}</div>
     <div class="sh-desc">${esc(i.note)}</div>
