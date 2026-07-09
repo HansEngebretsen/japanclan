@@ -1657,12 +1657,16 @@
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
       padding: 18px 18px calc(env(safe-area-inset-bottom) + 18px);
-      transform: translateY(14px);
-      transition: transform .24s cubic-bezier(.4, 0, .2, 1)
+      transform: translateY(100%);
+      transition: transform .28s cubic-bezier(.4, 0, .2, 1);
     }
 
     .ov.show .sheet {
-      transform: translateY(0)
+      transform: translateY(0);
+    }
+
+    .sheet.dragging {
+      transition: none;
     }
 
     @media(min-width:560px) {
@@ -1672,8 +1676,27 @@
 
       .sheet {
         border-radius: 14px;
-        max-height: 82vh
+        max-height: 82vh;
+        transform: translateY(14px);
       }
+    }
+
+    .sh-handle {
+      display: flex;
+      justify-content: center;
+      padding: 0 0 16px;
+      cursor: grab;
+    }
+    .sh-handle::before {
+      content: '';
+      width: 36px;
+      height: 5px;
+      border-radius: 99px;
+      background: var(--line);
+      opacity: .45;
+    }
+    @media(min-width:560px) {
+      .sh-handle { display: none; }
     }
 
     .sh-top {
@@ -1821,15 +1844,27 @@
       flex-wrap: wrap
     }
 
-    .sh-photo {
-      display: block;
+    .sh-photo-wrap {
       width: 100%;
       height: 190px;
-      object-fit: cover;
       border: 1px solid var(--line-2);
       border-radius: 9px;
       margin-top: 13px;
-      background: var(--soft)
+      background: var(--soft);
+      overflow: hidden;
+    }
+    
+    .sh-photo {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0;
+      transition: opacity .4s ease;
+    }
+    
+    .sh-photo.loaded {
+      opacity: 1;
     }
 
     .sh-desc {
@@ -1869,17 +1904,25 @@
     }
 
     .sh-map {
-      margin-top: 13px
+      margin-top: 13px;
+      border: 1px solid var(--line-2);
+      border-radius: 9px;
+      background: var(--soft);
+      overflow: hidden;
     }
 
     .sh-map iframe {
       width: 100%;
       height: 170px;
-      border: 1px solid var(--line-2);
-      border-radius: 9px;
       display: block;
-      background: var(--soft);
-      filter: var(--map-filter)
+      border: 0;
+      filter: var(--map-filter);
+      opacity: 0;
+      transition: opacity .4s ease;
+    }
+    
+    .sh-map iframe.loaded {
+      opacity: 1;
     }
 
     .sh-act {
@@ -4323,7 +4366,7 @@
       const mine = i.custom && (!i.byUid || (me && me.uid === i.byUid));
       const by = i.custom ? `<div class="sh-by">Added by ${esc(mine ? "you" : (i.byName || "the clan"))}</div>` : "";
       const del = mine ? `<div class="sh-act"><button type="button" class="da sh-del" data-act="del-custom">Remove item</button></div>` : "";
-      return `<div class="sh-top">
+      return `<div class="sh-handle" aria-hidden="true"></div><div class="sh-top">
       <button class="sh-coin ${has ? "has" : ""}" data-act="coin" aria-label="${has ? "Remove" : "Collect"} coin">${has ? CATJP[i.cat] : "＋"}</button>
       <div class="sh-head">
         <div class="sh-name">${esc(i.name)}</div>
@@ -4337,10 +4380,10 @@
       </button>
     </div>
     <div class="sh-desc">${esc(i.note)}</div>
-    ${i.custom ? "" : `<img class="sh-photo" src="img/items/${i.id}.jpg" alt="" onerror="this.remove()">`}
+    ${i.custom ? "" : `<div class="sh-photo-wrap"><img class="sh-photo" src="img/items/${i.id}.jpg" alt="" onload="this.classList.add('loaded')" onerror="this.parentElement.remove()"></div>`}
     ${i.vt ? `<div class="sh-vt">${esc(i.vt)}</div>` : ""}
     ${i.tip ? `<div class="sh-tip">${esc(i.tip)}</div>` : ""}
-    ${loc ? `<div class="sh-map"><iframe loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="${src}"></iframe></div>
+    ${loc ? `<div class="sh-map"><iframe loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="${src}" onload="this.classList.add('loaded')"></iframe></div>
       <div class="sh-act"><a class="da" href="${link}" target="_blank" rel="noreferrer">Maps ↗</a></div>` : ""}
     ${by}${del}`;
     }
@@ -4406,6 +4449,39 @@
       }
     });
 
+    /* --- swipe down to dismiss --- */
+    (function setupSwipeDismiss() {
+      let startY = 0, currentY = 0, isDragging = false;
+      const sheetEl = $("#sheet");
+      
+      sheetEl.addEventListener("touchstart", e => {
+        if (window.innerWidth >= 560) return; /* desktop no swipe */
+        if (sheetEl.scrollTop > 0) return; /* only drag if at top of content */
+        startY = e.touches[0].clientY;
+        isDragging = true;
+        sheetEl.classList.add("dragging");
+      }, { passive: true });
+
+      sheetEl.addEventListener("touchmove", e => {
+        if (!isDragging) return;
+        currentY = e.touches[0].clientY;
+        const delta = currentY - startY;
+        if (delta > 0) {
+          e.preventDefault();
+          sheetEl.style.transform = `translateY(${delta}px)`;
+        }
+      }, { passive: false });
+
+      sheetEl.addEventListener("touchend", () => {
+        if (!isDragging) return;
+        isDragging = false;
+        sheetEl.classList.remove("dragging");
+        const delta = currentY - startY;
+        sheetEl.style.transform = ""; /* Reset so CSS can take over */
+        if (delta > 100) closeModal();
+      });
+    })();
+
     /* ---------------- add-your-own item (compose mode of the same sheet) ---------------- */
     const COMPOSE_ID = "__compose";
     const CUSTOM_CATS = [["eat", "Eat"], ["do", "Do"], ["buy", "Buy"]];
@@ -4413,7 +4489,7 @@
     function composeHTML() {
       const opts = CUSTOM_CATS.map(([k, l]) =>
         `<button type="button" class="segopt${k === composeCat ? " on" : ""}" data-act="ccat" data-cat="${k}"><span class="cj">${CATJP[k]}</span>${l}</button>`).join("");
-      return `<div class="sh-top">
+      return `<div class="sh-handle" aria-hidden="true"></div><div class="sh-top">
       <span class="sh-coin has" id="cCoin" aria-hidden="true">${CATJP[composeCat]}</span>
       <div class="sh-name">Add your own</div>
       <button class="sh-x" data-act="close" aria-label="Close">
