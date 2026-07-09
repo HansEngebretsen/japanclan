@@ -1673,7 +1673,7 @@
       max-height: 86dvh;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
-      padding: 16px 16px calc(env(safe-area-inset-bottom) + 18px);
+      padding: 18px 18px calc(env(safe-area-inset-bottom) + 18px);
       transform: translateY(14px);
       transition: transform .24s cubic-bezier(.4, 0, .2, 1)
     }
@@ -1707,8 +1707,8 @@
 
     .sh-coin {
       flex: 0 0 auto;
-      width: 30px;
-      height: 30px;
+      width: 34px;
+      height: 34px;
       border-radius: var(--stamp-shape);
       cursor: pointer;
       border: 1px solid var(--line-2);
@@ -1717,7 +1717,7 @@
       place-items: center;
       color: var(--muted);
       font-family: var(--serif);
-      font-size: 13px
+      font-size: 15px
     }
 
     .sh-coin.has {
@@ -1730,8 +1730,7 @@
       font-family: var(--head-font);
       font-size: 18px;
       font-weight: var(--head-weight);
-      line-height: 1.25;
-      padding-top: 2px
+      line-height: 1.2
     }
 
     /* compose sheet keeps its title directly inside sh-top */
@@ -1740,17 +1739,10 @@
       min-width: 0
     }
 
-    /* metadata rows under the title: location + who pinned it */
-    .sh-sub {
-      margin-top: 7px;
-      display: flex;
-      flex-direction: column;
-      gap: 4px
-    }
-
+    /* metadata row under the title: chips, location link, who pinned it */
     .sh-loc,
     .sh-pin {
-      display: flex;
+      display: inline-flex;
       align-items: center;
       gap: 5px;
       font-family: var(--mono);
@@ -1761,10 +1753,27 @@
       color: var(--muted)
     }
 
+    a.sh-loc {
+      text-decoration: none
+    }
+
+    a.sh-loc:hover {
+      color: var(--ink-2)
+    }
+
     .sh-loc svg {
       width: 11px;
       height: 11px;
       flex: 0 0 auto
+    }
+
+    /* thin vertical divider between the text-based metadata segments */
+    .sh-pin::before {
+      content: "";
+      width: 1px;
+      height: 11px;
+      background: var(--line-2);
+      margin-right: 3px
     }
 
     .pav {
@@ -1789,8 +1798,8 @@
 
     .sh-x {
       position: absolute;
-      top: 16px;
-      right: 16px;
+      top: 18px;
+      right: 18px;
       border: 0;
       background: 0;
       cursor: pointer;
@@ -1813,7 +1822,7 @@
       display: flex;
       align-items: center;
       gap: 7px;
-      margin-top: 10px;
+      margin-top: 2px;
       flex-wrap: wrap
     }
 
@@ -1853,7 +1862,7 @@
     }
 
     .sh-tip::before {
-      content: "コツ · Tip";
+      content: "コツ";
       display: block;
       font-family: var(--mono);
       font-size: 8.5px;
@@ -4247,12 +4256,14 @@
 
     /* ---------------- detail modal ---------------- */
     let modalId = null;
-    /* metadata rows under the sheet title: where it is, and who has pinned it */
+    /* metadata row under the sheet title: where it is, and who has pinned it */
     function locRowHTML(i) {
-      const label = i.area && i.area !== "jp"
-        ? i.area.charAt(0).toUpperCase() + i.area.slice(1)
-        : i.reg === "tokyo" ? "Tokyo" : i.reg === "hokkaido" ? "Hokkaido" : "All over Japan";
-      return `<div class="sh-loc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-6-5.2-6-10a6 6 0 1 1 12 0c0 4.8-6 10-6 10z"/><circle cx="12" cy="11" r="2.3"/></svg>${esc(label)}</div>`;
+      const specific = i.area && i.area !== "jp";
+      const label = specific
+        ? `${i.area.charAt(0).toUpperCase() + i.area.slice(1)}, ${i.reg === "hokkaido" ? "Hokkaido" : "Tokyo"}`
+        : "Anywhere";
+      const q = specific ? `${label}, Japan` : i.name;
+      return `<a class="sh-loc" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}" target="_blank" rel="noreferrer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-6-5.2-6-10a6 6 0 1 1 12 0c0 4.8-6 10-6 10z"/><circle cx="12" cy="11" r="2.3"/></svg>${esc(label)}</a>`;
     }
     function pinRowHTML(id) {
       const you = !!state.coins[id], others = othersByItem[id] || [];
@@ -4289,8 +4300,7 @@
       <button class="sh-coin ${has ? "has" : ""}" data-act="coin" aria-label="${has ? "Remove" : "Collect"} coin">${has ? CATJP[i.cat] : "＋"}${othersBadge(i.id)}</button>
       <div class="sh-head">
         <div class="sh-name">${esc(i.name)}</div>
-        <div class="sh-meta">${vbadge}${when}${flag}${price}</div>
-        <div class="sh-sub">${locRowHTML(i)}<div class="sh-pin"${pinRowHTML(i.id) ? "" : " hidden"}>${pinRowHTML(i.id)}</div></div>
+        <div class="sh-meta">${vbadge}${when}${flag}${price}${locRowHTML(i)}<span class="sh-pin"${pinRowHTML(i.id) ? "" : " hidden"}>${pinRowHTML(i.id)}</span></div>
       </div>
       <button class="sh-x" data-act="close" aria-label="Close">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
