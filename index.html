@@ -1342,6 +1342,7 @@
     }
 
     .card {
+      position: relative;
       border: 1px solid var(--line);
       border-radius: var(--card-radius);
       background: var(--card);
@@ -2916,10 +2917,10 @@
 
     .others {
       position: absolute;
-      top: -5px;
-      right: -5px;
-      min-width: 15px;
-      height: 15px;
+      top: 9px;
+      right: 9px;
+      min-width: 16px;
+      height: 16px;
       padding: 0 3px;
       border-radius: 99px;
       background: var(--seal);
@@ -2938,20 +2939,17 @@
       display: grid
     }
 
+    /* a lone profile photo renders as an exact circle */
+    .others:has(img) {
+      padding: 0;
+      width: 16px
+    }
+
     .others img {
       width: 100%;
       height: 100%;
       object-fit: cover;
       border-radius: 50%
-    }
-
-    .sh-coin {
-      position: relative
-    }
-
-    .sh-coin .others {
-      top: -4px;
-      right: -4px
     }
 
     .card.byothers {
@@ -4230,9 +4228,10 @@
       const flag = i.flag ? `<span class="flag">${esc(i.flag)}</span>` : "";
       const vbadge = i.vd ? `<span class="verdict v-${i.vd}">${i.vd === "go" ? "catch it" : i.vd === "maybe" ? "maybe" : "you'll miss"}</span>` : "";
       return `<article class="card ${has ? "has" : ""}${!has && others ? " byothers" : ""}" data-id="${i.id}">
+    ${othersBadge(i.id)}
     <div class="ctop" data-act="open">
       <div class="crow1">
-        <button class="coin" data-act="coin" aria-label="${has ? "Remove" : "Collect"} coin for ${esc(i.name)}">${has ? CATJP[i.cat] : "＋"}${othersBadge(i.id)}</button>
+        <button class="coin" data-act="coin" aria-label="${has ? "Remove" : "Collect"} coin for ${esc(i.name)}">${has ? CATJP[i.cat] : "＋"}</button>
         <div class="cname">${esc(i.name)}</div>
       </div>
       <div class="cdesc">${esc(d1)}</div>
@@ -4274,7 +4273,7 @@
           ? `<span class="pav" data-tip="${first}" tabindex="0"><img src="${esc(o.photo)}" alt="${first}" referrerpolicy="no-referrer"></span>`
           : `<span class="pav" data-tip="${first}" tabindex="0">${esc((o.name || "?").slice(0, 1).toUpperCase())}</span>`;
       }).join("");
-      return `Pinned by${you ? " you" : ""}${faces}`;
+      return you ? `Pinned by you${faces}` : faces;
     }
     /* keep the open sheet's pin row honest when a coin flips or clan data syncs in */
     function refreshSheetPin() {
@@ -4297,7 +4296,7 @@
       const by = i.custom ? `<div class="sh-by">Added by ${esc(mine ? "you" : (i.byName || "the clan"))}</div>` : "";
       const del = mine ? `<div class="sh-act"><button type="button" class="da sh-del" data-act="del-custom">Remove item</button></div>` : "";
       return `<div class="sh-top">
-      <button class="sh-coin ${has ? "has" : ""}" data-act="coin" aria-label="${has ? "Remove" : "Collect"} coin">${has ? CATJP[i.cat] : "＋"}${othersBadge(i.id)}</button>
+      <button class="sh-coin ${has ? "has" : ""}" data-act="coin" aria-label="${has ? "Remove" : "Collect"} coin">${has ? CATJP[i.cat] : "＋"}</button>
       <div class="sh-head">
         <div class="sh-name">${esc(i.name)}</div>
         <div class="sh-meta">${vbadge}${when}${flag}${price}${locRowHTML(i)}<span class="sh-pin"${pinRowHTML(i.id) ? "" : " hidden"}>${pinRowHTML(i.id)}</span></div>
@@ -4314,7 +4313,7 @@
     ${i.vt ? `<div class="sh-vt">${esc(i.vt)}</div>` : ""}
     ${i.tip ? `<div class="sh-tip">${esc(i.tip)}</div>` : ""}
     ${loc ? `<div class="sh-map"><iframe loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="${src}"></iframe></div>
-      <div class="sh-act"><a class="da" href="${link}" target="_blank" rel="noreferrer">Directions in Maps ↗</a></div>` : ""}
+      <div class="sh-act"><a class="da" href="${link}" target="_blank" rel="noreferrer">Maps ↗</a></div>` : ""}
     ${by}${del}`;
     }
     let lockedY = 0;
@@ -4374,7 +4373,7 @@
         toggleCoin(modalId);
         const c = $("#sheet").querySelector(".sh-coin");
         c.className = "sh-coin" + (state.coins[modalId] ? " has" : "");
-        c.innerHTML = (state.coins[modalId] ? CATJP[ITEMS.find(x => x.id === modalId).cat] : "＋") + othersBadge(modalId);
+        c.innerHTML = state.coins[modalId] ? CATJP[ITEMS.find(x => x.id === modalId).cat] : "＋";
         refreshSheetPin();
       }
     });
@@ -4549,10 +4548,12 @@
       card.classList.toggle("byothers", !has && !!others);
       const coin = card.querySelector(".coin");
       if (coin) {
-        coin.innerHTML = (has ? CATJP[it.cat] : "＋") + othersBadge(id);
+        coin.innerHTML = has ? CATJP[it.cat] : "＋";
         coin.setAttribute("aria-label", (has ? "Remove" : "Collect") + " coin for " + it.name);
         if (pulse) { coin.classList.remove("pulse"); void coin.offsetWidth; coin.classList.add("pulse"); }
       }
+      const badge = card.querySelector(".others"); if (badge) badge.remove();
+      card.insertAdjacentHTML("afterbegin", othersBadge(id));
     }
     function toggleCoin(id) {
       const nowOn = !state.coins[id];
@@ -4902,7 +4903,7 @@
         othersByItem = others;
         if (mine) { state.coins = Object.assign({}, mine); save(); }   /* my cloud pins are authoritative; cache locally */
         renderBuckets(); renderGrid();
-        if (modalId) { const c = $("#sheet").querySelector(".sh-coin"); if (c) { c.className = "sh-coin" + (state.coins[modalId] ? " has" : ""); c.innerHTML = (state.coins[modalId] ? CATJP[ITEMS.find(x => x.id === modalId).cat] : "＋") + othersBadge(modalId); } refreshSheetPin(); }
+        if (modalId) { const c = $("#sheet").querySelector(".sh-coin"); if (c) { c.className = "sh-coin" + (state.coins[modalId] ? " has" : ""); c.innerHTML = state.coins[modalId] ? CATJP[ITEMS.find(x => x.id === modalId).cat] : "＋"; } refreshSheetPin(); }
       }, fbErr);
     }
 
