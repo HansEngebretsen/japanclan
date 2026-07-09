@@ -3111,6 +3111,19 @@
 
     /* mobile size overrides to make interactive elements larger */
     @media (max-width: 719px) {
+      /* Safari Liquid Glass Body Fallback */
+      body.drawer-open {
+        background-color: var(--barseal);
+        background-image: none;
+      }
+      body.drawer-open header,
+      body.drawer-open .wrap,
+      body.drawer-open footer {
+        background-color: var(--paper);
+        background-image: var(--bg-pattern), var(--glow);
+        background-attachment: fixed;
+      }
+
       /* Make ledger drawer background seamless solid var(--barseal) */
       .lgdrawer {
         background-image: none;
