@@ -110,7 +110,7 @@ This triggers a custom `browser-sync` script (`preview.js`) that:
 - Prints a clean, easy-to-read **External IP URL** in the terminal.
 - Allows Safari Web Inspector debugging over Wi-Fi, since it doesn't block proxy traffic.
 
-**Agent Instruction:** When running the mobile preview for the user, check the terminal output for the URL. If the URL is exactly `http://192.168.86.30:3000`, you MUST embed the pre-generated static QR code in your chat response using this exact markdown: `![QR Code](/Users/hansengebretsen/Sites/japanclan/.agents/qr.png)`. If the URL is anything else (e.g., a different port or IP), just provide the text URL to the user.
+**Agent Instruction:** When running the mobile preview for the user, check the terminal output for the URL. If the URL matches the expected IP and port (e.g., `http://192.168.86.30:3000`), you MUST create an artifact named `view-on-mobile.md` that embeds the pre-generated static QR code (`![QR Code](/Users/hansengebretsen/Sites/japanclan/.agents/qr.png)`) and lists the URL and debugging steps. Do not attempt to render the image inline in the chat; simply provide the link to the artifact to the user. If the URL is different, just provide the text URL to the user.
 
 
 ## Don'ts
