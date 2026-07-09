@@ -661,19 +661,19 @@
   .a2hs-wut,.a2hs-hide{align-self:center;margin-top:10px;border:0;background:none;color:inherit;
     opacity:.78;font:inherit;font-size:.8rem;font-weight:600;cursor:pointer;padding:5px 12px;
     text-decoration:underline;text-underline-offset:3px}
-  /* carousel — hidden until expanded */
+  /* carousel — hidden until expanded; panel just hugs the screenshot height */
   .a2hs-car,.a2hs-hide{display:none}
   .a2hs-car{gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;
-    margin-top:12px;flex:1;align-items:center;padding-bottom:4px;scrollbar-width:none}
+    margin-top:12px;align-items:flex-start;padding-bottom:4px;scrollbar-width:none}
   .a2hs-car::-webkit-scrollbar{display:none}
-  .a2hs-car img{flex:0 0 66%;width:66%;height:auto;object-fit:contain;
-    scroll-snap-align:center;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,.35)}
-  /* expanded: grow to almost full screen, swap wut?→hide, reveal carousel */
-  .a2hs.expanded{top:calc(20px + env(safe-area-inset-top))}
-  .a2hs.expanded::after{display:none}
+  .a2hs-car img{flex:0 0 88%;width:88%;height:auto;max-height:64vh;object-fit:contain;
+    scroll-snap-align:start;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,.35)}
+  /* expanded: swap wut?→hide, reveal carousel (height follows the screenshots) */
   .a2hs.expanded .a2hs-wut{display:none}
   .a2hs.expanded .a2hs-hide{display:block}
   .a2hs.expanded .a2hs-car{display:flex}
+  /* never show inside the installed PWA */
+  @media (display-mode:standalone){.a2hs{display:none!important}}
 </style>
 </head>
 <body>
