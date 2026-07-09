@@ -99,6 +99,20 @@ All colors flow through CSS custom properties on `:root` / `[data-theme="dark"]`
 - The manifest `start_url` is `"../"` because the manifest lives in `favicon/`.
 - Icon src in `site.webmanifest` are relative to the manifest file.
 
+### Mobile Preview (Local Server)
+To test the site locally with live-reloading on a mobile device, run:
+```bash
+npm run preview
+```
+This triggers a custom `browser-sync` script (`preview.js`) that:
+- Spawns a local server.
+- Watches for changes in `index.html`, `favicon/**/*`, `sw.js`, `config/**/*`, and `img/**/*` and auto-refreshes.
+- Prints a clean, easy-to-read **External IP URL** in the terminal.
+- Allows Safari Web Inspector debugging over Wi-Fi, since it doesn't block proxy traffic.
+
+**Agent Instruction:** When running the mobile preview for the user, check the terminal output for the URL. If the URL is exactly `http://192.168.86.30:3000`, you MUST embed the pre-generated static QR code in your chat response using this exact markdown: `![QR Code](/Users/hansengebretsen/Sites/japanclan/.agents/qr.png)`. If the URL is anything else (e.g., a different port or IP), just provide the text URL to the user.
+
+
 ## Don'ts
 - Don't split `index.html` into separate files — the single-file design is intentional.
 - Don't upgrade the Firebase SDK from compat to modular without explicit approval.

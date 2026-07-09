@@ -1,0 +1,25 @@
+{
+  "name": "japanclan",
+  "version": "1.0.0",
+  "description": "A single-file trip planner for a July 2026 Japan trip (Tokyo + Hokkaido). Browse only-in-Japan things to **eat / do / buy**, collect them as stamped \"coins,\" see the day-by-day itinerary, and split the shared Hans↔Spencer IOU ledger.",
+  "main": "fetch-maps.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "preview": "node preview.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HansEngebretsen/japanclan.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/HansEngebretsen/japanclan/issues"
+  },
+  "homepage": "https://github.com/HansEngebretsen/japanclan#readme",
+  "devDependencies": {
+    "browser-sync": "^3.0.4",
+    "qrcode-terminal": "^0.12.0"
+  }
+}
