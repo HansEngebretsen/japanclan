@@ -1,0 +1,57 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Item photo review</title>
+<style>
+  body { font: 14px/1.4 -apple-system, sans-serif; margin: 0; background: #f4f1ea; color: #1a1611; padding: 16px; }
+  h1 { font-size: 20px; } h2 { margin: 28px 0 10px; border-bottom: 2px solid #c2492c; padding-bottom: 4px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
+  .cell { background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.12); cursor: pointer; }
+  .cell img { width: 100%; height: 150px; object-fit: cover; display: block; background: #ddd; }
+  .cell .meta { padding: 8px 10px; }
+  .cell .nm { font-weight: 700; }
+  .cell .src { color: #777; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cell.flagged { outline: 4px solid #e01b18; }
+  .cell.flagged .nm::before { content: "🚩 "; }
+  #bar { position: sticky; top: 0; background: #1a1611; color: #fff; padding: 10px 14px; border-radius: 10px; z-index: 5; }
+  #flagged { width: 100%; box-sizing: border-box; margin-top: 6px; font-family: monospace; }
+</style>
+</head>
+<body>
+<h1>Photo review — click any photo to flag it for replacement</h1>
+<div id="bar">Flagged: <span id="count">0</span>
+  <textarea id="flagged" rows="2" readonly placeholder="flagged ids appear here — copy/paste this list back to Claude"></textarea>
+</div>
+<div id="sheets"></div>
+<script>
+const CATS = { eat: "Eat", do: "Do", buy: "Buy / Kids", july: "July" };
+fetch("img/items/manifest.json").then(r => r.json()).then(man => {
+  const ids = Object.keys(man);
+  const byCat = { eat: [], do: [], buy: [], july: [] };
+  ids.forEach(id => {
+    const cat = id[0] === "e" ? "eat" : id[0] === "d" ? "do" : id[0] === "j" ? "july" : "buy";
+    byCat[cat].push(id);
+  });
+  document.getElementById("sheets").innerHTML = Object.entries(byCat).map(([cat, list]) => `
+    <h2>${CATS[cat]} (${list.length})</h2>
+    <div class="grid">${list.map(id => {
+      const m = man[id];
+      return `<div class="cell" data-id="${id}">
+        <img loading="lazy" src="img/items/${m.file}" alt="">
+        <div class="meta"><div class="nm">${m.name}</div><div class="src">${id} · ${(m.title || "").replace(/^File:/, "")}</div></div>
+      </div>`;
+    }).join("")}</div>`).join("");
+});
+const flags = new Set();
+document.addEventListener("click", e => {
+  const c = e.target.closest(".cell"); if (!c) return;
+  c.classList.toggle("flagged");
+  flags[c.classList.contains("flagged") ? "add" : "delete"](c.dataset.id);
+  document.getElementById("count").textContent = flags.size;
+  document.getElementById("flagged").value = [...flags].join(",");
+});
+</script>
+</body>
+</html>
