@@ -1622,6 +1622,9 @@
 
     @media(max-width:719px) {
 
+      body.modal-open .safari-toolbar-fix-top {
+        background-color: rgb(20, 16, 10)
+      }
       body.drawer-open .safari-toolbar-fix,
       body.drawer-open .safari-toolbar-fix-top {
         background-color: var(--barseal)
@@ -1758,6 +1761,17 @@
       flex-wrap: wrap
     }
 
+    .sh-photo {
+      display: block;
+      width: 100%;
+      height: 190px;
+      object-fit: cover;
+      border: 1px solid var(--line-2);
+      border-radius: 9px;
+      margin-top: 13px;
+      background: var(--soft)
+    }
+
     .sh-desc {
       font-size: 13.5px;
       color: var(--ink-2);
@@ -1808,6 +1822,116 @@
 
     .sh-act {
       margin-top: 12px
+    }
+
+    /* ===== add-your-own item — the same sheet, fields dressed as the finished text ===== */
+    .sh-in {
+      display: block;
+      width: 100%;
+      border: 0;
+      margin: 0;
+      padding: 0;
+      background: transparent;
+      font: inherit;
+      color: inherit;
+      letter-spacing: inherit;
+      line-height: inherit;
+      outline: none;
+      resize: none;
+      border-radius: 0;
+      caret-color: var(--seal)
+    }
+
+    .sh-in::placeholder {
+      color: var(--muted);
+      opacity: .7
+    }
+
+    input.sh-name {
+      flex: 1 1 auto
+    }
+
+    .sh-catrow {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin-top: 10px;
+      flex-wrap: wrap
+    }
+
+    .sh-catopt {
+      font-family: var(--mono);
+      font-size: 9.5px;
+      font-weight: 700;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      border-radius: var(--chip-radius);
+      padding: 6px 12px;
+      border: 1px solid var(--line-2);
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: color .15s, border-color .15s, background .15s
+    }
+
+    .sh-catopt .cj {
+      font-family: var(--serif);
+      font-size: 11px;
+      line-height: 1
+    }
+
+    .sh-catopt.on {
+      border-color: var(--seal);
+      color: var(--seal);
+      background: color-mix(in srgb, var(--seal) 9%, transparent)
+    }
+
+    .sh-add {
+      width: 100%;
+      border: 0;
+      border-radius: var(--radius);
+      background: var(--seal);
+      color: #fff;
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .09em;
+      text-transform: uppercase;
+      padding: 12px 14px;
+      cursor: pointer;
+      transition: background .15s, color .15s
+    }
+
+    .sh-add:disabled {
+      background: var(--soft);
+      color: var(--muted);
+      cursor: default
+    }
+
+    .sh-add:not(:disabled):hover {
+      background: var(--seal-2)
+    }
+
+    .sh-by {
+      font-family: var(--mono);
+      font-size: 9.5px;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-top: 12px
+    }
+
+    .sh-del {
+      color: var(--muted);
+      transition: color .15s
+    }
+
+    .sh-del:hover,
+    .sh-del.arm {
+      color: var(--seal)
     }
 
     footer {
@@ -4061,6 +4185,8 @@
     }
 
     /* ---------------- detail modal ---------------- */
+    /* item photos live at img/items/{id}.jpg except these five */
+    const PNG_ITEMS = new Set(["b_stationery", "d_akihabara", "d_themedcafe", "e_hakodateramen", "j_otaru_ushio"]);
     let modalId = null;
     function buildSheet(i) {
       const has = !!state.coins[i.id], loc = i.area !== "jp";
@@ -4085,6 +4211,7 @@
       </button>
     </div>
     <div class="sh-meta">${vbadge}${when}${flag}${price}</div>
+    ${i.custom ? "" : `<img class="sh-photo" src="img/items/${i.id}.${PNG_ITEMS.has(i.id) ? "png" : "jpg"}" alt="" loading="lazy" onerror="this.remove()">`}
     <div class="sh-desc">${esc(i.note)}</div>
     ${i.vt ? `<div class="sh-vt">${esc(i.vt)}</div>` : ""}
     ${i.tip ? `<div class="sh-tip">${esc(i.tip)}</div>` : ""}
