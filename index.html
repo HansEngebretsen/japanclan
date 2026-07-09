@@ -1824,69 +1824,64 @@
       margin-top: 12px
     }
 
-    /* ===== add-your-own item — the same sheet, fields dressed as the finished text ===== */
-    .sh-in {
-      display: block;
-      width: 100%;
-      border: 0;
-      margin: 0;
-      padding: 0;
-      background: transparent;
-      font: inherit;
-      color: inherit;
-      letter-spacing: inherit;
-      line-height: inherit;
-      outline: none;
-      resize: none;
-      border-radius: 0;
-      caret-color: var(--seal)
+    /* ===== add-your-own item — same sheet, fields built from the site's own components ===== */
+    /* category picker = the same sliding-pill segmented control as scheme/payer (.cogseg) */
+    .sh-catseg {
+      margin-top: 12px
     }
 
-    .sh-in::placeholder {
-      color: var(--muted);
-      opacity: .7
-    }
-
-    input.sh-name {
-      flex: 1 1 auto
-    }
-
-    .sh-catrow {
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      margin-top: 10px;
-      flex-wrap: wrap
-    }
-
-    .sh-catopt {
-      font-family: var(--mono);
-      font-size: 9.5px;
-      font-weight: 700;
-      letter-spacing: .04em;
-      text-transform: uppercase;
-      border-radius: var(--chip-radius);
-      padding: 6px 12px;
-      border: 1px solid var(--line-2);
-      background: transparent;
-      color: var(--muted);
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      transition: color .15s, border-color .15s, background .15s
-    }
-
-    .sh-catopt .cj {
+    .sh-catseg .segopt .cj {
       font-family: var(--serif);
-      font-size: 11px;
-      line-height: 1
+      font-size: 12px;
+      margin-right: 5px
     }
 
-    .sh-catopt.on {
+    .sh-catseg .segopt.on .cj {
+      color: inherit
+    }
+
+    /* text fields — the light-page twin of the ledger's wut input */
+    .sh-form {
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+      margin-top: 12px
+    }
+
+    .sh-field {
+      width: 100%;
+      border: 1px solid var(--line-2);
+      border-radius: 9px;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 14px;
+      line-height: 1.5;
+      padding: 10px 12px;
+      outline: 0;
+      caret-color: var(--seal);
+      transition: border-color .12s, background .12s
+    }
+
+    .sh-field::placeholder {
+      color: var(--muted)
+    }
+
+    .sh-field:focus {
       border-color: var(--seal);
-      color: var(--seal);
-      background: color-mix(in srgb, var(--seal) 9%, transparent)
+      background: var(--card)
+    }
+
+    .sh-field.name {
+      font-family: var(--head-font);
+      font-size: 16px;
+      font-weight: var(--head-weight);
+      letter-spacing: var(--head-tracking)
+    }
+
+    textarea.sh-field {
+      resize: none;
+      min-height: 62px
     }
 
     .sh-add {
@@ -3324,8 +3319,9 @@
       .fbtn svg { width: 21px; height: 21px; }
 
       /* Add-your-own sheet */
-      .sh-catopt { font-size: 11px; padding: 8px 14px; }
-      .sh-catopt .cj { font-size: 13px; }
+      .sh-catseg .segopt { padding: 8px 0; font-size: 13px; }
+      .sh-catseg .segopt .cj { font-size: 14px; }
+      .sh-field { font-size: 16px; padding: 11px 12px; }
       .sh-add { font-size: 12.5px; padding: 14px; }
       .stamptog-mark { width: 26px; height: 26px; font-size: 16px; }
       .stamptog::after { width: 26px; }
@@ -4267,7 +4263,8 @@
       if (act && act.dataset.act === "close") { closeModal(); return; }
       if (act && act.dataset.act === "ccat" && modalId === COMPOSE_ID) {
         composeCat = act.dataset.cat;
-        $("#sheet").querySelectorAll(".sh-catopt").forEach(b => b.classList.toggle("on", b.dataset.cat === composeCat));
+        $("#sheet").querySelectorAll(".sh-catseg .segopt").forEach(b => b.classList.toggle("on", b.dataset.cat === composeCat));
+        slideCatBg();
         const cc = $("#cCoin"); if (cc) cc.textContent = CATJP[composeCat];
         return;
       }
@@ -4289,11 +4286,11 @@
     const CUSTOM_CATS = [["eat", "Eat"], ["do", "Do"], ["buy", "Buy"]];
     let composeCat = "do";
     function composeHTML() {
-      const chips = CUSTOM_CATS.map(([k, l]) =>
-        `<button type="button" class="sh-catopt${k === composeCat ? " on" : ""}" data-act="ccat" data-cat="${k}"><span class="cj">${CATJP[k]}</span>${l}</button>`).join("");
+      const opts = CUSTOM_CATS.map(([k, l]) =>
+        `<button type="button" class="segopt${k === composeCat ? " on" : ""}" data-act="ccat" data-cat="${k}"><span class="cj">${CATJP[k]}</span>${l}</button>`).join("");
       return `<div class="sh-top">
       <span class="sh-coin has" id="cCoin" aria-hidden="true">${CATJP[composeCat]}</span>
-      <input class="sh-name sh-in" id="cName" placeholder="Name it…" maxlength="80" autocomplete="off" enterkeyhint="next" aria-label="Item name">
+      <div class="sh-name">Add your own</div>
       <button class="sh-x" data-act="close" aria-label="Close">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
           <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -4301,12 +4298,22 @@
         </svg>
       </button>
     </div>
-    <div class="sh-catrow" role="group" aria-label="Category">${chips}</div>
-    <textarea class="sh-desc sh-in" id="cNote" rows="2" maxlength="400" aria-label="Description"
-      placeholder="What is it — and why is it worth a coin? Paste a description here."></textarea>
-    <div class="sh-tip"><input class="sh-in" id="cTip" maxlength="200" autocomplete="off" enterkeyhint="done" aria-label="Tip" placeholder="Pro tip (optional)"></div>
+    <div class="cogseg sh-catseg" id="cCatSeg" role="group" aria-label="Category">
+      <span class="segbg" id="cCatBg" aria-hidden="true"></span>${opts}
+    </div>
+    <div class="sh-form">
+      <input class="sh-field name" id="cName" placeholder="Name it…" maxlength="80" autocomplete="off" enterkeyhint="next" aria-label="Item name">
+      <textarea class="sh-field" id="cNote" rows="2" maxlength="400" aria-label="Description"
+        placeholder="What is it — and why is it worth a coin?"></textarea>
+      <input class="sh-field" id="cTip" maxlength="200" autocomplete="off" enterkeyhint="done" aria-label="Tip" placeholder="Pro tip (optional)">
+    </div>
     <div class="sh-act"><button type="button" class="sh-add" id="cAdd" data-act="add-custom" disabled>Add to the list</button></div>
     <div class="sh-by">${me ? "Shared with the whole clan · stamped as yours" : "Saves on this device — sign in to share it with the clan"}</div>`;
+    }
+    /* park the sliding pill under whichever category is on (same slideSegBg as scheme/payer) */
+    function slideCatBg() {
+      const seg = $("#cCatSeg"); if (!seg) return;
+      slideSegBg(seg, $("#cCatBg"), seg.querySelector(".segopt.on"));
     }
     function composeDirty() {
       return ["cName", "cNote", "cTip"].some(id => { const el = document.getElementById(id); return el && el.value.trim(); });
@@ -4320,9 +4327,12 @@
       $("#sheet").innerHTML = composeHTML();
       lockMobileScroll();
       const ov = $("#ov"); ov.setAttribute("aria-hidden", "false");
-      requestAnimationFrame(() => ov.classList.add("show"));
+      requestAnimationFrame(() => { ov.classList.add("show"); slideCatBg(); });
       const n = $("#cName"); if (n) n.focus({ preventScroll: true });
+      if (typeof syncThemeColor === "function") syncThemeColor();
     }
+    /* the sliding pill is geometry-based; keep it correctly parked if the sheet reflows */
+    window.addEventListener("resize", () => { if (modalId === COMPOSE_ID) slideCatBg(); });
     { const aib = $("#addItemBtn"); if (aib) aib.addEventListener("click", openCompose); }
     $("#sheet").addEventListener("input", e => {
       if (modalId !== COMPOSE_ID) return;

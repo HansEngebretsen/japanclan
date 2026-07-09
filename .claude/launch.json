@@ -4,7 +4,8 @@
     {
       "name": "japan-clan",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["serve", "-p", "4321", "."],
+      "runtimeArgs": ["serve", "."],
+      "autoPort": true,
       "port": 4321
     }
   ]

@@ -33,6 +33,14 @@ service cloud.firestore {
         allow read: if isMember();
         allow write: if request.auth != null && request.auth.uid == uid && isMember();
       }
+
+      // clan-added items — members read; any member may add one as themselves;
+      // only the person who added an item may change or remove it
+      match /items/{item} {
+        allow read: if isMember();
+        allow create: if isMember() && request.resource.data.byUid == request.auth.uid;
+        allow update, delete: if isMember() && resource.data.byUid == request.auth.uid;
+      }
     }
   }
 }
