@@ -2480,6 +2480,11 @@
       transition: opacity .15s, color .12s, background .12s
     }
 
+    .lg-del svg {
+      width: 11px;
+      height: 11px
+    }
+
     .lg-row:hover .lg-swap,
     .lg-row:hover .lg-del {
       opacity: 1
@@ -3218,20 +3223,28 @@
         right: 10px;
         transform: translateY(-100%);
       }
-      .lg-plus { width: 38px; height: 38px; display: grid; place-items: center; }
+      .lg-wut { font-size: 16px; padding: 14px 12px; height: 50px; }
+      .lg-plus { width: 50px; height: 50px; display: grid; place-items: center; }
       .lg-plus svg { width: 24px; height: 24px; stroke-width: 2.2px; }
 
       /* Row Actions size increase & Larger font for row labels */
       .lg-actions { gap: 12px; }
       .lg-swap, .lg-del {
-        width: 38px;
-        height: 38px;
-        font-size: 22px;
-        opacity: .75;
+        width: 42px;
+        height: 42px;
+        font-size: 24px;
+        font-weight: 900;
+        opacity: .85;
+      }
+      .lg-del svg {
+        width: 24px;
+        height: 24px;
+        stroke-width: 2.2px;
       }
       .lg-wutn { font-size: 15px; }
       .lg-total { font-size: 12px; }
       .lg-cell { font-size: 14px; }
+      .lg-th { font-size: 11px; }
     }
   </style>
 </head>
@@ -4279,7 +4292,12 @@
       <div class="lg-cell ${s.c}">${s.t}</div>
       <div class="lg-actions">
         <button class="lg-swap" data-swap data-tip="Swap" aria-label="Swap who paid">⇄</button>
-        <button class="lg-del" data-del data-tip="Delete row" aria-label="Delete row">×</button>
+        <button class="lg-del" data-del data-tip="Delete row" aria-label="Delete row">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
       </div>
     </div>`;
       }).join("") : "";
