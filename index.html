@@ -1695,9 +1695,14 @@
 
     .sh-top {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       gap: 11px;
       padding-right: 32px
+    }
+
+    .sh-head {
+      flex: 1;
+      min-width: 0
     }
 
     .sh-coin {
@@ -1726,9 +1731,60 @@
       font-size: 18px;
       font-weight: var(--head-weight);
       line-height: 1.25;
-      flex: 1;
-      min-width: 0;
       padding-top: 2px
+    }
+
+    /* compose sheet keeps its title directly inside sh-top */
+    .sh-top>.sh-name {
+      flex: 1;
+      min-width: 0
+    }
+
+    /* metadata rows under the title: location + who pinned it */
+    .sh-sub {
+      margin-top: 7px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px
+    }
+
+    .sh-loc,
+    .sh-pin {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      color: var(--muted)
+    }
+
+    .sh-loc svg {
+      width: 11px;
+      height: 11px;
+      flex: 0 0 auto
+    }
+
+    .pav {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      overflow: hidden;
+      flex: 0 0 auto;
+      display: inline-grid;
+      place-items: center;
+      background: var(--soft);
+      color: var(--ink-2);
+      font-size: 8px
+    }
+
+    .pav img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block
     }
 
     .sh-x {
@@ -1797,7 +1853,7 @@
     }
 
     .sh-tip::before {
-      content: "Hot tip";
+      content: "コツ · Tip";
       display: block;
       font-family: var(--mono);
       font-size: 8.5px;
@@ -4191,6 +4247,32 @@
 
     /* ---------------- detail modal ---------------- */
     let modalId = null;
+    /* metadata rows under the sheet title: where it is, and who has pinned it */
+    function locRowHTML(i) {
+      const label = i.area && i.area !== "jp"
+        ? i.area.charAt(0).toUpperCase() + i.area.slice(1)
+        : i.reg === "tokyo" ? "Tokyo" : i.reg === "hokkaido" ? "Hokkaido" : "All over Japan";
+      return `<div class="sh-loc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-6-5.2-6-10a6 6 0 1 1 12 0c0 4.8-6 10-6 10z"/><circle cx="12" cy="11" r="2.3"/></svg>${esc(label)}</div>`;
+    }
+    function pinRowHTML(id) {
+      const you = !!state.coins[id], others = othersByItem[id] || [];
+      if (!you && !others.length) return "";
+      const faces = others.map(o => {
+        const first = esc((o.name || "someone").split(" ")[0]);
+        return o.photo
+          ? `<span class="pav" data-tip="${first}" tabindex="0"><img src="${esc(o.photo)}" alt="${first}" referrerpolicy="no-referrer"></span>`
+          : `<span class="pav" data-tip="${first}" tabindex="0">${esc((o.name || "?").slice(0, 1).toUpperCase())}</span>`;
+      }).join("");
+      return `Pinned by${you ? " you" : ""}${faces}`;
+    }
+    /* keep the open sheet's pin row honest when a coin flips or clan data syncs in */
+    function refreshSheetPin() {
+      if (!modalId) return;
+      const el = $("#sheet .sh-pin"); if (!el) return;
+      const html = pinRowHTML(modalId);
+      el.innerHTML = html;
+      el.hidden = !html;
+    }
     function buildSheet(i) {
       const has = !!state.coins[i.id], loc = i.area !== "jp";
       const flag = i.flag ? `<span class="flag">${esc(i.flag)}</span>` : "";
@@ -4205,7 +4287,11 @@
       const del = mine ? `<div class="sh-act"><button type="button" class="da sh-del" data-act="del-custom">Remove item</button></div>` : "";
       return `<div class="sh-top">
       <button class="sh-coin ${has ? "has" : ""}" data-act="coin" aria-label="${has ? "Remove" : "Collect"} coin">${has ? CATJP[i.cat] : "＋"}${othersBadge(i.id)}</button>
-      <div class="sh-name">${esc(i.name)}</div>
+      <div class="sh-head">
+        <div class="sh-name">${esc(i.name)}</div>
+        <div class="sh-meta">${vbadge}${when}${flag}${price}</div>
+        <div class="sh-sub">${locRowHTML(i)}<div class="sh-pin"${pinRowHTML(i.id) ? "" : " hidden"}>${pinRowHTML(i.id)}</div></div>
+      </div>
       <button class="sh-x" data-act="close" aria-label="Close">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
           <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -4213,7 +4299,6 @@
         </svg>
       </button>
     </div>
-    <div class="sh-meta">${vbadge}${when}${flag}${price}</div>
     <div class="sh-desc">${esc(i.note)}</div>
     ${i.custom ? "" : `<img class="sh-photo" src="img/items/${i.id}.jpg" alt="" onerror="this.remove()">`}
     ${i.vt ? `<div class="sh-vt">${esc(i.vt)}</div>` : ""}
@@ -4280,6 +4365,7 @@
         const c = $("#sheet").querySelector(".sh-coin");
         c.className = "sh-coin" + (state.coins[modalId] ? " has" : "");
         c.innerHTML = (state.coins[modalId] ? CATJP[ITEMS.find(x => x.id === modalId).cat] : "＋") + othersBadge(modalId);
+        refreshSheetPin();
       }
     });
 
@@ -4701,7 +4787,7 @@
       lgTip.style.top = top + "px";
     }
     function hideTip() { if (!lgTipEl) return; lgTipEl = null; try { lgTip.hidePopover(); } catch (_) { } }
-    [lgdrawer, $(".filt-tools"), $("header")].forEach(root => {
+    [lgdrawer, $(".filt-tools"), $("header"), $("#ov")].forEach(root => {
       if (!root) return;
       root.addEventListener("mouseover", e => { const el = e.target.closest?.("[data-tip]"); el ? showTip(el) : hideTip(); });
       root.addEventListener("mouseleave", hideTip);
@@ -4806,7 +4892,7 @@
         othersByItem = others;
         if (mine) { state.coins = Object.assign({}, mine); save(); }   /* my cloud pins are authoritative; cache locally */
         renderBuckets(); renderGrid();
-        if (modalId) { const c = $("#sheet").querySelector(".sh-coin"); if (c) { c.className = "sh-coin" + (state.coins[modalId] ? " has" : ""); c.innerHTML = (state.coins[modalId] ? CATJP[ITEMS.find(x => x.id === modalId).cat] : "＋") + othersBadge(modalId); } }
+        if (modalId) { const c = $("#sheet").querySelector(".sh-coin"); if (c) { c.className = "sh-coin" + (state.coins[modalId] ? " has" : ""); c.innerHTML = (state.coins[modalId] ? CATJP[ITEMS.find(x => x.id === modalId).cat] : "＋") + othersBadge(modalId); } refreshSheetPin(); }
       }, fbErr);
     }
 
