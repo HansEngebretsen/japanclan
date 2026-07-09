@@ -387,7 +387,10 @@
 
   /* detail modal — opens over the page, never reflows the grid */
   .safari-toolbar-fix{position:fixed;bottom:0;left:10%;width:80%;height:4px;background-color:var(--paper);z-index:-9999;pointer-events:none;opacity:0.01}
-  @media(max-width:719px){body.drawer-open .safari-toolbar-fix{background-color:var(--barseal)}}
+  .safari-toolbar-fix-top{position:fixed;top:0;left:10%;width:80%;height:4px;background-color:var(--paper);z-index:-9999;pointer-events:none;opacity:0.01}
+  @media(max-width:719px){
+    body.drawer-open .safari-toolbar-fix, body.drawer-open .safari-toolbar-fix-top{background-color:var(--barseal)}
+  }
   .ov{position:fixed;inset:0;z-index:50;visibility:hidden;transition:visibility 0s linear .2s;
     display:flex;align-items:flex-end;justify-content:center}
   .ov::before{content:'';position:absolute;inset:0;background:rgba(20,16,10,.42);opacity:0;transition:opacity .2s ease;pointer-events:none}
@@ -444,7 +447,7 @@
   .lgdrawer{--dtext:rgba(255,255,255,.94);--dmuted:rgba(255,255,255,.62);--dfaint:rgba(255,255,255,.42);
     --dline:rgba(255,255,255,.16);--dline2:rgba(255,255,255,.30);--dsurf:rgba(255,255,255,.10);--dsurf2:rgba(255,255,255,.17);
     position:fixed;right:0;top:0;bottom:0;width:var(--lgw);max-width:100%;z-index:40;
-    background:var(--dseal);color:var(--dtext);
+    background-color:var(--barseal);background:var(--dseal);color:var(--dtext);
     visibility:hidden;transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1), visibility 0s linear .3s;
     overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;
     padding:calc(env(safe-area-inset-top) + 22px) 26px calc(env(safe-area-inset-bottom) + 30px)}
@@ -466,7 +469,7 @@
   }
   /* mobile: full width, tab hides once drawer takes over, close button returns */
   @media(max-width:719px){
-    .lgdrawer{width:100%;border-left:none}
+    .lgdrawer{width:100%;height:100dvh;border-left:none}
     body.drawer-open .nobori{opacity:0;pointer-events:none}
     .lgdrawer .lg-x{display:grid}
     .nobori{position:static;width:28px;height:28px;background:transparent;box-shadow:none;border-radius:0;color:var(--ink-2);transform:none!important}
@@ -629,8 +632,6 @@
     display:flex;align-items:center;gap:7px;padding:0}
   .cog-a2hs:hover{opacity:.7}
   .cog-a2hs svg{width:15px;height:15px;flex:0 0 auto}
-  @media (hover:none) and (pointer:coarse){.cog-a2hs-row{display:block}}
-  @media (display-mode:standalone){.cog-a2hs-row{display:none}}
   /* scheme segmented control — same sliding-bg logic as the payer control */
   .cogseg{position:relative;display:flex;background:var(--soft);border-radius:99px;padding:3px;margin-top:4px}
   .cogseg .segbg{position:absolute;border-radius:99px;background:var(--seal);pointer-events:none;
@@ -653,7 +654,7 @@
   /* ===== add-to-homescreen tooltip (iOS Safari, first visit only) ===== */
   .a2hs{position:fixed;left:12px;right:12px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:45;
     display:flex;flex-direction:column;max-width:420px;margin-left:auto;
-    background:var(--ink);color:var(--paper);border-radius:14px;padding:12px;
+    background:var(--ink);color:var(--paper);border-radius:14px;padding:18px 14px 14px;
     box-shadow:0 10px 30px rgba(0,0,0,.30);
     opacity:0;transform:translateY(12px);transition:opacity .3s ease,transform .3s ease}
   .a2hs.show{opacity:1;transform:none}
@@ -666,7 +667,7 @@
   .a2hs-ic{width:15px;height:15px;vertical-align:-2.5px}
   .a2hs-dot{fill:var(--ink)}
   .a2hs-b{font-weight:700}
-  .a2hs-x{position:absolute;top:3px;right:3px;border:0;background:none;color:inherit;opacity:.7;padding:8px;cursor:pointer;line-height:0}
+  .a2hs-x{position:absolute;top:6px;right:6px;border:0;background:none;color:inherit;opacity:.7;padding:8px;cursor:pointer;line-height:0}
   .a2hs-x:hover{opacity:1}
   .a2hs-x svg{width:20px;height:20px}
   .a2hs-wut,.a2hs-hide{align-self:center;margin-top:10px;border:0;background:none;color:inherit;
@@ -721,8 +722,8 @@
           </div>
           <div class="cog-a2hs-row" id="cogA2hsRow">
             <button type="button" class="cog-a2hs" id="cogA2hs">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><polyline points="8 7 12 3 16 7"/><rect x="4" y="13" width="16" height="8" rx="2"/></svg>
-              Offline access
+              View offline
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3.5c-.5-.5-2.5 0-4 1.5L13.5 8.5 5.3 6.7c-.9-.2-1.9.1-2.4.9l-.7.7 7.7 4.7-4.7 4.7-3.1-.4c-.5-.1-1 .1-1.3.5l-.5.5 4.3 2 2 4.3.5-.5c.4-.3.6-.8.5-1.3l-.4-3.1 4.7-4.7 4.7 7.7.7-.7c.8-.5 1.1-1.5.9-2.4z"/></svg>
             </button>
           </div>
         </div>
@@ -766,6 +767,7 @@
 <div class="lg-edge" id="lgEdge" aria-hidden="true"></div>
 <div class="lg-backdrop" id="lgBackdrop"></div>
 <div class="safari-toolbar-fix"></div>
+<div class="safari-toolbar-fix-top"></div>
 
 <div class="lgdrawer" id="lgdrawer" role="complementary" aria-label="Split the bill">
   <div class="lg-hd">
@@ -818,7 +820,7 @@
   <div class="a2hs-top">
     <img class="a2hs-icon" src="favicon/icon-192.png" alt="Japan Clan app icon">
     <div class="a2hs-txt">
-      <div class="a2hs-title">Offline access</div>
+      <div class="a2hs-title">View offline <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:14px;height:14px;display:inline-block;vertical-align:middle;margin-left:4px;margin-top:-2px;"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3.5c-.5-.5-2.5 0-4 1.5L13.5 8.5 5.3 6.7c-.9-.2-1.9.1-2.4.9l-.7.7 7.7 4.7-4.7 4.7-3.1-.4c-.5-.1-1 .1-1.3.5l-.5.5 4.3 2 2 4.3.5-.5c.4-.3.6-.8.5-1.3l-.4-3.1 4.7-4.7 4.7 7.7.7-.7c.8-.5 1.1-1.5.9-2.4z"/></svg></div>
       <div class="a2hs-steps">Tap
         <svg class="a2hs-ic" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="9" fill="currentColor"/><circle class="a2hs-dot" cx="5.6" cy="10" r="1.5"/><circle class="a2hs-dot" cx="10" cy="10" r="1.5"/><circle class="a2hs-dot" cx="14.4" cy="10" r="1.5"/></svg>
         then
@@ -1676,7 +1678,6 @@ function openDrawer(){
     lockMobileScroll();
   }
   renderLedger();
-  if(window.a2hsAuto)window.a2hsAuto();   /* first ledger engagement → offer add-to-home */
   setTimeout(()=>{lgAmt.focus();refreshPayerSeg();},310);
 }
 function closeDrawer(){
@@ -2027,10 +2028,15 @@ function restoreMe(){const cached=localStorage.getItem("_me");if(cached)try{me=J
     el.classList.remove("show");
     setTimeout(()=>{el.hidden=true;el.classList.remove("expanded");},300);
   }
-  /* auto trigger from the ledger: iOS mobile only, and only until the user dismisses it */
-  window.a2hsAuto=()=>{if(isIOS&&isMobile()&&!isStandalonePWA()&&!isDismissed())reveal();};
-  /* manual trigger from Settings: mobile only, always shows the instructions, ignores dismissal */
-  window.a2hsOpen=()=>{if(isMobile()&&!isStandalonePWA())reveal();};
+  /* manual trigger from Settings: iOS mobile only, always shows the instructions, ignores dismissal */
+  window.a2hsOpen=()=>{if(isIOS&&isMobile()&&!isStandalonePWA())reveal();};
+
+  /* auto trigger on first page load: iOS mobile only, and only until the user dismisses it */
+  if(isIOS&&isMobile()&&!isStandalonePWA()){
+    const row=$("#cogA2hsRow");
+    if(row)row.style.display="block";
+    if(!isDismissed())setTimeout(reveal,1200);
+  }
 
   $("#a2hsX").addEventListener("click",()=>hide(true));
   $("#a2hsWut").addEventListener("click",()=>el.classList.add("expanded"));
