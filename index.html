@@ -574,7 +574,29 @@
       margin-top: 14px;
       border: 1px solid var(--line-2);
       border-radius: var(--radius);
-      overflow: hidden
+      overflow: hidden;
+      position: relative
+    }
+
+    /* signed-out veil — itinerary details stay in Firestore until an allowed account signs in */
+    .cal-lock {
+      position: absolute;
+      inset: 0;
+      z-index: 4;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(1.5px);
+      -webkit-backdrop-filter: blur(1.5px);
+      background: color-mix(in srgb, var(--paper) 22%, transparent)
+    }
+
+    .cal-lock[hidden] {
+      display: none
+    }
+
+    .cal-lock .authbtn {
+      font-size: 13px
     }
 
     .calgrid {
@@ -3011,9 +3033,9 @@
       position: absolute;
       top: 9px;
       right: 9px;
-      min-width: 16px;
-      height: 16px;
-      padding: 0 3px;
+      min-width: 24px;
+      height: 24px;
+      padding: 0 4px;
       border-radius: 99px;
       background: var(--seal);
       color: #fff;
@@ -3021,7 +3043,7 @@
       display: none;
       place-items: center;
       font-family: var(--mono);
-      font-size: 8px;
+      font-size: 9.5px;
       font-weight: 700;
       line-height: 1;
       overflow: hidden
@@ -3034,7 +3056,7 @@
     /* a lone profile photo renders as an exact circle */
     .others:has(img) {
       padding: 0;
-      width: 16px
+      width: 24px
     }
 
     .others img {
@@ -3605,6 +3627,9 @@
   <div class="wrap">
     <section class="cal">
       <div class="calgrid" id="days"></div>
+      <div class="cal-lock" id="calLock">
+        <button class="authbtn" id="calLockBtn" type="button">Sign in to view calendar</button>
+      </div>
     </section>
 
     <div class="itin-win" id="itinWin"></div>
@@ -3831,7 +3856,27 @@
     const DAYS = [14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24];
     const CAL_DAYS = [12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25];
     const TRIP = new Set(DAYS);
-    const DEFAULT_CITY = { 14: "Tokyo", 15: "Tokyo", 16: "Tokyo", 17: "Tokyo", 18: "Tokyo", 19: "Hakodate", 20: "Sapporo", 21: "Sapporo", 22: "Otaru", 23: "Tokyo", 24: "Tokyo" };
+    /* trip details (cities, flights, hotels, confirmation numbers) are private —
+       they live in Firestore at trips/japan-2026/config/itinerary (allowlisted
+       accounts only) and hydrate after sign-in; nothing sensitive ships in this file */
+    let DEFAULT_CITY = {}, STAYS = {}, ITIN = {}, itinLoaded = false;
+    function hydrateItin(data) {
+      if (!data) return;
+      STAYS = data.stays || {};
+      DEFAULT_CITY = data.defaultCity || {};
+      ITIN = {};
+      Object.keys(data.itin || {}).forEach(k => {
+        const src = data.itin[k], e = {};
+        if (src.main) e.main = src.main;
+        if (src.stay && STAYS[src.stay]) e.stay = STAYS[src.stay];   /* shared object refs keep multi-night stays linked */
+        ITIN[k] = e;
+      });
+      itinLoaded = true;
+    }
+    function clearItin() {
+      DEFAULT_CITY = {}; STAYS = {}; ITIN = {}; itinLoaded = false;
+      try { localStorage.removeItem("_itin"); } catch (e) { }
+    }
     /* calendar corner glyph, derived automatically from that day's itinerary event */
     function evtGlyph(d) {
       const m = (typeof ITIN !== "undefined" && ITIN[d]) ? ITIN[d].main : null;
@@ -3845,6 +3890,7 @@
     function izone(i) { return i.reg === "either" ? "any" : (i.reg === "hokkaido" ? "hok" : "tyo"); }
     function esc2(s) { return String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
     function renderCal() {
+      const lock = document.getElementById("calLock"); if (lock) lock.hidden = itinLoaded;
       const el = document.getElementById("days"); el.innerHTML = "";
       WD.forEach(w => { const h = document.createElement("div"); h.className = "cwd"; h.textContent = w; el.appendChild(h); });
       CAL_DAYS.forEach((d, idx) => {
@@ -3852,6 +3898,14 @@
         const isLast = idx >= CAL_DAYS.length - 7;
         const lastCls = isLast ? " row-last" : "";
         if (!TRIP.has(d)) { cell.className = "cell out" + lastCls; cell.innerHTML = `<div class="dn">${d}</div>`; el.appendChild(cell); return; }
+        /* signed out: decoy cells (fake cities, no data-d/click target) sit blurred behind the veil */
+        if (!itinLoaded) {
+          const fake = ["Tokyo", "Kyoto", "Osaka", "Nara", "Kobe", "Sendai"][idx % 6];
+          const gl = (d === DAYS[0] || d === DAYS[DAYS.length - 1]) ? `<span class="fl">${ICONS.flight}</span>` : "";
+          cell.className = "cell active z-" + (idx % 3 ? "tyo" : "hok") + lastCls;
+          cell.innerHTML = `${gl}<div class="dn">${d}</div><div class="city">${fake}</div>`;
+          el.appendChild(cell); return;
+        }
         const city = cityOf(d), z = zoneOfCity(city);
         cell.className = "cell active z-" + z + (d === itinDay ? " picked" : "") + lastCls; cell.dataset.d = d;
         cell.innerHTML = `${evtGlyph(d)}<div class="dn">${d}</div><div class="city">${esc2(city)}</div>`;
@@ -3870,27 +3924,8 @@
       expand: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>',
       collapse: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14h6v6"/><path d="M20 10h-6V4"/><path d="M14 10l7-7"/><path d="M3 21l7-7"/></svg>'
     };
-    /* one headline per day (flight/train > hotel check-in > event) + where you sleep that night */
-    const STAYS = {
-      shibuya: { title: "all day place shibuya", addr: "150-0002 Tokyo-to, 1-17-1 Shibuya, Shibuya-ku, Japan", in: "3:00 PM", out: "11:00 AM", tz: "GMT+9", day: 15 },
-      hakodate: { title: "Premier Hotel - Cabin President - Hakodate", addr: "14-10 Wakamatsucho Hakodate 040-0063 JP", in: "3:00 PM", out: "11:00 AM", tz: "GMT+9", day: 19 },
-      sapporo: { title: "Onsen Ryokan Yuen Sapporo", addr: "7-6, Kita 1 jo Nishi, Chuo-ku, Sapporo, Hokkaido Prefecture", in: "3:00 PM", out: "11:00 AM", tz: "GMT+9", day: 20 },
-      otaru: { title: "Otaru Kourakuen", addr: "8-1, Shinko 5-chome, Otaru, Hokkaido Prefecture", in: "3:00 PM", out: "11:00 AM", tz: "GMT+9", day: 22 },
-      bellustar: { title: "Bellustar Tokyo, a Pan Pacific Hotel", addr: "1-39-1, Kabukicho Shinjuku-ku Tokyo 00 160-0021 JP", in: "3:00 PM", out: "12:00 PM", tz: "GMT+9", day: 23 }
-    };
-    const ITIN = {
-      14: { main: { t: "1:30 PM", tz: "PDT", ic: "flight", title: "SEA → NRT", wp: "Narita International Airport", sub: ["Flight Number AS 823", "Confirmation QMCZLP", "Seat(s) 14G, 14E", "Arrive 7/15/2026 4:00 PM GMT+9"] } },
-      15: { stay: STAYS.shibuya },
-      16: { main: { t: "6:00 PM", tz: "GMT+9", ic: "event", title: "Swallows game", wp: "Meiji Jingu Stadium", sub: ["Meiji Jingu Baseball Stadium", "3-1 Kasumigaokamachi, Shinjuku City, Tokyo 160-0013, Japan", "Ends 7:00 PM"] }, stay: STAYS.shibuya },
-      17: { stay: STAYS.shibuya },
-      18: { main: { t: "9:00 AM", tz: "GMT+9", ic: "event", title: "Disney SEA TICKETS", wp: "Tokyo DisneySea", sub: ["Tokyo DisneySea", "1-13 Maihama, Urayasu, Chiba 279-8511, Japan", "Ends 9:00 PM"] }, stay: STAYS.shibuya },
-      19: { main: { t: "12:20 PM", tz: "GMT+9", ic: "train", title: "TOKYO → SHIN HAKODATE-HOKUTO", wp: "Shin-Hakodate-Hokuto Station", sub: ["East Japan Railway Company Train 23", "Coach 10, Seat(s) 4-B, 4-C, 5-B, 5-C", "Confirmation E47543", "Arrive 7/19/2026 4:30 PM GMT+9"] }, stay: STAYS.hakodate },
-      20: { stay: STAYS.sapporo },
-      21: { stay: STAYS.sapporo },
-      22: { stay: STAYS.otaru },
-      23: { main: { t: "2:40 PM", tz: "GMT+9", ic: "flight", title: "CTS → HND", wp: "Haneda Airport", sub: ["Flight Number BC SKY 716", "Confirmation 1031", "Arrive 7/23/2026 4:20 PM GMT+9"] }, stay: STAYS.bellustar },
-      24: { main: { t: "6:00 PM", tz: "GMT+9", ic: "flight", title: "NRT → SEA", wp: "Narita International Airport", sub: ["Flight Number AS 824", "Confirmation QNBHHA", "Seat(s) 18H, 18J", "Arrive 7/24/2026 11:15 AM PDT"] } }
-    };
+    /* STAYS / ITIN (one headline per day: flight/train > hotel check-in > event, plus
+       where you sleep that night) are declared above and hydrated from Firestore */
     function mapsLink(wp) { return "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(wp); }
     /* wider for airports/stations, closer for hotels & venues */
     function mapZoom(ic) { return ic === "flight" ? 9 : ic === "train" ? 10 : 12; }
@@ -4033,6 +4068,7 @@
     function showAllDays() { itinAll = true; animItin(renderItinAll()); }
     function closeItin() { if (!itinOpen()) return; itinDay = null; itinAll = false; markPicked(); animItin(null); }
     document.getElementById("days").addEventListener("click", e => {
+      if (!itinLoaded) return;   /* decoy cells behind the sign-in veil aren't interactive */
       const cell = e.target.closest(".cell.active"); if (!cell) return;
       const d = +cell.dataset.d;
       if (itinAll) { selectDay(d); return; }            /* clicking a date exits the timeline into that day */
@@ -4251,7 +4287,7 @@
     let catF = "all", selBucket = null, shuffleRank = null, showStamped = (state.showStamped !== false), sortPending = false;
     /* sync state: `me` = signed-in user (null when signed out); othersByItem[id] = [{uid,name,photo}] who else pinned it */
     let me = null, othersByItem = Object.create(null);
-    let fbAuth = null, fbLedger = null, fbPins = null, fbRoster = null, fbItems = null; /* Firestore refs, set once Firebase loads */
+    let fbAuth = null, fbLedger = null, fbPins = null, fbRoster = null, fbItems = null, fbItinDoc = null; /* Firestore refs, set once Firebase loads */
     const open = new Set();
     const $ = (s, e = document) => e.querySelector(s);
     const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -4327,6 +4363,13 @@
       return true;
     }
     function priceMark(lvl) { if (!lvl) return ""; return `<span class="lvl"><b>${"¥".repeat(lvl)}</b>${"¥".repeat(3 - lvl)}</span>`; }
+    /* pin state for an item: "mine" is your own coin (the only thing clicking the coin ever toggles);
+       "has" is the display state — pinned by you OR by any other signed-in clan member — so a friend's
+       pin shows the item as collected everywhere, not just via the small corner badge */
+    function pinInfo(id) {
+      const mine = !!state.coins[id], others = othersByItem[id] || [];
+      return { mine, others, has: mine || !!others.length };
+    }
     /* small badge shown on a token when other people have collected it (only meaningful when signed in) */
     function othersBadge(id) {
       const list = othersByItem[id]; if (!list || !list.length) return "";
@@ -4335,16 +4378,15 @@
       return `<span class="others show" title="Also collected by ${esc(label)}">${list.length > 1 ? list.length : face}</span>`;
     }
     function cardHTML(i) {
-      const has = !!state.coins[i.id];
-      const others = othersByItem[i.id] && othersByItem[i.id].length;
+      const { mine, others, has } = pinInfo(i.id);
       const p = i.note.split(" — "), d1 = p[0];
       const flag = i.flag ? `<span class="flag">${esc(i.flag)}</span>` : "";
       const vbadge = i.vd ? `<span class="verdict v-${i.vd}">${i.vd === "go" ? "catch it" : i.vd === "maybe" ? "maybe" : "you'll miss"}</span>` : "";
-      return `<article class="card ${has ? "has" : ""}${!has && others ? " byothers" : ""}" data-id="${i.id}">
+      return `<article class="card ${has ? "has" : ""}${!mine && others.length ? " byothers" : ""}" data-id="${i.id}">
     ${othersBadge(i.id)}
     <div class="ctop" data-act="open">
       <div class="crow1">
-        <button class="coin" data-act="coin" aria-label="${has ? "Remove" : "Collect"} coin for ${esc(i.name)}">${has ? CATJP[i.cat] : "＋"}</button>
+        <button class="coin" data-act="coin" aria-label="${mine ? "Remove" : "Collect"} coin for ${esc(i.name)}">${has ? CATJP[i.cat] : "＋"}</button>
         <div class="cname">${esc(i.name)}</div>
       </div>
       <div class="cdesc">${esc(d1)}</div>
@@ -4397,7 +4439,7 @@
       el.hidden = !html;
     }
     function buildSheet(i) {
-      const has = !!state.coins[i.id], loc = i.area !== "jp";
+      const { mine: pinMine, has } = pinInfo(i.id), loc = i.area !== "jp";
       const flag = i.flag ? `<span class="flag">${esc(i.flag)}</span>` : "";
       const vbadge = i.vd ? `<span class="verdict v-${i.vd}">${i.vd === "go" ? "catch it" : i.vd === "maybe" ? "maybe" : "you'll miss"}</span>` : "";
       const price = priceMark(i.lvl);
@@ -4409,7 +4451,7 @@
       const by = i.custom ? `<div class="sh-by">Added by ${esc(mine ? "you" : (i.byName || "the clan"))}</div>` : "";
       const del = mine ? `<div class="sh-act"><button type="button" class="da sh-del" data-act="del-custom">Remove item</button></div>` : "";
       return `<div class="sh-handle" aria-hidden="true"></div><div class="sh-top">
-      <button class="sh-coin ${has ? "has" : ""}" data-act="coin" aria-label="${has ? "Remove" : "Collect"} coin">${has ? CATJP[i.cat] : "＋"}</button>
+      <button class="sh-coin ${has ? "has" : ""}" data-act="coin" aria-label="${pinMine ? "Remove" : "Collect"} coin">${has ? CATJP[i.cat] : "＋"}</button>
       <div class="sh-head">
         <div class="sh-name">${esc(i.name)}</div>
         <div class="sh-meta">${vbadge}${when}${flag}${[price, locRowHTML(i)].filter(Boolean).join(`<span class="sh-div"></span>`)}<span class="sh-pin"${pinRowHTML(i.id) ? "" : " hidden"}>${pinRowHTML(i.id)}</span></div>
@@ -4484,9 +4526,9 @@
       }
       if (act && act.dataset.act === "coin" && modalId && modalId !== COMPOSE_ID) {
         toggleCoin(modalId);
-        const c = $("#sheet").querySelector(".sh-coin");
-        c.className = "sh-coin" + (state.coins[modalId] ? " has" : "");
-        c.innerHTML = state.coins[modalId] ? CATJP[ITEMS.find(x => x.id === modalId).cat] : "＋";
+        const c = $("#sheet").querySelector(".sh-coin"), { has } = pinInfo(modalId);
+        c.className = "sh-coin" + (has ? " has" : "");
+        c.innerHTML = has ? CATJP[ITEMS.find(x => x.id === modalId).cat] : "＋";
         refreshSheetPin();
       }
     });
@@ -4694,14 +4736,14 @@
     function updateCardState(id, pulse) {
       const card = document.querySelector(`.card[data-id="${CSS.escape(id)}"]`);
       if (!card) { renderGrid(); return; }
-      const it = ITEMS.find(x => x.id === id), has = !!state.coins[id];
-      const others = othersByItem[id] && othersByItem[id].length;
+      const it = ITEMS.find(x => x.id === id);
+      const { mine, others, has } = pinInfo(id);
       card.classList.toggle("has", has);
-      card.classList.toggle("byothers", !has && !!others);
+      card.classList.toggle("byothers", !mine && !!others.length);
       const coin = card.querySelector(".coin");
       if (coin) {
         coin.innerHTML = has ? CATJP[it.cat] : "＋";
-        coin.setAttribute("aria-label", (has ? "Remove" : "Collect") + " coin for " + it.name);
+        coin.setAttribute("aria-label", (mine ? "Remove" : "Collect") + " coin for " + it.name);
         if (pulse) { coin.classList.remove("pulse"); void coin.offsetWidth; coin.classList.add("pulse"); }
       }
       const badge = card.querySelector(".others"); if (badge) badge.remove();
@@ -5040,7 +5082,7 @@
     const TRIP_ID = "japan-2026";
     function fbErr(e) { console.warn("[sync]", e && e.code || e); }
     let localExpensesBackup = null;                 /* the signed-out (local) ledger, restored on sign-out */
-    let ledgerUnsub = null, pinsUnsub = null, itemsUnsub = null;
+    let ledgerUnsub = null, pinsUnsub = null, itemsUnsub = null, itinUnsub = null;
 
     /* first sign-in: union my local pins into the cloud (merge keeps any pins made on other devices) */
     function mergeMyPins() {
@@ -5067,7 +5109,7 @@
         othersByItem = others;
         if (mine) { state.coins = Object.assign({}, mine); save(); }   /* my cloud pins are authoritative; cache locally */
         renderBuckets(); renderGrid();
-        if (modalId) { const c = $("#sheet").querySelector(".sh-coin"); if (c) { c.className = "sh-coin" + (state.coins[modalId] ? " has" : ""); c.innerHTML = state.coins[modalId] ? CATJP[ITEMS.find(x => x.id === modalId).cat] : "＋"; } refreshSheetPin(); }
+        if (modalId) { const c = $("#sheet").querySelector(".sh-coin"); if (c) { const { has } = pinInfo(modalId); c.className = "sh-coin" + (has ? " has" : ""); c.innerHTML = has ? CATJP[ITEMS.find(x => x.id === modalId).cat] : "＋"; } refreshSheetPin(); }
       }, fbErr);
     }
 
@@ -5093,6 +5135,21 @@
         saveCustoms();
         renderChips(); renderBuckets(); renderGrid();
         if (modalId && modalId !== COMPOSE_ID && !ITEMS.some(x => x.id === modalId)) closeModal();   /* the open item was removed elsewhere */
+      }, fbErr);
+    }
+
+    /* private itinerary — one doc, allowlisted accounts only; cached in localStorage
+       so the installed PWA still shows the calendar offline / before auth settles */
+    function subscribeItin() {
+      if (itinUnsub) itinUnsub();
+      itinUnsub = fbItinDoc.onSnapshot(doc => {
+        const d = doc.data();
+        if (!d) return;
+        hydrateItin(d);
+        try { localStorage.setItem("_itin", JSON.stringify(d)); } catch (e) { }
+        renderCal();
+        if (itinDay !== null) animItin(renderItinDay(itinDay));
+        else if (itinAll) animItin(renderItinAll());
       }, fbErr);
     }
 
@@ -5198,13 +5255,22 @@
         fbPins = trip.collection("pins");
         fbItems = trip.collection("items");
         fbRoster = trip.collection("roster").doc("list");
+        fbItinDoc = trip.collection("config").doc("itinerary");
       } catch (e) { console.warn("[sync] init failed", e); return; }
       window.fbReady = true;
       restoreMe(); paintAuthBtn();   /* restore cached user to avoid auth flash on reload */
+      /* restore cached itinerary alongside the cached user so the calendar doesn't flash locked */
+      if (me) { try { const c = localStorage.getItem("_itin"); if (c) { hydrateItin(JSON.parse(c)); renderCal(); } } catch (e) { } }
 
       /* sign in from nav */
       const topBtn = $("#authBtnTop");
       if (topBtn) topBtn.addEventListener("click", () => {
+        if (!me) signIn();
+      });
+
+      /* sign in from the locked calendar overlay */
+      const lockBtn = $("#calLockBtn");
+      if (lockBtn) lockBtn.addEventListener("click", () => {
         if (!me) signIn();
       });
 
@@ -5229,6 +5295,8 @@
           /* swap the local ledger out for the shared one */
           localExpensesBackup = state.expenses;
           subscribeLedger();
+          /* pull the private itinerary (calendar details) down */
+          subscribeItin();
           paintAuthBtn();
         } else {
           me = null;
@@ -5236,6 +5304,8 @@
           if (ledgerUnsub) { ledgerUnsub(); ledgerUnsub = null; }
           if (pinsUnsub) { pinsUnsub(); pinsUnsub = null; }
           if (itemsUnsub) { itemsUnsub(); itemsUnsub = null; }   /* customs stay visible from the local cache */
+          if (itinUnsub) { itinUnsub(); itinUnsub = null; }
+          clearItin(); closeItin(); renderCal();   /* re-lock the calendar and drop cached details */
           othersByItem = Object.create(null);
           if (localExpensesBackup) { state.expenses = localExpensesBackup; localExpensesBackup = null; }
           else { state.expenses = Array.isArray(Store.load().expenses) ? Store.load().expenses : []; }

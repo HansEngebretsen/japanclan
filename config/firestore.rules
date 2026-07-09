@@ -2,6 +2,16 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /trips/{trip} {
+      // the allowed-email list lives in Firestore (config/allowlist), not in this
+      // file, so personal emails never appear in the public repo
+      function allowedEmails() {
+        return get(/databases/$(database)/documents/trips/$(trip)/config/allowlist).data.emails;
+      }
+      function isAllowed() {
+        return request.auth != null
+          && request.auth.token.get('email_verified', false) == true
+          && request.auth.token.get('email', '').lower() in allowedEmails();
+      }
       function rosterExists() {
         return exists(/databases/$(database)/documents/trips/$(trip)/roster/list);
       }
@@ -9,16 +19,27 @@ service cloud.firestore {
         return get(/databases/$(database)/documents/trips/$(trip)/roster/list).data.members;
       }
       function isMember() {
-        return request.auth != null && rosterExists() && request.auth.uid in members();
+        return isAllowed() && rosterExists() && request.auth.uid in members();
       }
 
-      // roster: readable by members; a signed-in user may add ONLY themselves, capped at 13
+      // private trip config — allowlist is server-managed only (rules read it via
+      // get(), which doesn't require client read access); itinerary holds flight
+      // confirmations and hotel details, readable only by allowed accounts
+      match /config/allowlist {
+        allow read, write: if false;
+      }
+      match /config/itinerary {
+        allow read: if isAllowed();
+        allow write: if false;
+      }
+
+      // roster: readable by members; an allowed user may add ONLY themselves, capped at 13
       match /roster/list {
         allow read: if isMember();
-        allow create: if request.auth != null
+        allow create: if isAllowed()
           && request.resource.data.members.size() <= 13
           && request.resource.data.members.keys().hasOnly([request.auth.uid]);
-        allow update: if request.auth != null
+        allow update: if isAllowed()
           && request.resource.data.members.size() <= 13
           && request.resource.data.members.diff(resource.data.members).affectedKeys().hasOnly([request.auth.uid]);
       }

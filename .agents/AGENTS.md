@@ -39,7 +39,10 @@ README.md
 - Project: `japanclan2k6`. Services: Firestore + Auth (Google provider).
 - Firebase CLI config files live in `config/`. `firebase.json` at root references them via `config/firestore.rules` and `config/firestore.indexes.json`.
 - The Firebase web SDK is loaded via CDN (`firebase-*-compat.js` v10.12.2). Config object is inline at `window.JC_FB_CONFIG` (~L709).
-- Firestore path: `trips/japan-2026/{ledger,pins,roster}`.
+- Firestore path: `trips/japan-2026/{ledger,pins,roster,items,config}`.
+- Access is allowlisted: `trips/japan-2026/config/allowlist` holds an `emails` array; the rules `get()` it and deny everything (roster join included) to accounts not on it. **The emails live only in Firestore — never put them in the repo.** Edit the list via the Firebase console or MCP tools.
+- **The itinerary (calendar details: flights, hotels, confirmation numbers) is private data** stored at `trips/japan-2026/config/itinerary` (`{defaultCity, stays, itin}`; `itin[day].stay` is a string key into `stays`). It is NOT in `index.html` — the client hydrates it after sign-in (`hydrateItin()`), caches it in localStorage (`_itin`), and shows a blurred "Sign in to view calendar" overlay (`#calLock`) when signed out. Never hardcode itinerary details back into the repo.
+- Both `config/*` docs are client-read-only (`allowlist` not even readable); write them with admin tooling only.
 - The `firestore.rules` enforce a 13-person roster cap and self-only writes.
 - Deploy rules: `npx firebase-tools deploy --only firestore:rules`
 
@@ -75,17 +78,18 @@ Append an object to the `ITEMS` array (~L894–1026). Format:
 - For `july` items add `when`, `vd` ("go"/"maybe"/"miss"), and `vt` fields.
 
 ### Adding a new itinerary day
-Add an entry to the `ITIN` object (~L786–798):
+Itinerary data lives in Firestore (`trips/japan-2026/config/itinerary`), not in the repo. Update the doc's `itin` map (day-number key) via the Firebase console/MCP:
 ```js
-DAY_NUM: {main:{t:"TIME", ic:"flight|train|hotel|event", title:"Title", wp:"Google Maps query", sub:["Line 1","Line 2"]}, stay:{title:"Hotel", wp:"Hotel query", day:CHECK_IN_DAY}}
+"DAY_NUM": {main:{t:"TIME", tz:"GMT+9", ic:"flight|train|hotel|event", title:"Title", wp:"Google Maps query", sub:["Line 1","Line 2"]}, stay:"staysKey"}
 ```
+`stay` is a string key into the doc's `stays` map (`{title, addr, in, out, tz, day:CHECK_IN_DAY}`). Signed-in clients pick the change up live via `onSnapshot`.
 
 ### Adding a new color skin
 1. Add CSS variables for `[data-skin="id"]` and `[data-skin="id"][data-theme="dark"]` blocks (~L40–105).
 2. Add an entry to the `THEMES` array (~L1186–1193).
 
 ### Changing cities on the calendar
-Edit `DEFAULT_CITY` (~L751). Hokkaido cities are auto-detected via the `HOK` set (~L754).
+Edit the `defaultCity` map in the Firestore itinerary doc (see above). Hokkaido cities are auto-detected via the `HOK` set in `index.html`.
 
 ### Modifying the IOU ledger
 The ledger is a two-party (Hans ↔ Spencer) split. Names are hardcoded in the HTML (~L665-666) and in `expNets()` / `renderLedger()`. To change names: search for "hans" and "spencer" (case-insensitive) and replace consistently.
