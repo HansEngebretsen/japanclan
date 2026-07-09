@@ -402,7 +402,8 @@
       -webkit-font-smoothing: antialiased;
       padding-bottom: calc(env(safe-area-inset-bottom) + 30px);
       background-image: var(--bg-pattern), var(--glow);
-      background-attachment: fixed
+      background-attachment: fixed;
+      transition: background-color 0s linear
     }
 
     button,
@@ -1624,7 +1625,8 @@
 
       body.drawer-open .safari-toolbar-fix,
       body.drawer-open .safari-toolbar-fix-top {
-        background-color: var(--barseal)
+        background-color: var(--barseal);
+        transition: background-color 0s linear 0.3s
       }
     }
 
@@ -1643,7 +1645,7 @@
       content: '';
       position: absolute;
       inset: 0;
-      background: rgba(20, 16, 10, .42);
+      background: rgba(20, 16, 10, .85);
       opacity: 0;
       transition: opacity .2s ease;
       pointer-events: none
@@ -3100,12 +3102,14 @@
       body.drawer-open {
         background-color: var(--barseal) !important;
         background-image: none !important;
+        transition: background-color 0s linear 0.3s !important;
       }
 
       /* Make ledger drawer background seamless solid var(--barseal) */
       .lgdrawer {
         background-image: none !important;
         background-color: var(--barseal) !important;
+        padding: calc(env(safe-area-inset-top) + 16px) 19px calc(env(safe-area-inset-bottom) + 30px) !important;
       }
 
       /* Close buttons & Header centering */
@@ -3120,10 +3124,10 @@
         display: grid;
         position: static;
         font-weight: 700;
-        width: 38px;
-        height: 38px;
         font-size: 32px;
-        margin-right: -8px; /* offset visual whitespace */
+        padding: 0;
+        border: 0;
+        background: 0;
       }
       .sh-x { position: absolute; top: 16px; right: 16px; font-weight: 700; width: 34px; height: 34px; font-size: 28px; }
       .a2hs-x { top: 10px; right: 10px; }
@@ -3132,7 +3136,9 @@
       /* Next/prev (theme cycler) and Size up (expand/arrows) */
       .cog-it { width: 24px; height: 32px; }
       .cog-it svg { width: 20px; height: 20px; stroke-width: 3.2px; }
-      .itin-arrows { gap: 8px; height: auto; padding: 12px 14px 12px 14px !important; }
+      .itin { padding-bottom: 13px !important; }
+      .itin-tl { padding-top: 0 !important; }
+      .itin-arrows { height: auto; padding: 11px 0px !important; margin-bottom: 0 !important; }
       .itin-arrow { width: 38px; height: 38px; }
       .itin-arrow svg { width: 20px; height: 20px; stroke-width: 2.2px; }
       .itin-expand svg { width: 16px; height: 16px; }
@@ -3173,12 +3179,17 @@
       .a2hs { padding: 26px 14px 14px; }
 
       /* Ledger Entry alignment & sizing */
-      .lg-amtrow { align-items: flex-end; padding-bottom: 2px; }
-      .lg-cur { font-size: 28px; margin-bottom: 2px; height: 38px; line-height: 38px; }
+      .lg-amtrow { align-items: center !important; margin-top: 10px !important; padding-bottom: 0 !important; }
+      .lg-cur { font-size: 28px; height: 38px; line-height: 38px; margin-bottom: 0 !important; }
       #lgAmt { font-size: 36px; height: 50px; padding: 0; }
-      .lg-payer { margin-bottom: 2px; }
+      .lg-payer { position: relative !important; margin-bottom: 0 !important; }
+      .lg-payer-lbl { position: absolute !important; top: -3px !important; right: 7px !important; }
       .lg-plus { width: 38px; height: 38px; display: grid; place-items: center; }
       .lg-plus svg { width: 24px; height: 24px; stroke-width: 2.2px; }
+
+      /* Row Actions size increase */
+      .lg-actions { gap: 8px !important; }
+      .lg-swap, .lg-del { width: 32px !important; height: 32px !important; font-size: 20px !important; opacity: .75 !important; }
     }
   </style>
 </head>
@@ -4267,7 +4278,7 @@
         lockMobileScroll();
       }
       renderLedger();
-      if (typeof syncThemeColor === "function") syncThemeColor();
+      if (typeof syncThemeColor === "function") setTimeout(syncThemeColor, 300);
       setTimeout(() => { lgAmt.focus(); refreshPayerSeg(); }, 310);
     }
     function closeDrawer() {
