@@ -884,29 +884,19 @@ const save=()=>Store.save(state);
 const mqDark=(window.matchMedia?matchMedia("(prefers-color-scheme: dark)"):{matches:false});
 if(!state.scheme)state.scheme=(state.theme==="light"||state.theme==="dark")?state.theme:"system";  /* migrate old toggle */
 function resolveScheme(){const s=state.scheme||"system";return s==="system"?(mqDark.matches?"dark":"light"):s;}
-/* composite a hex colour under the detail-sheet scrim (rgba(20,16,10,.42)),
-   so the iOS toolbar darkens by exactly the same amount as the page does */
-const SCRIM=[20,16,10],SCRIM_A=.42;
-function scrimOver(hex){
-  hex=hex.replace('#','');if(hex.length===3)hex=hex.split('').map(x=>x+x).join('');
-  const ch=i=>parseInt(hex.slice(i,i+2),16);
-  const mix=(c,s)=>Math.round(c*(1-SCRIM_A)+s*SCRIM_A);
-  return `rgb(${mix(ch(0),SCRIM[0])},${mix(ch(2),SCRIM[1])},${mix(ch(4),SCRIM[2])})`;
-}
 function syncThemeColor(){
   /* In standalone PWA there's no Safari toolbar to tint — skip entirely */
   if(typeof isStandalonePWA==="function"&&isStandalonePWA())return;
   const cs=getComputedStyle(document.documentElement);
   /* mobile ledger takes over the whole screen → tint the browser chrome to the drawer colour */
   const drawerOpen=document.body.classList.contains("drawer-open")&&window.innerWidth<720;
-  /* detail sheet is up → dark scrim covers the page, incl. behind the toolbar */
-  const sheetOpen=document.getElementById("ov").classList.contains("show");
-  /* base = solid --paper hex (always reliable, unlike --glow gradient regex) */
-  const top=cs.getPropertyValue("--paper").trim();
+  /* base = the bright top of the page (the --glow peak), not flat --paper */
+  const glow=cs.getPropertyValue("--glow");
+  const gm=glow&&glow.match(/#[0-9a-fA-F]{3,8}/);
+  const top=(gm&&gm[0])||cs.getPropertyValue("--paper").trim();
   let c;
-  if(drawerOpen)      c=cs.getPropertyValue("--barseal").trim();
-  else if(sheetOpen)  c=/^#/.test(top)?scrimOver(top):top;   /* match the scrimmed page */
-  else                c=top;
+  if(drawerOpen) c=cs.getPropertyValue("--barseal").trim();
+  else           c=top;
   if(c)document.getElementById("themeColorMeta").setAttribute("content",c);
   document.documentElement.style.colorScheme=resolveScheme();
 }
