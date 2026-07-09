@@ -3111,12 +3111,6 @@
 
     /* mobile size overrides to make interactive elements larger */
     @media (max-width: 719px) {
-      /* Safari Liquid Glass Body Fallback */
-      body.drawer-open {
-        background-color: var(--barseal);
-        background-image: none;
-      }
-
       /* Make ledger drawer background seamless solid var(--barseal) */
       .lgdrawer {
         background-image: none;
@@ -4099,7 +4093,9 @@
     function closeModal() {
       const ov = $("#ov"); ov.classList.remove("show"); ov.setAttribute("aria-hidden", "true");
       modalId = null;
-      unlockMobileScroll();
+      setTimeout(() => {
+        unlockMobileScroll();
+      }, 250);
     }
     $("#ov").addEventListener("click", e => {
       const act = e.target.closest("[data-act]");
@@ -4352,12 +4348,14 @@
       setTimeout(() => { lgAmt.focus(); refreshPayerSeg(); }, 310);
     }
     function closeDrawer() {
-      if (document.body.classList.contains("modal-open")) unlockMobileScroll();
       lgdrawer.classList.remove("open");
       lgBackdrop.classList.remove("show");
       document.body.classList.remove("drawer-open");
       document.body.classList.remove("drawer-peek");
       if (typeof syncThemeColor === "function") syncThemeColor();
+      setTimeout(() => {
+        if (document.body.classList.contains("modal-open")) unlockMobileScroll();
+      }, 300);
     }
     /* peek when the pointer nears the right edge (<=30px), or is over the tab/drawer */
     let lgPeek = false;
