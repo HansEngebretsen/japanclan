@@ -2620,7 +2620,8 @@
       font-size: 9px;
       line-height: 1;
       padding: 0;
-      transition: .14s
+      transition: .14s;
+      position: relative;
     }
 
     .lg-check:hover {
@@ -2694,8 +2695,7 @@
     }
 
     /* let the outline/edit box breathe instead of being clipped by the cell */
-    .lg-wutcell:has([contenteditable="true"]),
-    .lg-wutcell:hover {
+    .lg-wutcell:has([contenteditable="true"]) {
       overflow: visible
     }
 
@@ -2744,7 +2744,8 @@
       font-size: 13px;
       border-radius: 5px;
       opacity: 0;
-      transition: opacity .15s, color .12s, background .12s
+      transition: opacity .15s, color .12s, background .12s;
+      position: relative;
     }
 
     .lg-del svg {
@@ -2761,6 +2762,17 @@
     .lg-del:hover {
       color: #fff;
       background: var(--dsurf2)
+    }
+
+    .lg-check::after,
+    .lg-swap::after,
+    .lg-del::after {
+      content: "";
+      position: absolute;
+      top: -12px;
+      right: -12px;
+      bottom: -12px;
+      left: -12px;
     }
 
     @media(hover:none) {
@@ -4758,19 +4770,31 @@
       if (raw.includes("¥")) { lgYenOn = true; lgYenManual = true; return; }
       if (!lgYenManual) { const n = parseFloat(raw.replace(/[^0-9.]/g, "")); if (isFinite(n) && n > 1300) lgYenOn = true; }
     }
-    /* ledger writes: cloud when signed in (snapshot re-renders), else the local array */
+    /* ledger writes: optimistic local update first, then sync to cloud */
     function expAdd(entry) {
-      if (me && window.fbReady) { entry.by = me.uid; fbLedger.add(entry).catch(fbErr); return; }
+      if (me && window.fbReady) { 
+        entry.by = me.uid; 
+        const docRef = fbLedger.doc();
+        entry.id = docRef.id;
+        state.expenses.push(entry); 
+        renderLedger();
+        docRef.set(entry).catch(fbErr); 
+        return; 
+      }
       entry.id = "x" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
       state.expenses.push(entry); save(); renderLedger();
     }
-    function expUpdate(id, patch) {
+    function expUpdate(id, patch, noRender) {
+      const e = state.expenses.find(x => x.id === id); 
+      if (e) { Object.assign(e, patch); if (!noRender) renderLedger(); }
       if (me && window.fbReady) { fbLedger.doc(id).update(patch).catch(fbErr); return; }
-      const e = state.expenses.find(x => x.id === id); if (e) { Object.assign(e, patch); save(); renderLedger(); }
+      save();
     }
     function expDelete(id) {
+      state.expenses = state.expenses.filter(x => x.id !== id);
+      renderLedger();
       if (me && window.fbReady) { fbLedger.doc(id).delete().catch(fbErr); return; }
-      state.expenses = state.expenses.filter(x => x.id !== id); save(); renderLedger();
+      save();
     }
     function addExpense() {
       if (!canAdd()) { lgEntry.classList.remove("shake"); void lgEntry.offsetWidth; lgEntry.classList.add("shake"); return; }
@@ -4976,9 +5000,9 @@
       const id = row.dataset.id, exp = state.expenses.find(x => x.id === id);
 
       if (e.target.closest("[data-check]") && exp) {
-        if (me && window.fbReady) { expUpdate(id, { settled: !exp.settled }); return; } /* cloud: snapshot re-sorts */
         const first = {}; lgRows.querySelectorAll(".lg-row").forEach(r => first[r.dataset.id] = r.getBoundingClientRect().top);
-        exp.settled = !exp.settled; save(); renderLedger();
+        expUpdate(id, { settled: !exp.settled }, true);
+        renderLedger();
         lgRows.querySelectorAll(".lg-row").forEach(r => {
           const o = first[r.dataset.id]; if (o == null) return;
           const dy = o - r.getBoundingClientRect().top;
