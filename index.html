@@ -1734,10 +1734,11 @@
       line-height: 1.2
     }
 
-    /* compose sheet keeps its title directly inside sh-top */
+    /* compose sheet keeps its title directly inside sh-top, centered on the coin */
     .sh-top>.sh-name {
       flex: 1;
-      min-width: 0
+      min-width: 0;
+      align-self: center
     }
 
     /* metadata row under the title: chips, location link, who pinned it */
@@ -1754,6 +1755,10 @@
       color: var(--muted)
     }
 
+    .sh-pin[hidden] {
+      display: none
+    }
+
     a.sh-loc {
       text-decoration: none
     }
@@ -1768,7 +1773,14 @@
       flex: 0 0 auto
     }
 
-    /* thin vertical divider between the text-based metadata segments */
+    /* thin vertical dividers between metadata segments (never trailing) */
+    .sh-div {
+      width: 1px;
+      height: 11px;
+      background: var(--line-2);
+      flex: 0 0 auto
+    }
+
     .sh-pin::before {
       content: "";
       width: 1px;
@@ -1894,13 +1906,18 @@
 
     /* ===== add-your-own item — same sheet, fields built from the site's own components ===== */
     /* category picker = the same sliding-pill segmented control as scheme/payer (.cogseg) */
-    .sh-catseg {
-      margin-top: 12px
+    .cogseg.sh-catseg {
+      margin-top: 16px
+    }
+
+    .sh-catseg .segopt {
+      padding: 4px 0;
+      font-size: 11px
     }
 
     .sh-catseg .segopt .cj {
       font-family: var(--serif);
-      font-size: 12px;
+      font-size: 11px;
       margin-right: 5px
     }
 
@@ -1923,9 +1940,9 @@
       background: var(--paper);
       color: var(--ink);
       font-family: inherit;
-      font-size: 14px;
+      font-size: 13.5px;
       line-height: 1.5;
-      padding: 10px 12px;
+      padding: 8px 11px;
       outline: 0;
       caret-color: var(--seal);
       transition: border-color .12s, background .12s
@@ -1942,20 +1959,42 @@
 
     .sh-field.name {
       font-family: var(--head-font);
-      font-size: 16px;
+      font-size: 15px;
       font-weight: var(--head-weight);
       letter-spacing: var(--head-tracking)
     }
 
     textarea.sh-field {
       resize: none;
-      min-height: 62px
+      min-height: 56px
+    }
+
+    /* compose footer: byline left (wraps), compact add button pinned bottom-right */
+    .sh-cfoot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 14px;
+      margin-bottom: 4px
+    }
+
+    .sh-cfoot .sh-by {
+      margin-top: 0;
+      min-width: 0;
+      flex: 1 1 auto
+    }
+
+    .sh-cfoot .sh-add {
+      flex: 0 0 auto
     }
 
     .sh-add {
-      width: 100%;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
       border: 0;
-      border-radius: var(--radius);
+      border-radius: 99px;
       background: var(--seal);
       color: #fff;
       font-family: var(--mono);
@@ -1963,9 +2002,16 @@
       font-weight: 700;
       letter-spacing: .09em;
       text-transform: uppercase;
-      padding: 12px 14px;
+      padding: 9px 15px;
       cursor: pointer;
+      white-space: nowrap;
       transition: background .15s, color .15s
+    }
+
+    .sh-add svg {
+      width: 12px;
+      height: 12px;
+      flex: 0 0 auto
     }
 
     .sh-add:disabled {
@@ -4299,7 +4345,7 @@
       <button class="sh-coin ${has ? "has" : ""}" data-act="coin" aria-label="${has ? "Remove" : "Collect"} coin">${has ? CATJP[i.cat] : "＋"}</button>
       <div class="sh-head">
         <div class="sh-name">${esc(i.name)}</div>
-        <div class="sh-meta">${vbadge}${when}${flag}${price}${locRowHTML(i)}<span class="sh-pin"${pinRowHTML(i.id) ? "" : " hidden"}>${pinRowHTML(i.id)}</span></div>
+        <div class="sh-meta">${vbadge}${when}${flag}${[price, locRowHTML(i)].filter(Boolean).join(`<span class="sh-div"></span>`)}<span class="sh-pin"${pinRowHTML(i.id) ? "" : " hidden"}>${pinRowHTML(i.id)}</span></div>
       </div>
       <button class="sh-x" data-act="close" aria-label="Close">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
@@ -4404,8 +4450,13 @@
         placeholder="What is it — and why is it worth a coin?"></textarea>
       <input class="sh-field" id="cTip" maxlength="200" autocomplete="off" enterkeyhint="done" aria-label="Tip" placeholder="Pro tip (optional)">
     </div>
-    <div class="sh-act"><button type="button" class="sh-add" id="cAdd" data-act="add-custom" disabled>Add to the list</button></div>
-    <div class="sh-by">${me ? "Shared with the whole clan · stamped as yours" : "Saves on this device — sign in to share it with the clan"}</div>`;
+    <div class="sh-cfoot">
+      <div class="sh-by">${me ? "Shared with the whole clan · stamped as yours" : "Saves on this device — sign in to share it with the clan"}</div>
+      <button type="button" class="sh-add" id="cAdd" data-act="add-custom" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        Add
+      </button>
+    </div>`;
     }
     /* park the sliding pill under whichever category is on (same slideSegBg as scheme/payer) */
     function slideCatBg() {
