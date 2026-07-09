@@ -686,6 +686,35 @@
   .a2hs.expanded .a2hs-car{display:flex}
   /* never show inside the installed PWA */
   @media (display-mode:standalone){.a2hs{display:none!important}}
+
+  /* mobile size overrides to make interactive elements larger */
+  @media (max-width: 719px) {
+    /* Close buttons */
+    .lgdrawer .lg-x { width: 38px; height: 38px; font-size: 30px; }
+    .sh-x { width: 34px; height: 34px; font-size: 26px; }
+    .a2hs-x svg { width: 24px; height: 24px; }
+    .itin-close svg { width: 22px; height: 22px; }
+    
+    /* Next/prev (theme cycler) and Size up (expand/arrows) */
+    .cog-it { width: 24px; height: 32px; }
+    .cog-it svg { width: 20px; height: 20px; }
+    .itin-arrow { width: 28px; height: 26px; }
+    .itin-arrow svg { width: 24px; height: 24px; }
+    
+    /* Shuffle & Hide Token (stamp toggle) */
+    .fbtn { width: 28px; height: 28px; }
+    .fbtn svg { width: 21px; height: 21px; }
+    .stamptog-mark { width: 26px; height: 26px; font-size: 16px; }
+    .stamptog::after { width: 26px; }
+    
+    /* Google doc & settings cog button */
+    .ibtn { width: 32px; height: 32px; }
+    .ibtn svg { width: 22px; height: 22px; }
+    
+    /* Yen icon thing (noboriBtn / nb-coin) */
+    .nobori { width: 34px; height: 34px; }
+    .nb-coin { font-size: 20px; }
+  }
 </style>
 </head>
 <body>
