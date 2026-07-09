@@ -396,6 +396,9 @@
     transform:translateY(14px);transition:transform .24s cubic-bezier(.4,0,.2,1)}
   .ov.show .sheet{transform:translateY(0)}
   @media(min-width:560px){.ov{align-items:center}.sheet{border-radius:14px;max-height:82vh}}
+  .sh-grip{width:38px;height:5px;border-radius:3px;background:var(--line-2);opacity:.7;margin:-6px auto 12px;flex:0 0 auto;touch-action:none}
+  @media(min-width:560px){.sh-grip{display:none}}
+  .sheet.dragging{transition:none!important}
   .sh-top{display:flex;align-items:flex-start;gap:11px}
   .sh-coin{flex:0 0 auto;width:30px;height:30px;border-radius:var(--stamp-shape);cursor:pointer;border:1px solid var(--line-2);background:transparent;
     display:grid;place-items:center;color:var(--muted);font-family:var(--serif);font-size:13px}
@@ -651,6 +654,7 @@
   .a2hs-steps{font-size:.78rem;line-height:1.6;margin-top:2px;opacity:.85}
   .a2hs-ic{width:15px;height:15px;vertical-align:-2.5px}
   .a2hs-dot{fill:var(--ink)}
+  .a2hs-chip{display:inline-flex;align-items:center;gap:4px;border:1px solid color-mix(in srgb,currentColor 40%,transparent);border-radius:7px;padding:2px 6px;margin:0 1px}
   .a2hs-x{position:absolute;top:5px;right:5px;border:0;background:none;color:inherit;opacity:.65;padding:5px;cursor:pointer;line-height:0}
   .a2hs-x svg{width:14px;height:14px}
 </style>
@@ -778,14 +782,13 @@
 <div class="a2hs" id="a2hs" role="dialog" aria-label="Add to home screen" hidden>
   <img class="a2hs-icon" src="favicon/icon-192.png" alt="Japan Clan app icon">
   <div class="a2hs-txt">
-    <div class="a2hs-title">Add Japan Clan to your homescreen</div>
+    <div class="a2hs-title">Add to home</div>
     <div class="a2hs-steps">Tap
       <svg class="a2hs-ic" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="9" fill="currentColor"/><circle class="a2hs-dot" cx="5.6" cy="10" r="1.5"/><circle class="a2hs-dot" cx="10" cy="10" r="1.5"/><circle class="a2hs-dot" cx="14.4" cy="10" r="1.5"/></svg>
       then
-      <svg class="a2hs-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
-      Share, then &ldquo;View More&rdquo;, then
-      <svg class="a2hs-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-      Add to Home Screen
+      <span class="a2hs-chip"><svg class="a2hs-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>Share</span>, then
+      <span class="a2hs-chip">&ldquo;View More&rdquo;</span>, then
+      <span class="a2hs-chip"><svg class="a2hs-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Add to Home Screen</span>
     </div>
   </div>
   <button class="a2hs-x" id="a2hsX" type="button" aria-label="Dismiss">
@@ -1303,10 +1306,11 @@ function buildSheet(i){
   const flag=i.flag?`<span class="flag">${esc(i.flag)}</span>`:"";
   const vbadge=i.vd?`<span class="verdict v-${i.vd}">${i.vd==="go"?"catch it":i.vd==="maybe"?"maybe":"you'll miss"}</span>`:"";
   const price=priceMark(i.lvl);
-  const src=loc?`https://maps.google.com/maps?q=${encodeURIComponent(i.name+" "+i.area+" Japan")}&z=10&output=embed`:"";
+  const src=loc?`https://maps.google.com/maps?q=${encodeURIComponent(i.name+" "+i.area+" Japan")}&z=14&output=embed`:"";
   const link=`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(i.name+" "+(loc?i.area:"Japan"))}`;
   const when=i.when?`<span class="flag">${esc(i.when)}</span>`:"";
-  return `<div class="sh-top">
+  return `<div class="sh-grip" aria-hidden="true"></div>
+    <div class="sh-top">
       <button class="sh-coin ${has?"has":""}" data-act="coin" aria-label="${has?"Remove":"Collect"} coin">${has?CATJP[i.cat]:"＋"}${othersBadge(i.id)}</button>
       <div class="sh-name">${esc(i.name)}</div>
       <button class="sh-x" data-act="close" aria-label="Close">×</button>
@@ -1321,7 +1325,9 @@ function buildSheet(i){
 function openModal(id){
   const i=ITEMS.find(x=>x.id===id);if(!i)return;
   modalId=id;
-  $("#sheet").innerHTML=buildSheet(i);
+  const sheet=$("#sheet");
+  sheet.innerHTML=buildSheet(i);
+  sheet.style.transform="";sheet.classList.remove("dragging");sheet.scrollTop=0;
   const ov=$("#ov");ov.setAttribute("aria-hidden","false");
   requestAnimationFrame(()=>ov.classList.add("show"));
 }
@@ -1339,6 +1345,55 @@ $("#ov").addEventListener("click",e=>{
     c.innerHTML=(state.coins[modalId]?CATJP[ITEMS.find(x=>x.id===modalId).cat]:"＋")+othersBadge(modalId);
   }
 });
+/* ---- swipe-down to dismiss the bottom sheet (mobile / iOS) ----
+   Native pattern: only start dragging when the sheet is scrolled to the top
+   and the finger pulls down, so inner scrolling still works normally.       */
+(function(){
+  const sheet=$("#sheet");
+  let startY=0,dragY=0,active=false,fromTop=false;
+  const canSwipe=()=>window.matchMedia("(max-width:559px)").matches;
+  sheet.addEventListener("touchstart",e=>{
+    if(!modalId||!canSwipe()||e.touches.length!==1)return;
+    startY=e.touches[0].clientY;dragY=0;
+    fromTop=sheet.scrollTop<=0;active=true;
+  },{passive:true});
+  sheet.addEventListener("touchmove",e=>{
+    if(!active)return;
+    const dy=e.touches[0].clientY-startY;
+    if(fromTop&&dy>0){
+      e.preventDefault();                 // take over from overscroll bounce
+      dragY=dy;
+      sheet.classList.add("dragging");
+      sheet.style.transform=`translateY(${dy}px)`;
+    }else{
+      dragY=0;fromTop=sheet.scrollTop<=0; // re-arm once they scroll back to top
+      sheet.classList.remove("dragging");sheet.style.transform="";
+    }
+  },{passive:false});
+  function end(){
+    if(!active)return;active=false;
+    sheet.classList.remove("dragging");   // restore the CSS spring transition
+    if(dragY>110){
+      sheet.style.transform="translateY(110%)";
+      const done=()=>{closeModal();sheet.style.transform="";sheet.removeEventListener("transitionend",done);};
+      sheet.addEventListener("transitionend",done);
+      setTimeout(done,300);               // fallback if transitionend doesn't fire
+    }else{
+      sheet.style.transform="";           // snap back to translateY(0)
+    }
+    dragY=0;
+  }
+  sheet.addEventListener("touchend",end);
+  sheet.addEventListener("touchcancel",end);
+  /* swipe down on the dimmed area above the sheet also dismisses */
+  const ov=$("#ov");let bStartY=null;
+  ov.addEventListener("touchstart",e=>{if(e.target===ov)bStartY=e.touches[0].clientY;else bStartY=null;},{passive:true});
+  ov.addEventListener("touchend",e=>{
+    if(bStartY==null)return;
+    if(e.changedTouches[0].clientY-bStartY>30&&modalId)closeModal();
+    bStartY=null;
+  });
+})();
 /* ===== theme skins (colours) + settings cog dropdown ===== */
 const THEMES=[
   {id:"sumi",jp:"墨",name:"Sumi",sw:["#f6f3ed","#1a1611","#c2492c"]},
