@@ -883,19 +883,29 @@ const save=()=>Store.save(state);
 const mqDark=(window.matchMedia?matchMedia("(prefers-color-scheme: dark)"):{matches:false});
 if(!state.scheme)state.scheme=(state.theme==="light"||state.theme==="dark")?state.theme:"system";  /* migrate old toggle */
 function resolveScheme(){const s=state.scheme||"system";return s==="system"?(mqDark.matches?"dark":"light"):s;}
+/* composite a hex colour under the detail-sheet scrim (rgba(20,16,10,.42)),
+   so the iOS toolbar darkens by exactly the same amount as the page does */
+const SCRIM=[20,16,10],SCRIM_A=.42;
+function scrimOver(hex){
+  hex=hex.replace('#','');if(hex.length===3)hex=hex.split('').map(x=>x+x).join('');
+  const ch=i=>parseInt(hex.slice(i,i+2),16);
+  const mix=(c,s)=>Math.round(c*(1-SCRIM_A)+s*SCRIM_A);
+  return `rgb(${mix(ch(0),SCRIM[0])},${mix(ch(2),SCRIM[1])},${mix(ch(4),SCRIM[2])})`;
+}
 function syncThemeColor(){
   const cs=getComputedStyle(document.documentElement);
   /* mobile ledger takes over the whole screen → tint the browser chrome to the drawer colour */
   const drawerOpen=document.body.classList.contains("drawer-open")&&window.innerWidth<720;
+  /* detail sheet is up → dark scrim covers the page, incl. behind the toolbar */
+  const sheetOpen=document.getElementById("ov").classList.contains("show");
+  /* base = the bright top of the page (the --glow peak), not flat --paper */
+  const glow=cs.getPropertyValue("--glow");
+  const gm=glow&&glow.match(/#[0-9a-fA-F]{3,8}/);
+  const top=(gm&&gm[0])||cs.getPropertyValue("--paper").trim();
   let c;
-  if(drawerOpen){
-    c=cs.getPropertyValue("--barseal").trim();
-  }else{
-    /* match the status bar to the bright top of the page (the --glow peak), not flat --paper */
-    const glow=cs.getPropertyValue("--glow");
-    const m=glow&&glow.match(/#[0-9a-fA-F]{3,8}|rgba?\([^)]*\)/);
-    c=(m&&m[0])||cs.getPropertyValue("--paper").trim();
-  }
+  if(drawerOpen)      c=cs.getPropertyValue("--barseal").trim();
+  else if(sheetOpen)  c=/^#/.test(top)?scrimOver(top):top;   /* match the scrimmed page */
+  else                c=top;
   if(c)document.getElementById("themeColorMeta").setAttribute("content",c);
   document.documentElement.style.colorScheme=resolveScheme();
 }
@@ -1378,18 +1388,36 @@ function buildSheet(i){
     ${loc?`<div class="sh-map"><iframe loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="${src}"></iframe></div>
       <div class="sh-act"><a class="da" href="${link}" target="_blank" rel="noreferrer">Directions in Maps ↗</a></div>`:""}`;
 }
+/* iOS-robust body scroll lock — plain overflow:hidden is ignored on iOS, so we
+   pin the body and offset it by the current scroll, then restore on close.     */
+let lockedY=0;
+function lockScroll(){
+  lockedY=window.scrollY||window.pageYOffset||0;
+  const b=document.body;
+  b.style.position="fixed";b.style.top=`-${lockedY}px`;b.style.left="0";b.style.right="0";
+  b.style.width="100%";b.classList.add("modal-open");
+}
+function unlockScroll(){
+  const b=document.body;
+  b.classList.remove("modal-open");
+  b.style.position="";b.style.top="";b.style.left="";b.style.right="";b.style.width="";
+  window.scrollTo(0,lockedY);
+}
 function openModal(id){
   const i=ITEMS.find(x=>x.id===id);if(!i)return;
   modalId=id;
   const sheet=$("#sheet");
   sheet.innerHTML=buildSheet(i);
   sheet.style.transform="";sheet.classList.remove("dragging");sheet.scrollTop=0;
+  lockScroll();
   const ov=$("#ov");ov.setAttribute("aria-hidden","false");
-  requestAnimationFrame(()=>ov.classList.add("show"));
+  requestAnimationFrame(()=>{ov.classList.add("show");syncThemeColor();});
 }
 function closeModal(){
   const ov=$("#ov");ov.classList.remove("show");ov.setAttribute("aria-hidden","true");
   modalId=null;
+  unlockScroll();
+  syncThemeColor();
 }
 $("#ov").addEventListener("click",e=>{
   const act=e.target.closest("[data-act]");
