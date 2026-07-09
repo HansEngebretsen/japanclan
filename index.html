@@ -1789,21 +1789,23 @@
     .sh-tip {
       font-size: 13px;
       color: var(--ink-2);
-      margin-top: 10px;
-      padding-left: 13px;
-      position: relative;
-      line-height: 1.5
+      margin-top: 12px;
+      padding: 9px 11px 10px;
+      line-height: 1.5;
+      background: var(--soft);
+      border-radius: 9px
     }
 
     .sh-tip::before {
-      content: "";
-      position: absolute;
-      left: 1px;
-      top: 7px;
-      width: 4px;
-      height: 4px;
-      border-radius: 50%;
-      background: var(--seal)
+      content: "Hot tip";
+      display: block;
+      font-family: var(--mono);
+      font-size: 8.5px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--seal);
+      margin-bottom: 2px
     }
 
     .sh-map {
@@ -4212,8 +4214,8 @@
       </button>
     </div>
     <div class="sh-meta">${vbadge}${when}${flag}${price}</div>
-    ${i.custom ? "" : `<img class="sh-photo" src="img/items/${i.id}.jpg" alt="" onerror="this.remove()">`}
     <div class="sh-desc">${esc(i.note)}</div>
+    ${i.custom ? "" : `<img class="sh-photo" src="img/items/${i.id}.jpg" alt="" onerror="this.remove()">`}
     ${i.vt ? `<div class="sh-vt">${esc(i.vt)}</div>` : ""}
     ${i.tip ? `<div class="sh-tip">${esc(i.tip)}</div>` : ""}
     ${loc ? `<div class="sh-map"><iframe loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="${src}"></iframe></div>
