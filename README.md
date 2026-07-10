@@ -1,6 +1,6 @@
 # `japanclan`
 
-Organize travel details. View, pin and share fun unique things to do, eat or see.
+Organize travel details. View, pin and share fun unique things to do, eat or see. It's even a [progressive web app](demo/demo-pwa.mp4) that can be used offline. For more info on the app see [about.md](about.md).
 
 
 <div align="center">
