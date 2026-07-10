@@ -1,79 +1,65 @@
-# Japan Clan 一族
+# `japanclan`
 
-A single-file trip planner for a July 2026 Japan trip (Tokyo + Hokkaido). Browse only-in-Japan
-things to **eat / do / buy**, collect them as stamped "coins," see the day-by-day itinerary, and
-split the shared Hans↔Spencer IOU ledger.
+Organize travel details. View, pin and share fun unique things to do, eat or see.
 
-Everything lives in one file: [`index.html`](index.html) — inline HTML, CSS, and JS, no build step.
+
+<div align="center">
+  
+[<kbd><br>haaans.com/japanclan<br><br></kbd>](https://haaans.com/japanclan)
+
+</div>
+
+
+<p align="center">
+<img src="demo/main-app.png" alt="app" width="500">
+</p>
 
 ## Features
 
-- **Browse & collect** – 125+ curated items with filters (Eat/Do/Buy/July, Anywhere/Tokyo/Hokkaido).
-  Tap a coin to "stamp" it. Works offline; stamps persist in `localStorage`.
-- **Itinerary panel** – tap a calendar day to see that day's flight / train / hotel / event, with
-  Google-Maps links to each waypoint and a hotel line for where you're sleeping.
-- **Shared IOU ledger** – a two-party (Hans↔Spencer) split-the-bill drawer. Local until you sign in,
-  then live-synced across everyone in the group.
-- **Sign-in sync (Firebase)** – optional. Sign in with Google to sync your stamps, see everyone
-  else's stamps, and share the live ledger.
-
-## How sync works
-
-The app is **local-first**: with no sign-in it runs entirely from `localStorage`. Signing in with
-Google (Firebase Auth) layers on a shared [Cloud Firestore](https://firebase.google.com/docs/firestore)
-backend:
-
-| Data | Signed out | Signed in |
-| --- | --- | --- |
-| Your stamps (`coins`) | localStorage | merged up to `pins/{uid}`, cached locally |
-| Everyone's stamps | — | read from all `pins/*`, shown as badges on cards |
-| IOU ledger | local array | shared `ledger/*` collection, live via `onSnapshot` |
-
-Firestore layout (`trips/japan-2026/`): `ledger/{id}`, `pins/{uid}`, `roster/list`.
-
-### Access
-
-Anyone with a Google account can sign in, **capped at 13 people** total (enforced in the security
-rules via the roster document). The public Firebase web keys in the HTML are **not secrets** — access
-is enforced server-side by [`firestore.rules`](firestore.rules), not by hiding the config.
-
-## Firebase project
-
-- Project: `japanclan2k6`
-- Services: Firestore (rules in [`firestore.rules`](firestore.rules)), Auth (Google provider)
-- Config files: [`firebase.json`](firebase.json), [`.firebaserc`](.firebaserc)
-
-Deploy rules changes with the Firebase CLI:
-
-```sh
-npx firebase-tools deploy --only firestore:rules
-```
-
-## Deployment
-
-Hosted as static files at **haaans.com**. The site is marked `noindex` (meta tag + `robots.txt`) so it
-stays out of search engines.
-
-Before deploying:
-
-1. **Authorized domains** – in the Firebase console (Authentication → Settings → Authorized domains),
-   add `haaans.com` (and `localhost` for local testing) so Google sign-in is allowed from that origin.
-
-## Local development
-
-Serve the folder over http (Firebase Auth needs `http://localhost`, not `file://`):
-
-```sh
-npx serve .        # serves index.html at http://localhost:3000
-```
-
-### Dev settings
-
-Press **Escape twice** to open the dev-settings dialog. Every setting maps 1:1 to a URL query
-param, read at boot before anything renders — so a URL with the params baked in reproduces the
-same view (toggling a setting rewrites the URL and reloads through the same path). Add new
-settings to the `DEV_SETTINGS` registry in `index.html` and gate behavior on `devOn("key")`.
-
-| Setting | Param | What it does |
-| --- | --- | --- |
-| Mock data | `?mock=1` | Replaces the private Firestore itinerary with `MOCK_ITIN` — same shape, but every venue, hotel, flight, seat and confirmation number is a real-but-different stand-in, so screenshots/demos leak nothing. Also unlocks the calendar without sign-in and never touches the `_itin` localStorage cache. |
+<table>
+<tr valign="top">
+<td width="50%">
+<h3>Trip calendar</h3>
+<p>Organize by day, or view the whole schedule, with only the essential info. Details stored and protected by auth.</p>
+</td>
+<td width="50%">
+<img src="demo/calendar.gif" alt="Trip calendar">
+</td>
+</tr>
+<tr valign="top">
+<td width="50%">
+<img src="demo/collect-share.gif" alt="What should we do?">
+</td>
+<td width="50%">
+<h3>What should we do?</h3>
+<p>Pin & share, automatically categorized lists of unique-to-japan items.</p>
+</td>
+</tr>
+<tr valign="top">
+<td width="50%">
+<h3>Add your own</h3>
+<p>Whatever you want, to the list.</p>
+</td>
+<td width="50%">
+<img src="demo/add.gif" alt="Add your own">
+</td>
+</tr>
+<tr valign="top">
+<td width="50%">
+<img src="demo/ledger.gif" alt="What does spencer owe Hans?">
+</td>
+<td width="50%">
+<h3>What does spencer owe Hans?</h3>
+<p>Ledger collects and calculates debts automatically. Oh yen conversion too.</p>
+</td>
+</tr>
+<tr valign="top">
+<td width="50%">
+<h3>All the colors</h3>
+<p>Def a vibe.</p>
+</td>
+<td width="50%">
+<img src="demo/colors.gif" alt="All the colors">
+</td>
+</tr>
+</table>
