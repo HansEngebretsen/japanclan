@@ -3160,9 +3160,10 @@
       margin: 6px 2px 0
     }
 
-    /* while a retry is in flight, keep the fspin animation looping instead of one turn */
+    /* while a retry is in flight, keep the fspin animation looping instead of one turn
+       (.6s × the 1.2s minimum hold in JS = two clean turns before the outcome shows) */
     #offRefresh.spin svg {
-      animation: fspin .7s linear infinite
+      animation: fspin .6s linear infinite
     }
 
     /* "Add to home screen" link — always available even after the tooltip is dismissed */
@@ -4306,6 +4307,31 @@
     /* trip details (cities, flights, hotels, confirmation numbers) are private —
        they live in Firestore at trips/japan-2026/config/itinerary (allowlisted
        accounts only) and hydrate after sign-in; nothing sensitive ships in this file */
+    /* --- offline image warm-up ----------------------------------------------
+       Best effort: while online, quietly fetch images the app may need later
+       (item photos, this itinerary's map thumbs, add-to-home screenshots) so
+       the service worker's runtime cache-fill stores them and they still show
+       when offline. A few at a time, already-cached ones skipped, failures
+       ignored, and the loop pauses whenever the network drops. */
+    const warmQueue = [];
+    let warmBusy = false;
+    function warmImages(urls) {
+      if (!("caches" in window)) return;
+      (urls || []).forEach(u => { if (!warmQueue.includes(u)) warmQueue.push(u); });
+      if (warmBusy || !navigator.onLine) return;
+      warmBusy = true;
+      (async () => {
+        while (warmQueue.length && navigator.onLine) {
+          const batch = warmQueue.splice(0, 4);
+          await Promise.all(batch.map(async u => {
+            try { if (!(await caches.match(u))) await fetch(u); } catch (e) { }
+          }));
+        }
+        warmBusy = false;
+      })();
+    }
+    window.addEventListener("online", () => warmImages());   /* resume anything left when the network returns */
+
     let DEFAULT_CITY = {}, STAYS = {}, ITIN = {}, itinLoaded = false;
     function hydrateItin(data) {
       if (devOn("mock")) data = MOCK_ITIN;   /* dev: anonymized stand-in for every data path (Firestore, cache, boot) */
@@ -4320,6 +4346,11 @@
         ITIN[k] = e;
       });
       itinLoaded = true;
+      /* warm this itinerary's map thumbs so they render offline too */
+      const mapUrls = [];
+      Object.values(ITIN).forEach(e => { if (e.main && e.main.wp) mapUrls.push("maps/" + encodeURIComponent(e.main.wp) + ".png"); });
+      Object.values(STAYS).forEach(s => { if (s.addr) mapUrls.push("maps/" + encodeURIComponent(s.addr) + ".png"); });
+      warmImages(mapUrls);
     }
     function clearItin() {
       DEFAULT_CITY = {}; STAYS = {}; ITIN = {}; itinLoaded = false;
@@ -5597,7 +5628,15 @@
     function mergeMyPins() {
       if (devOn("mock")) return;
       if (!me || !fbPins) return;
-      fbPins.doc(me.uid).set({ coins: state.coins || {}, name: me.name, photo: me.photo || null, updatedAt: Date.now() }, { merge: true }).catch(fbErr);
+      const data = { name: me.name, photo: me.photo || null, updatedAt: Date.now() };
+      /* only include pins we actually hold — merge-setting an EMPTY coins map is NOT
+         a no-op: Firestore reads {} as "replace this field with an empty map", which
+         wiped every cloud pin whenever you signed in from a fresh install (new PWA,
+         new device, cleared storage). No local pins → leave coins out entirely. */
+      const mine = state.coins || {};
+      const held = Object.keys(mine).filter(id => mine[id]);
+      if (held.length) { data.coins = {}; held.forEach(id => { data.coins[id] = true; }); }
+      fbPins.doc(me.uid).set(data, { merge: true }).catch(fbErr);
     }
     /* per-toggle: touch only the one key so concurrent devices don't clobber each other */
     function syncPin(id, on) {
@@ -5905,32 +5944,46 @@
         if (refresh.classList.contains("spin")) return;
         fail.hidden = true;
         refresh.classList.add("spin");
+        const started = Date.now();
+        let updated = false;
         try {
           if (me && window.fbReady && fbItinDoc) {
             /* a real data pull — the server read lands in the local cache, so the
                live onSnapshot listeners fan the fresh itinerary out to the UI */
             await fbItinDoc.get({ source: "server" });
-            markSynced();
           } else {
             /* __probe: the SW deliberately ignores these, so this hits the real
                network instead of being answered from cache */
             const r = await fetch("index.html?__probe=" + Date.now(), { cache: "no-store" });
             if (!r.ok) throw new Error("http " + r.status);
-            markSynced();
           }
+          updated = true;
+        } catch (err) { }
+        /* offline failures reject near-instantly — hold the spinner for a couple
+           of turns so the attempt is visible, then reveal the outcome */
+        const left = 1200 - (Date.now() - started);
+        if (left > 0) await new Promise(r => setTimeout(r, left));
+        refresh.classList.remove("spin");
+        if (updated) {
+          markSynced();
           renderAgo();
           setChip(false);   /* the request landed, so we're back online */
-        } catch (err) {
+        } else {
           renderAgo();
           fail.hidden = false;
-        } finally {
-          refresh.classList.remove("spin");
         }
       });
       window.addEventListener("offline", () => setChip(true));
       window.addEventListener("online", () => setChip(false));
       setChip(!navigator.onLine);
     })();
+
+    /* warm the offline cache with every item photo (plus the add-to-home
+       screenshots) once the page has settled — see warmImages() up top */
+    setTimeout(() => {
+      warmImages(ITEMS.filter(i => !i.custom).map(i => "img/items/" + i.id + ".jpg")
+        .concat(["img/addtohome-1.png", "img/addtohome-2.png", "img/addtohome-3.png"]));
+    }, 3000);
 
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(e => console.warn('SW reg failed:', e));
   </script>
