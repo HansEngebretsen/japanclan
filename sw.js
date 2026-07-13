@@ -1,4 +1,4 @@
-const CACHE_NAME = "jc-cache-v13";
+const CACHE_NAME = "jc-cache-v14";
 const ASSETS = [
   "./",
   "index.html",
@@ -8,6 +8,7 @@ const ASSETS = [
   "favicon/apple-touch-icon.png",
   "favicon/icon-192.png",
   "favicon/icon-512.png",
+  "favicon/icon-maskable-512.png",
   "favicon/site.webmanifest",
   "https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;600;700&family=Noto+Serif+JP:wght@400;700;900&family=Outfit:wght@500;600;700&display=swap",
   "https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js",
@@ -37,9 +38,15 @@ self.addEventListener("fetch", e => {
   // always hit the live network. Intercepting them was causing auth/network-request-failed.
   if (req.method !== "GET") return;
   const url = new URL(req.url);
+  // __probe requests are connectivity checks (the offline chip's retry button) —
+  // hands off: never answer from cache (they'd falsely "succeed" offline) and
+  // never store them (each probe has a unique cache-busting URL).
+  if (url.searchParams.has("__probe")) return;
   // Never intercept Google/Firebase API traffic, even GETs — always go straight to the
   // network so auth and data stay live and are never served stale from cache.
-  if (url.hostname.endsWith("googleapis.com") ||
+  // fonts.googleapis.com is the one exception: it's static font CSS (precached in
+  // ASSETS above) and must be cache-served or typography dies offline.
+  if ((url.hostname.endsWith("googleapis.com") && url.hostname !== "fonts.googleapis.com") ||
       url.hostname.endsWith("firebaseio.com")) return;
   // App shell is network-first: every launch gets the freshest index.html and the
   // cache is only the offline fallback. Cache-first here would pin installed PWAs
@@ -57,7 +64,17 @@ self.addEventListener("fetch", e => {
     );
     return;
   }
+  // Everything else (map images, font woff2 files, avatar photos…) is cache-first,
+  // and cache-misses that succeed get stored so they're available offline next time.
+  // Without the runtime fill, anything not in ASSETS — notably the fonts.gstatic.com
+  // files behind the fonts CSS — was never cached and broke as soon as we went offline.
   e.respondWith(
-    caches.match(req).then(res => res || fetch(req))
+    caches.match(req).then(res => res || fetch(req).then(net => {
+      if (net && (net.ok || net.type === "opaque")) {
+        const copy = net.clone();
+        caches.open(CACHE_NAME).then(c => c.put(req, copy));
+      }
+      return net;
+    }))
   );
 });

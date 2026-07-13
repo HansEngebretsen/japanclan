@@ -3132,6 +3132,39 @@
       margin-top: 11px
     }
 
+    /* offline chip dropdown — reuses the cog menu shell, just narrower */
+    .offmenu {
+      width: 190px
+    }
+
+    .off-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-top: 2px
+    }
+
+    .off-ago {
+      font-family: var(--sans);
+      font-size: 13px;
+      color: var(--ink-2)
+    }
+
+    .off-fail {
+      font-family: var(--mono);
+      font-size: 9.5px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--seal);
+      margin: 6px 2px 0
+    }
+
+    /* while a retry is in flight, keep the fspin animation looping instead of one turn */
+    #offRefresh.spin svg {
+      animation: fspin .7s linear infinite
+    }
+
     /* "Add to home screen" link — always available even after the tooltip is dismissed */
     /* offline-access / add-to-home is a mobile-only feature — hidden on desktop, shown on touch devices */
     .cog-a2hs-row {
@@ -3852,6 +3885,32 @@
     <div class="hd">
       <div class="wm"><span class="jp">一族</span><span class="en">Japan Clan</span></div>
       <div class="hbtns">
+        <!-- offline chip — only visible while the network is down; menu shows data freshness + a retry -->
+        <div class="cogwrap" id="offWrap" hidden>
+          <button class="ibtn" id="offBtn" type="button" aria-label="You're offline" title="You're offline"
+            aria-haspopup="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M22.61 16.95A5 5 0 0 0 18 10h-1.26a8 8 0 0 0-7.05-6M5 5a8 8 0 0 0 4 15h9a5 5 0 0 0 1.7-.3" />
+              <line x1="1" y1="1" x2="23" y2="23" />
+            </svg>
+          </button>
+          <div class="cogmenu offmenu" id="offMenu" hidden>
+            <div class="cog-lbl">Offline</div>
+            <div class="off-row">
+              <span class="off-ago" id="offAgo"></span>
+              <button class="fbtn" id="offRefresh" type="button" aria-label="Try to refresh"
+                title="Try to refresh">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <polyline points="23 4 23 10 17 10" />
+                  <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+                </svg>
+              </button>
+            </div>
+            <div class="off-fail" id="offFail" hidden>Couldn't update</div>
+          </div>
+        </div>
         <a href="https://docs.google.com/document/d/1-jccafbZFzifdpOfkJt6z2TDBRb_i6nRuN08KsGikk8/edit?tab=t.116vmxasik2y#heading=h.rryhsrm594zj"
           target="_blank" rel="noreferrer" class="ibtn" aria-label="Google doc for planning"
           data-tip="Google doc for planning">
@@ -5519,6 +5578,18 @@
     /* ================= Firebase sync (optional layer — app works fully without it) ================= */
     const TRIP_ID = "japan-2026";
     function fbErr(e) { console.warn("[sync]", e && e.code || e); }
+    /* data-freshness stamp for the offline chip — set whenever a snapshot arrives
+       from the server (never for cache-served reads, those aren't new data) */
+    function markSynced() { try { localStorage.setItem("_lastSync", String(Date.now())); } catch (e) { } }
+    function fmtAgo(ts) {
+      const m = Math.floor((Date.now() - ts) / 60000);
+      if (m < 1) return "just now";
+      if (m < 60) return m + " min ago";
+      const h = Math.floor(m / 60);
+      if (h < 24) return h + (h === 1 ? " hr ago" : " hrs ago");
+      const d = Math.floor(h / 24);
+      return d + (d === 1 ? " day ago" : " days ago");
+    }
     let localExpensesBackup = null;                 /* the signed-out (local) ledger, restored on sign-out */
     let ledgerUnsub = null, pinsUnsub = null, itemsUnsub = null, itinUnsub = null;
 
@@ -5541,6 +5612,7 @@
       if (devOn("mock")) return;
       if (pinsUnsub) pinsUnsub();
       pinsUnsub = fbPins.onSnapshot(snap => {
+        if (!snap.metadata.fromCache) markSynced();
         const others = Object.create(null); let mine = null;
         snap.forEach(doc => {
           const d = doc.data() || {}, coins = d.coins || {};
@@ -5565,6 +5637,7 @@
     function subscribeItems() {
       if (itemsUnsub) itemsUnsub();
       itemsUnsub = fbItems.onSnapshot(snap => {
+        if (!snap.metadata.fromCache) markSynced();
         const cloud = [];
         snap.forEach(doc => {
           const d = doc.data() || {};
@@ -5584,6 +5657,7 @@
     function subscribeItin() {
       if (itinUnsub) itinUnsub();
       itinUnsub = fbItinDoc.onSnapshot(doc => {
+        if (!doc.metadata.fromCache) markSynced();
         const d = doc.data();
         if (!d) return;
         hydrateItin(d);
@@ -5597,6 +5671,7 @@
     function subscribeLedger() {
       if (ledgerUnsub) ledgerUnsub();
       ledgerUnsub = fbLedger.orderBy("ts", "asc").onSnapshot(snap => {
+        if (!snap.metadata.fromCache) markSynced();
         const list = [];
         snap.forEach(doc => { const d = doc.data() || {}; list.push({ id: doc.id, wut: d.wut, usd: d.usd, payers: d.payers || [], settled: !!d.settled, ts: d.ts, by: d.by }); });
         state.expenses = list;                        /* cloud is source of truth — do NOT save() to localStorage */
@@ -5725,9 +5800,18 @@
         if (user) {
           me = { uid: user.uid, name: user.displayName || user.email || "Traveler", email: user.email || "", photo: user.photoURL || null };
           cacheMe();   /* cache to avoid flash on next reload */
-          /* join the roster (rules cap it at 13, self-add only) */
-          try { await fbRoster.set({ members: { [me.uid]: { email: me.email, name: me.name, photo: me.photo || null, ts: Date.now() } } }, { merge: true }); }
-          catch (e) { fbErr(e); if (e && e.code === "permission-denied") { alert("This trip is full (13 people max) or sign-in isn't allowed for this account."); await fbAuth.signOut(); return; } }
+          /* join the roster (rules cap it at 13, self-add only). Offline, Firestore
+             write promises never settle (they ack on server commit), so awaiting this
+             unconditionally used to hang here forever and none of the subscriptions
+             below ever ran — the whole app looked dead offline. Instead, give the
+             join a short window to land (first sign-in needs it committed before the
+             member-only reads pass rules), then proceed regardless: a returning
+             member reads fine from local persistence and the queued join syncs later. */
+          let joinDenied = false;
+          const joinRoster = fbRoster.set({ members: { [me.uid]: { email: me.email, name: me.name, photo: me.photo || null, ts: Date.now() } } }, { merge: true });
+          joinRoster.catch(async e => { fbErr(e); if (e && e.code === "permission-denied") { joinDenied = true; alert("This trip is full (13 people max) or sign-in isn't allowed for this account."); await fbAuth.signOut(); } });
+          await Promise.race([joinRoster.catch(() => { }), new Promise(res => setTimeout(res, 2500))]);
+          if (joinDenied) return;
           /* merge local pins + custom items up, then subscribe (snapshots make cloud authoritative) */
           mergeMyPins();
           subscribePins();
@@ -5789,6 +5873,63 @@
       $("#a2hsHide").addEventListener("click", () => el.classList.remove("expanded"));
       const cogA2hs = $("#cogA2hs");
       if (cogA2hs) cogA2hs.addEventListener("click", () => { cogMenu.hidden = true; window.a2hsOpen(); });
+    })();
+
+    /* --- offline chip --------------------------------------------------------
+       A cloud-off button appears in the header (left of the doc icon) whenever
+       the network drops. Its dropdown shows how fresh the data is — stamped by
+       markSynced() on every server-sourced snapshot — plus a retry button that
+       attempts a real server pull. If the retry fails it says "Couldn't update"
+       and keeps showing the last-updated line. */
+    (function offlineChip() {
+      const wrap = $("#offWrap"), btn = $("#offBtn"), menu = $("#offMenu"),
+        ago = $("#offAgo"), fail = $("#offFail"), refresh = $("#offRefresh");
+      if (!wrap) return;
+      let tick = null;
+      function renderAgo() {
+        let ts = 0; try { ts = +(localStorage.getItem("_lastSync") || 0); } catch (e) { }
+        ago.textContent = ts ? "Updated " + fmtAgo(ts) : "No update yet";
+      }
+      function stopTick() { if (tick) { clearInterval(tick); tick = null; } }
+      function closeMenu() { menu.hidden = true; fail.hidden = true; stopTick(); }
+      function setChip(off) { wrap.hidden = !off; if (!off) closeMenu(); }
+      btn.addEventListener("click", e => {
+        e.stopPropagation();
+        if (menu.hidden) {
+          fail.hidden = true; renderAgo(); menu.hidden = false;
+          stopTick(); tick = setInterval(renderAgo, 30000);   /* keep "N min ago" honest while open */
+        } else closeMenu();
+      });
+      document.addEventListener("click", e => { if (!e.target.closest("#offWrap")) closeMenu(); });
+      refresh.addEventListener("click", async () => {
+        if (refresh.classList.contains("spin")) return;
+        fail.hidden = true;
+        refresh.classList.add("spin");
+        try {
+          if (me && window.fbReady && fbItinDoc) {
+            /* a real data pull — the server read lands in the local cache, so the
+               live onSnapshot listeners fan the fresh itinerary out to the UI */
+            await fbItinDoc.get({ source: "server" });
+            markSynced();
+          } else {
+            /* __probe: the SW deliberately ignores these, so this hits the real
+               network instead of being answered from cache */
+            const r = await fetch("index.html?__probe=" + Date.now(), { cache: "no-store" });
+            if (!r.ok) throw new Error("http " + r.status);
+            markSynced();
+          }
+          renderAgo();
+          setChip(false);   /* the request landed, so we're back online */
+        } catch (err) {
+          renderAgo();
+          fail.hidden = false;
+        } finally {
+          refresh.classList.remove("spin");
+        }
+      });
+      window.addEventListener("offline", () => setChip(true));
+      window.addEventListener("online", () => setChip(false));
+      setChip(!navigator.onLine);
     })();
 
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(e => console.warn('SW reg failed:', e));
