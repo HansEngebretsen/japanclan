@@ -4807,11 +4807,17 @@
     $("#clan").addEventListener("click", e => {
       const v = e.target.closest(".vault"); if (!v) return;
       selBucket = (selBucket === v.dataset.bk) ? null : v.dataset.bk;
-      renderBuckets(); renderGrid();
+      renderBuckets(); renderChips(); renderGrid();
     });
 
     /* ---------------- category chips ---------------- */
-    function catCount(k) { return k === "all" ? ITEMS.length : ITEMS.filter(i => i.cat === k).length; }
+    /* count reflects the active region bucket, so chips match what the grid shows */
+    function catCount(k) {
+      return ITEMS.filter(i => {
+        if (selBucket && !matchBucket(i, selBucket)) return false;
+        return k === "all" || i.cat === k;
+      }).length;
+    }
     function renderChips() {
       const cr = $("#catRow"); cr.innerHTML = "";
       CATS.forEach(([k, l]) => {
