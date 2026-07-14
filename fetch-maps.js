@@ -10,6 +10,7 @@ const locations = [
   { wp: "Meiji Jingu Stadium", z: 8 },
   { wp: "Tokyo DisneySea", z: 8 },
   { wp: "Shin-Hakodate-Hokuto Station", z: 5 },
+  { wp: "Sapporo Station", z: 5 },
   { wp: "Premier Hotel Cabin President Hakodate", z: 8 },
   { wp: "Onsen Ryokan Yuen Sapporo", z: 8 },
   { wp: "Otaru Kourakuen", z: 8 },
