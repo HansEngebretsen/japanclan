@@ -1,0 +1,19 @@
+{
+  "name": "japanclan-mail-worker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "seed": "node seed-config.mjs",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "mimetext": "^3.0.24",
+    "postal-mime": "^2.2.0"
+  },
+  "devDependencies": {
+    "vitest": "^3.0.0",
+    "wrangler": "^4.0.0"
+  }
+}

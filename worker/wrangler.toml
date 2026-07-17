@@ -1,0 +1,16 @@
+# japanclan-mail — Cloudflare Email Worker
+# Receives email routed from Cloudflare Email Routing (japan@trips.haaans.com),
+# parses it (ICS fast-path, else one Gemini call), and writes the event into the
+# Firestore itinerary doc the app renders live. See SETUP.md for the runbook.
+#
+# Secrets (never in this file, never in git — set with `npx wrangler secret put`):
+#   GCP_SA_KEY       service-account JSON for project japanclan2k6 (Cloud Datastore User role only)
+#   GEMINI_API_KEY   Gemini Developer API key (free tier)
+
+name = "japanclan-mail"
+main = "src/index.js"
+compatibility_date = "2026-06-01"
+compatibility_flags = ["nodejs_compat"]
+
+# No routes/triggers here: the email binding is attached in the Cloudflare
+# dashboard (Email Routing → Routes → Send to Worker → japanclan-mail).

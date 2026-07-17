@@ -47,6 +47,14 @@ README.md
 - The `firestore.rules` enforce a 13-person roster cap; pins/ledger/items writes are all member-scoped (own doc for pins).
 - Deploy rules: `npx firebase-tools deploy --only firestore:rules`
 
+### Email → calendar pipeline (worker/)
+
+- `worker/` is a **Cloudflare Email Worker** (`japanclan-mail`), separate from the static site (excluded from the Pages deploy). Emails to `*@trips.haaans.com` route to it; it parses bookings (ICS fast-path, else one Gemini structured-output call) and merges them into the Firestore itinerary doc via REST with a service-account JWT (IAM bypasses security rules — the rules are untouched).
+- Runtime behavior (sender allowlist, trip windows, addresses, model, prompt) lives in Firestore at `pipeline/config` — edit it in the console; **no redeploy needed**. State: `pipeline/state/{dedup,pending,log}`. None of these docs are client-readable.
+- Secrets (`GCP_SA_KEY`, `GEMINI_API_KEY`) exist ONLY as Cloudflare worker secrets — never in the repo, never in wrangler.toml.
+- Deploy: `cd worker && npx wrangler deploy`. Tests: `cd worker && npm test`. Human setup runbook: `worker/SETUP.md`.
+- ⚠️ **Branch rule: the `email-calendar` branch must NOT be merged into `main`** until Hans has completed the SETUP.md runbook and confirmed the pipeline end-to-end (his explicit instruction). Push follow-up work to `email-calendar` only.
+
 ## Code Map (index.html)
 
 Reference these line ranges for targeted edits:

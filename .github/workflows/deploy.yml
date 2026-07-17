@@ -31,6 +31,7 @@ jobs:
             --exclude='node_modules' \
             --exclude='firebase.json' --exclude='.firebaserc' --exclude='.agents' \
             --exclude='.claude' --exclude='config' \
+            --exclude='worker' \
             --exclude='README.md' --exclude='*.md' \
             ./ _site/
 

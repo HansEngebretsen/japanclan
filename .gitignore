@@ -2,3 +2,6 @@ key.env
 node_modules/
 .env-instructions
 .DS_Store
+.wrangler/
+.dev.vars
+*-sa-key.json
