@@ -4342,13 +4342,17 @@
       Object.keys(data.itin || {}).forEach(k => {
         const src = data.itin[k], e = {};
         if (src.main) e.main = src.main;
+        if (Array.isArray(src.more) && src.more.length) e.more = src.more;   /* extra same-day events (email pipeline) */
         if (src.stay && STAYS[src.stay]) e.stay = STAYS[src.stay];   /* shared object refs keep multi-night stays linked */
         ITIN[k] = e;
       });
       itinLoaded = true;
       /* warm this itinerary's map thumbs so they render offline too */
       const mapUrls = [];
-      Object.values(ITIN).forEach(e => { if (e.main && e.main.wp) mapUrls.push("maps/" + encodeURIComponent(e.main.wp) + ".png"); });
+      Object.values(ITIN).forEach(e => {
+        if (e.main && e.main.wp) mapUrls.push("maps/" + encodeURIComponent(e.main.wp) + ".png");
+        (e.more || []).forEach(m => { if (m.wp) mapUrls.push("maps/" + encodeURIComponent(m.wp) + ".png"); });
+      });
       Object.values(STAYS).forEach(s => { if (s.addr) mapUrls.push("maps/" + encodeURIComponent(s.addr) + ".png"); });
       warmImages(mapUrls);
     }
@@ -4359,8 +4363,9 @@
     }
     /* calendar corner glyph, derived automatically from that day's itinerary event */
     function evtGlyph(d) {
-      const m = (typeof ITIN !== "undefined" && ITIN[d]) ? ITIN[d].main : null;
-      if (m && (m.ic === "flight" || m.ic === "train")) return `<span class="fl">${ICONS[m.ic]}</span>`;
+      const it = (typeof ITIN !== "undefined" && ITIN[d]) ? ITIN[d] : null;
+      const m = it && [it.main, ...(it.more || [])].find(x => x && (x.ic === "flight" || x.ic === "train"));
+      if (m) return `<span class="fl">${ICONS[m.ic]}</span>`;
       return "";
     }
     const WD = ["S", "M", "T", "W", "T", "F", "S"];
@@ -4440,12 +4445,12 @@
       const it = ITIN[d] || {};
       const first = DAYS[0], last = DAYS[DAYS.length - 1];
       let mainHTML = "";
-      if (it.main) {
-        const m = it.main, subs = (m.sub || []).filter(s => !ARR_RE.test(s)).map(esc).join("<br>");
-        mainHTML = `<div class="itin-main"><div class="itin-ic">${ICONS[m.ic] || ICONS.event}</div>`
+      [it.main, ...(it.more || [])].filter(Boolean).forEach((m, i) => {
+        const subs = (m.sub || []).filter(s => !ARR_RE.test(s)).map(esc).join("<br>");
+        mainHTML += `<div class="itin-main"${i ? ' style="margin-top:16px;"' : ""}><div class="itin-ic">${ICONS[m.ic] || ICONS.event}</div>`
           + `<div class="itin-mn"><div class="itin-time">${esc(getDisplayTime(m, d))}</div>${ttlHTML(m)}${subs ? `<div class="itin-sub">${subs}</div>` : ""}</div>`
           + `${m.wp ? mapThumb(m.wp, mapZoom(m.ic)) : ""}</div>`;
-      }
+      });
       let stayHTML = "";
       if (it.stay) {
         const s = it.stay;
@@ -4454,7 +4459,7 @@
           const mHTML = s.addr ? `<a class="itin-ttl" href="${mapsLink(s.addr)}" target="_blank" rel="noopener">${esc(s.title)}</a>` : `<span class="itin-ttl">${esc(s.title)}</span>`;
           const sHTML = s.addr ? `<div class="itin-sub"><a href="${mapsLink(s.addr)}" target="_blank" rel="noopener">${esc(s.addr)}</a></div>` : "";
           const tHTML = s.in ? `<div class="itin-time">Check in: ${esc(s.in)}</div>` : "";
-          stayHTML = `<div class="itin-main" style="margin-top: ${it.main ? '16px' : '0'};"><div class="itin-ic">${ICONS.hotel}</div>`
+          stayHTML = `<div class="itin-main" style="margin-top: ${mainHTML ? '16px' : '0'};"><div class="itin-ic">${ICONS.hotel}</div>`
             + `<div class="itin-mn">${tHTML}${mHTML}${sHTML}</div>`
             + `${s.addr ? mapThumb(s.addr, 12) : ""}</div>`;
         } else {
@@ -4465,7 +4470,7 @@
           const currentDayOfStay = d - s.day + 1;
           const dayText = `Day ${currentDayOfStay} / ${stayDaysCount}`;
 
-          stayHTML = `<button class="itin-stay link${it.main ? "" : " solo"}" data-goto="${s.day}">`
+          stayHTML = `<button class="itin-stay link${mainHTML ? "" : " solo"}" data-goto="${s.day}">`
             + `<span class="sic">${ICONS.hotel}</span>`
             + `<div style="display:flex; flex-direction:column; align-items:flex-start; line-height:1.2;">`
             + `<span style="font-size:9px; font-family:var(--mono); color:var(--muted); text-transform:uppercase; margin-bottom:2px;">${dayText}</span>`
@@ -4493,6 +4498,7 @@
           evts.push({ ic: "hotel", title: prevStay.title, sub: [`Check out ${prevStay.out} ${prevStay.tz}`, prevStay.addr] });
         }
         if (it.main) evts.push(it.main);
+        (it.more || []).forEach(m => evts.push(m));
         if (currStay && prevStay !== currStay) {
           evts.push({ ic: "hotel", title: currStay.title, sub: [`Check in ${currStay.in} ${currStay.tz}`, currStay.addr] });
         }

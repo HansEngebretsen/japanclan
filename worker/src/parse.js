@@ -74,12 +74,25 @@ function classifySummary(s) {
   return "event";
 }
 
-export function icsToEvent(icsText, defaultOffset) {
+export function icsToEvents(icsText, defaultOffset) {
   const unfolded = String(icsText).replace(/\r?\n[ \t]/g, "");
-  const block = /BEGIN:VEVENT([\s\S]*?)END:VEVENT/.exec(unfolded);
-  if (!block) return null;
+  const events = [];
+  const re = /BEGIN:VEVENT([\s\S]*?)END:VEVENT/g;
+  let block;
+  while ((block = re.exec(unfolded)) && events.length < 5) {
+    const ev = vevent(block[1], defaultOffset);
+    if (ev) events.push(ev);
+  }
+  return events;
+}
+
+export function icsToEvent(icsText, defaultOffset) {
+  return icsToEvents(icsText, defaultOffset)[0] || null;
+}
+
+function vevent(body, defaultOffset) {
   const props = {};
-  for (const line of block[1].split(/\r?\n/)) {
+  for (const line of body.split(/\r?\n/)) {
     const m = /^([A-Z-]+)((?:;[^:]+)?):(.*)$/.exec(line.trim());
     if (!m) continue;
     const tzid = /TZID=([^;:]+)/.exec(m[2] || "");
@@ -109,27 +122,28 @@ export function icsToEvent(icsText, defaultOffset) {
   };
 }
 
-export function extractIcsEvent(parsed, tripCfg) {
+export function extractIcsEvents(parsed, tripCfg) {
   const defaultOffset = tripCfg?.tzOffset || "+09:00";
-  const parts = [];
+  const out = [];
+  const seen = new Set();
   for (const a of parsed.attachments || []) {
     const isIcs = /text\/calendar/i.test(a.mimeType || "") || /\.ics$/i.test(a.filename || "");
     if (!isIcs) continue;
-    const content = typeof a.content === "string" ? a.content : new TextDecoder().decode(a.content);
-    parts.push(content);
-  }
-  for (const text of parts) {
+    if ((a.content?.byteLength || a.content?.length || 0) > 1_000_000) continue; // ICS files are tiny; skip anything suspicious
     try {
-      const ev = icsToEvent(text, defaultOffset);
-      if (ev) return ev;
+      const content = typeof a.content === "string" ? a.content : new TextDecoder().decode(a.content);
+      for (const ev of icsToEvents(content, defaultOffset)) {
+        const key = `${ev.title}|${ev.startDateTime}`;
+        if (!seen.has(key)) { seen.add(key); out.push(ev); }
+      }
     } catch { /* fall through to Gemini */ }
   }
-  return null;
+  return out;
 }
 
 /* ---------- Tier 2: Gemini structured output ---------- */
 
-const RESPONSE_SCHEMA = {
+const EVENT_SCHEMA = {
   type: "OBJECT",
   properties: {
     type: { type: "STRING", enum: ["flight", "train", "lodging", "event", "dining", "none"] },
@@ -149,14 +163,15 @@ const RESPONSE_SCHEMA = {
   required: ["type", "title", "startDateTime", "timezoneOffset", "confidence"],
 };
 
-export async function geminiParse(env, cfg, text, tripCfg) {
-  const model = cfg.llm?.model || "gemini-2.5-flash";
-  const tripWindow = tripCfg
-    ? `the trip runs ${tripCfg.year}-${String(tripCfg.month).padStart(2, "0")}-${tripCfg.firstDay} to ${tripCfg.year}-${String(tripCfg.month).padStart(2, "0")}-${tripCfg.lastDay}, default timezone ${tripCfg.defaultTz || "GMT+9"} (${tripCfg.tzOffset || "+09:00"})`
-    : "unknown trip window";
-  const prompt = (cfg.llm?.promptTemplate || DEFAULT_PROMPT)
-    .replace("{{tripWindow}}", tripWindow)
-    .replace("{{today}}", new Date().toISOString().slice(0, 10));
+/* One email can hold several bookings (outbound + return flights, multi-night
+   packages), so the model returns an array. */
+const RESPONSE_SCHEMA = {
+  type: "OBJECT",
+  properties: { events: { type: "ARRAY", items: EVENT_SCHEMA } },
+  required: ["events"],
+};
+
+async function geminiCall(env, model, prompt, text) {
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${env.GEMINI_API_KEY}`,
     {
@@ -172,11 +187,37 @@ export async function geminiParse(env, cfg, text, tripCfg) {
       }),
     }
   );
-  if (!res.ok) throw new Error(`Gemini ${res.status}: ${(await res.text()).slice(0, 300)}`);
+  if (!res.ok) {
+    const err = new Error(`Gemini ${model} ${res.status}: ${(await res.text()).slice(0, 300)}`);
+    err.status = res.status;
+    throw err;
+  }
   const out = await res.json();
   const raw = out.candidates?.[0]?.content?.parts?.[0]?.text;
   if (!raw) throw new Error("Gemini returned no candidate text");
-  return JSON.parse(raw);
+  const parsed = JSON.parse(raw);
+  return Array.isArray(parsed.events) ? parsed.events.slice(0, 5) : [];
+}
+
+/* Returns ParsedEvent[]. Retries once; a quota/availability failure retries on
+   the fallback model so a tightened free tier never silently kills the
+   pipeline. Both model names are config-switchable without a redeploy. */
+export async function geminiParseEvents(env, cfg, text, tripCfg) {
+  const model = cfg.llm?.model || "gemini-2.5-flash";
+  const fallback = cfg.llm?.fallbackModel || "gemini-2.5-flash-lite";
+  const tripWindow = tripCfg
+    ? `the trip runs ${tripCfg.year}-${String(tripCfg.month).padStart(2, "0")}-${tripCfg.firstDay} to ${tripCfg.year}-${String(tripCfg.month).padStart(2, "0")}-${tripCfg.lastDay}, default timezone ${tripCfg.defaultTz || "GMT+9"} (${tripCfg.tzOffset || "+09:00"})`
+    : "unknown trip window";
+  const prompt = (cfg.llm?.promptTemplate || DEFAULT_PROMPT)
+    .replace("{{tripWindow}}", tripWindow)
+    .replace("{{today}}", new Date().toISOString().slice(0, 10));
+  try {
+    return await geminiCall(env, model, prompt, text);
+  } catch (e) {
+    console.error("gemini primary failed:", e.message);
+    const retryModel = (e.status === 429 || e.status >= 500) && fallback !== model ? fallback : model;
+    return await geminiCall(env, retryModel, prompt, text);
+  }
 }
 
 /* ---------- validation / sanitization (applies to every parse path) ---------- */

@@ -75,6 +75,28 @@ export function buildMain(ev) {
 const MONTHS = ["", "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December"];
 
+/* Trip grouping: an event belongs to whichever configured trip's date window
+   contains its start date (flights define those windows when a trip is set
+   up), regardless of which trip the sender defaults to. Sender default only
+   breaks ties between overlapping trips. */
+export function resolveTripByDate(cfg, ev, fallbackId) {
+  const p = localParts(ev.startDateTime);
+  if (!p) return null;
+  const matches = Object.entries(cfg.trips || {}).filter(([, t]) =>
+    t.year === p.y && t.month === p.mo && p.d >= t.firstDay && p.d <= t.lastDay);
+  if (!matches.length) return null;
+  const hit = matches.find(([id]) => id === fallbackId) || matches[0];
+  return { id: hit[0], trip: hit[1] };
+}
+
+function minsOf(t) {
+  const m = /^(\d{1,2}):(\d{2}) (AM|PM)$/.exec(t || "");
+  if (!m) return 0;
+  return ((Number(m[1]) % 12) + (m[3] === "PM" ? 12 : 0)) * 60 + Number(m[2]);
+}
+
+const ANCHOR_RANK = { flight: 2, train: 1 };
+
 /* Merge one validated ParsedEvent into itinerary data.
    Returns { data, summary } on success or { conflict: "reason" }.
    Never mutates the input. */
@@ -120,15 +142,37 @@ export function applyEvent(input, ev, tripCfg) {
     return { data, summary: `${ev.title}, ${month} ${inDay}–${outDay}` };
   }
 
+  /* Non-lodging events coexist on a day: flights/trains anchor as `main`,
+     everything else joins the day's `more` list (time-sorted). Re-sent
+     bookings (same confirmation or title) update in place. */
   const day = start.d;
-  const existing = data.itin[day]?.main;
-  if (existing) {
-    const sameConf = ev.confirmation && existing.sub?.some((l) => l === `Confirmation ${ev.confirmation}`);
-    const sameTitle = existing.title && existing.title.toLowerCase() === ev.title.toLowerCase();
-    if (!sameConf && !sameTitle) {
-      return { conflict: `${month} ${day} already has "${existing.title}"` };
-    }
+  const cell = { ...(data.itin[day] || {}) };
+  const incoming = buildMain(ev);
+  const isSame = (m) => Boolean(m) && (
+    (ev.confirmation && (m.sub || []).includes(`Confirmation ${ev.confirmation}`)) ||
+    (m.title && m.title.toLowerCase() === ev.title.toLowerCase())
+  );
+  const more = (cell.more || []).slice();
+  const dup = more.findIndex(isSame);
+
+  if (isSame(cell.main)) {
+    cell.main = incoming; // schedule change / re-send → update in place
+  } else if (dup >= 0) {
+    more[dup] = incoming; // update of a secondary event
+  } else if (!cell.main) {
+    cell.main = incoming;
+  } else if ((ANCHOR_RANK[ev.type] || 0) > (ANCHOR_RANK[cell.main.ic] || 0)) {
+    more.push(cell.main); // e.g. a flight bumps a dinner out of the anchor slot
+    cell.main = incoming;
+  } else {
+    more.push(incoming);
   }
-  data.itin[day] = { ...(data.itin[day] || {}), main: buildMain(ev) };
-  return { data, summary: `${ev.title} on ${month} ${day} at ${fmtTime(ev.startDateTime)}` };
+  if (more.length) {
+    more.sort((a, b) => minsOf(a.t) - minsOf(b.t));
+    cell.more = more;
+  }
+  data.itin[day] = cell;
+  const alongside = cell.main === incoming
+    ? "" : ` (alongside ${cell.main.title})`;
+  return { data, summary: `${ev.title} on ${month} ${day} at ${fmtTime(ev.startDateTime)}${alongside}` };
 }

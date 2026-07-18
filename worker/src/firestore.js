@@ -80,10 +80,35 @@ export async function getDoc(env, path) {
 
 /* Full-document set. Options:
    - updateTime: optimistic-concurrency precondition (throws FAILED_PRECONDITION on mismatch)
-   - mustNotExist: create-only (throws ALREADY_EXISTS if present) — used for dedup markers */
+   - mustNotExist: create-only (throws ALREADY_EXISTS if present) — used for dedup markers
+   Returns the committed document's new updateTime (needed for safe undo). */
 export async function setDoc(env, path, data, { updateTime, mustNotExist } = {}) {
   const write = { update: { name: docName(env, path), fields: encFields(data) } };
   if (updateTime) write.currentDocument = { updateTime };
   else if (mustNotExist) write.currentDocument = { exists: false };
-  await call(env, "POST", `${docsBase(env)}:commit`, { writes: [write] });
+  const res = await call(env, "POST", `${docsBase(env)}:commit`, { writes: [write] });
+  return res.writeResults?.[0]?.updateTime || res.commitTime;
+}
+
+export async function deleteDoc(env, path) {
+  await call(env, "POST", `${docsBase(env)}:commit`, { writes: [{ delete: docName(env, path) }] });
+}
+
+/* Latest docs from a subcollection, newest first by `ts`. No `where` clause on
+   purpose: equality-filter + orderBy would demand a composite index, which is a
+   setup landmine — collections here are tiny, so callers filter in JS. */
+export async function latestDocs(env, parentPath, collectionId, limit = 10) {
+  const res = await call(env, "POST", `${docsBase(env)}/${parentPath}:runQuery`, {
+    structuredQuery: {
+      from: [{ collectionId }],
+      orderBy: [{ field: { fieldPath: "ts" }, direction: "DESCENDING" }],
+      limit,
+    },
+  });
+  return (Array.isArray(res) ? res : [])
+    .filter((r) => r.document)
+    .map((r) => ({
+      path: r.document.name.replace(/^.*\/documents\//, ""),
+      data: decFields(r.document.fields),
+    }));
 }

@@ -15,6 +15,7 @@ export async function replyTo(message, bodyText) {
     msg.setHeader("In-Reply-To", mid);
     msg.setHeader("References", mid);
   }
+  msg.setHeader("Auto-Submitted", "auto-replied"); // lets other systems know not to auto-respond back
   msg.addMessage({ contentType: "text/plain", data: bodyText });
   await message.reply(new EmailMessage(message.to, message.from, msg.asRaw()));
 }

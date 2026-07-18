@@ -2,8 +2,15 @@
 
 Forward any booking email — a flight, a hotel, a train, a dinner reservation,
 anything — to **`japan@trips.haaans.com`** and it appears on the japanclan
-calendar within seconds. This guide sets that up, start to finish, in about
-15 minutes of clicking. No servers, no monthly cost, no credit card.
+calendar within seconds. You get a reply confirming exactly what was added,
+and you can control everything by replying in plain words (**UNDO**,
+**YES**/**NO**, **STATUS**, **HELP**). One email can contain several bookings
+(an airline confirmation with outbound *and* return flights adds both), and
+everything you send groups itself into the right trip by date — the flights
+define the trip, then hotels and dinners snap to the same days automatically.
+
+This guide sets that up, start to finish, in about 15 minutes of clicking.
+No servers, no monthly cost, no credit card.
 
 ```
 you forward an email ──▶ Cloudflare receives it (trips.haaans.com)
@@ -108,10 +115,11 @@ npx wrangler secret put GEMINI_API_KEY
 npx wrangler deploy
 ```
 
-Now delete the downloaded key file (and empty the trash):
+Then confirm everything so far with the built-in checker — it prints a ✅ or
+❌ (with the fix) for every step:
 
 ```bash
-rm ~/Downloads/japanclan2k6-*.json
+npm run check
 ```
 
 ### 6. Route the address to the worker (Cloudflare)
@@ -125,12 +133,19 @@ the worker — future trips need zero extra Cloudflare setup.)
 
 The worker reads everything it's allowed to do from one Firestore doc, so you
 can change senders/trips/prompts later without touching code. Seed it from the
-repo (uses the same key file — do this **before** deleting it in step 5, or
-re-download a key):
+repo using the key file from step 3:
 
 ```bash
 cd worker
 GCP_SA_KEY_FILE=~/Downloads/japanclan2k6-*.json npm run seed
+GCP_SA_KEY_FILE=~/Downloads/japanclan2k6-*.json npm run check   # full verification
+```
+
+Now that the key has been pasted into Cloudflare (step 5) and the config is
+seeded, **delete the downloaded key file** (and empty the trash):
+
+```bash
+rm ~/Downloads/japanclan2k6-*.json
 ```
 
 Then open [Firebase console](https://console.firebase.google.com/project/japanclan2k6/firestore)
@@ -145,15 +160,37 @@ Then open [Firebase console](https://console.firebase.google.com/project/japancl
 
 1. From your own Gmail, forward a real flight or hotel confirmation to
    `japan@trips.haaans.com`.
-2. Within a few seconds you should get a reply — *"Added to the calendar ✅"* —
-   and the event is live in the app (no refresh needed).
-3. Forward the same email again → reply says it's already on the calendar.
-4. Send a made-up note like *"dinner at Gonpachi July 20 at 7pm"* → added via
-   the AI path.
-5. Ask a friend **not** on the allowlist to send something → they get a
+2. Within a few seconds you should get a reply listing exactly what was added
+   (a round-trip confirmation adds **both** flights) — and it's live in the
+   app, no refresh needed.
+3. Reply **UNDO** → the reply confirms it was removed, and it's gone from the
+   app. Forward the original email again to re-add it.
+4. Forward the same email again → reply says it's already on the calendar.
+5. Send a made-up note like *"dinner at Gonpachi July 20 at 7pm"* → added via
+   the AI path, on the same day as anything else already planned.
+6. Reply **STATUS** → you get a list of recent activity. **HELP** explains
+   all the commands.
+7. Ask a friend **not** on the allowlist to send something → they get a
    bounce, nothing is processed.
 
 ---
+
+## How it decides where things go
+
+- **Flights define the trip.** A trip in the config is just a date window +
+  timezone (set once, from the flights). Every email after that — hotels,
+  trains, dinners — is grouped into whichever trip's window contains its date,
+  no matter which address it was sent to.
+- **Same-day things stack.** A flight, a hotel check-in, and a dinner on the
+  same day all show on that day: flights/trains take the day's headline slot,
+  everything else lists under it in time order. Re-sent bookings (schedule
+  changes) update in place instead of duplicating.
+- **When it's not sure, it asks.** If the AI's confidence is low, nothing is
+  added — you get a reply describing what it *thinks* the booking is, and you
+  answer **YES** or **NO**. Nothing ever lands on the calendar silently wrong.
+- **Nothing is ever lost.** Every accepted email is forwarded to your Gmail as
+  an archive; anything unreadable or ambiguous is saved in a review queue
+  (`pipeline/state/pending`) and the sender is told so.
 
 ## Day-to-day
 
@@ -162,10 +199,15 @@ Then open [Firebase console](https://console.firebase.google.com/project/japancl
 - **Add a trip:** add an entry under `trips` (dates + timezone + itinerary
   path) and optionally map an address like `paris@trips.haaans.com` under
   `addresses`. Senders default to their own `trip`.
-- **Something didn't parse / date conflict:** it's saved in Firestore under
+- **Fix a mistake:** reply **UNDO** to the confirmation email (works while
+  nothing else has changed the calendar since). For anything older, edit the
+  itinerary doc in the Firebase console.
+- **Something didn't parse / hotel overlap:** it's saved in Firestore under
   `pipeline/state/pending` with the reason, and the sender got a reply saying
   so. Add it to the itinerary by hand (see `.agents/AGENTS.md` → "Adding a new
   itinerary day"), then delete the pending doc.
+- **Someone's spamming or a key concern:** each sender is capped at 30 emails
+  a day (change `options.maxPerSenderPerDay` in the config).
 - **See what's been happening:** `pipeline/state/log` has one entry per email
   (who, what, outcome, how long it took). Live tail: `cd worker && npx wrangler tail`.
 

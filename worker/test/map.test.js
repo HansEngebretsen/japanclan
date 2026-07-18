@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { applyEvent, buildMain, fmtTime, tzLabel, slugify } from "../src/map.js";
+import { applyEvent, buildMain, fmtTime, tzLabel, slugify, resolveTripByDate } from "../src/map.js";
 
 const TRIP = { year: 2026, month: 7, firstDay: 12, lastDay: 25, tzOffset: "+09:00" };
 
@@ -81,18 +81,45 @@ describe("applyEvent", () => {
     expect(res.data.itin[16].main.title).toBe("Giants game"); // untouched
   });
 
-  it("overwrites same-confirmation main (schedule change) but conflicts on a different event", () => {
+  it("overwrites same-confirmation main in place (schedule change)", () => {
     const first = applyEvent({}, FLIGHT, TRIP);
-    // same confirmation, new time → update in place
     const changed = applyEvent(first.data, { ...FLIGHT, startDateTime: "2026-07-14T15:00:00-07:00" }, TRIP);
     expect(changed.conflict).toBeUndefined();
     expect(changed.data.itin[14].main.t).toBe("3:00 PM");
-    // different event same day → conflict, itinerary untouched
-    const other = applyEvent(first.data, {
-      type: "event", title: "TeamLab", startDateTime: "2026-07-14T10:00:00+09:00",
+    expect(changed.data.itin[14].more).toBeUndefined();
+  });
+
+  it("lets a dinner coexist with a flight on the same day (more list)", () => {
+    const first = applyEvent({}, FLIGHT, TRIP);
+    const res = applyEvent(first.data, {
+      type: "dining", title: "Gonpachi", startDateTime: "2026-07-14T19:00:00+09:00",
+      timezoneOffset: "+09:00", locationName: "Gonpachi Nishi-Azabu", details: [],
+    }, TRIP);
+    expect(res.conflict).toBeUndefined();
+    expect(res.data.itin[14].main.title).toBe("SFO → HND"); // flight keeps the anchor slot
+    expect(res.data.itin[14].more).toHaveLength(1);
+    expect(res.data.itin[14].more[0].title).toBe("Gonpachi");
+    expect(res.summary).toContain("alongside SFO → HND");
+  });
+
+  it("promotes a flight to the anchor slot over an existing dinner", () => {
+    const dinner = applyEvent({}, {
+      type: "dining", title: "Gonpachi", startDateTime: "2026-07-14T19:00:00+09:00",
       timezoneOffset: "+09:00", details: [],
     }, TRIP);
-    expect(other.conflict).toContain('July 14 already has "SFO → HND"');
+    const res = applyEvent(dinner.data, FLIGHT, TRIP);
+    expect(res.data.itin[14].main.title).toBe("SFO → HND");
+    expect(res.data.itin[14].more.map((m) => m.title)).toEqual(["Gonpachi"]);
+  });
+
+  it("updates a secondary event in place and keeps more time-sorted", () => {
+    let d = applyEvent({}, FLIGHT, TRIP).data;
+    d = applyEvent(d, { type: "dining", title: "Gonpachi", startDateTime: "2026-07-14T19:00:00+09:00", timezoneOffset: "+09:00", details: [] }, TRIP).data;
+    d = applyEvent(d, { type: "event", title: "TeamLab", startDateTime: "2026-07-14T10:00:00+09:00", timezoneOffset: "+09:00", details: [] }, TRIP).data;
+    // re-send Gonpachi with a new time → replaces, no duplicate
+    d = applyEvent(d, { type: "dining", title: "Gonpachi", startDateTime: "2026-07-14T20:30:00+09:00", timezoneOffset: "+09:00", details: [] }, TRIP).data;
+    expect(d.itin[14].more.map((m) => m.title)).toEqual(["TeamLab", "Gonpachi"]);
+    expect(d.itin[14].more[1].t).toBe("8:30 PM");
   });
 
   it("conflicts when nights overlap a different stay", () => {
@@ -109,5 +136,23 @@ describe("applyEvent", () => {
     const base = { itin: {}, stays: {} };
     applyEvent(base, FLIGHT, TRIP);
     expect(base.itin).toEqual({});
+  });
+});
+
+describe("resolveTripByDate (trip grouping)", () => {
+  const cfg = {
+    trips: {
+      "japan-2026": TRIP,
+      "nyc-2026": { year: 2026, month: 9, firstDay: 3, lastDay: 8, tzOffset: "-04:00" },
+    },
+  };
+  it("groups an event into whichever trip's window contains its date", () => {
+    const dinner = { startDateTime: "2026-09-05T19:00:00-04:00" };
+    expect(resolveTripByDate(cfg, dinner, "japan-2026").id).toBe("nyc-2026"); // sender default overridden by date
+    const hotel = { startDateTime: "2026-07-15T15:00:00+09:00" };
+    expect(resolveTripByDate(cfg, hotel, "nyc-2026").id).toBe("japan-2026");
+  });
+  it("returns null when no trip window matches", () => {
+    expect(resolveTripByDate(cfg, { startDateTime: "2026-08-01T12:00:00+09:00" }, "japan-2026")).toBeNull();
   });
 });
