@@ -138,9 +138,15 @@ function pushActivity(data, ev, mo, day, now) {
 }
 
 /* Merge one validated ParsedEvent into itinerary data.
-   Returns { data, summary } on success or { conflict: "reason" }.
+   Returns { data, summary } on success, or { conflict, conflictInfo } when a
+   stay would land on nights another property already holds. `conflictInfo`
+   carries what the app needs to offer a replace — the nights at stake and
+   both properties — so the UI never has to re-derive it.
+
+   opts.replaceStay overrides the refusal: the incoming stay takes the nights
+   it asked for, and any property left holding no nights is dropped.
    Never mutates the input. */
-export function applyEvent(input, ev, tripCfg, now = Date.now()) {
+export function applyEvent(input, ev, tripCfg, now = Date.now(), opts = {}) {
   const data = {
     ...input,   // carry any field this function doesn't know about (activity), so a write never drops it
     defaultCity: { ...(input.defaultCity || {}) },
@@ -174,13 +180,47 @@ export function applyEvent(input, ev, tripCfg, now = Date.now()) {
       out: ev.endDateTime ? fmtTime(ev.endDateTime) : "11:00 AM",
       tz: tzLabel(ev.timezoneOffset),
     };
+    /* Survey every night first. Reporting only the first clash would make a
+       "replace" prompt understate what it is about to overwrite when two
+       different hotels sit inside the same range. */
+    const clashDays = [], clashKeys = new Set();
     for (let d = inDay; d < outDay; d++) {
       const existing = data.itin[d]?.stay;
-      if (existing && existing !== key) {
-        return { conflict: `${month} ${d} already has stay "${data.stays[existing]?.title || existing}"` };
-      }
-      data.itin[d] = { ...(data.itin[d] || {}), stay: key };
+      if (existing && existing !== key) { clashDays.push(d); clashKeys.add(existing); }
     }
+
+    if (clashDays.length && !opts.replaceStay) {
+      const titles = [...clashKeys].map((k) => data.stays[k]?.title || k);
+      return {
+        conflict: `${month} ${clashDays[0]} already has stay "${titles[0]}"`,
+        conflictInfo: {
+          days: clashDays,
+          month: monthNum,
+          /* `nights` is the property's whole span, so the app can tell a full
+             replacement from one that only takes part of an existing stay. */
+          existing: [...clashKeys].map((k) => ({
+            key: k,
+            ...(data.stays[k] || {}),
+            nights: Object.entries(data.itin)
+              .filter(([, c]) => c.stay === k).map(([d]) => Number(d)).sort((a, b) => a - b),
+          })),
+          incoming: { ...data.stays[key], key },
+          range: { inDay, outDay },
+        },
+      };
+    }
+
+    for (let d = inDay; d < outDay; d++) data.itin[d] = { ...(data.itin[d] || {}), stay: key };
+
+    /* A replaced property may still hold nights outside this range — only drop
+       the ones that now hold none, or the itinerary keeps dead stays around. */
+    if (clashDays.length) {
+      for (const k of clashKeys) {
+        const stillUsed = Object.values(data.itin).some((c) => c.stay === k);
+        if (!stillUsed) delete data.stays[k];
+      }
+    }
+
     pushActivity(data, ev, monthNum, inDay, now);
     return { data, summary: `${ev.title}, ${month} ${inDay}–${outDay}` };
   }
@@ -224,7 +264,8 @@ export function applyEvent(input, ev, tripCfg, now = Date.now()) {
 /* Remove one event from a day. `slot` is "main" or an index into `more`, and
    `title` must match what the caller believed it was deleting — the app sends
    both, so a stale view can't delete whatever slid into that position after
-   someone else's change. Returns { data, summary } or { error }.
+   someone else's change. `slot` may also be "stay", which clears the property
+   from every night it covers. Returns { data, summary } or { error }.
 
    Deletions are appended to the activity feed rather than erasing the "Added"
    entry: an activity log is history, and quietly rewriting it would leave the
@@ -241,6 +282,35 @@ export function removeEvent(input, { day, slot, title }, tripCfg, now = Date.now
 
   const same = (m) => m && String(m.title || "").toLowerCase() === String(title || "").toLowerCase();
   let removed = null;
+
+  /* A stay spans nights, so removing it clears every day pointing at it, not
+     just the one the button was on — leaving half a hotel behind would be
+     worse than not offering this at all. */
+  if (slot === "stay") {
+    const key = cell.stay;
+    const s = key && data.stays[key];
+    if (!same(s)) return { error: "That stay has changed since you loaded the page — reload and try again." };
+    const cleared = [];
+    for (const [d, c] of Object.entries(data.itin)) {
+      if (c.stay !== key) continue;
+      const next = { ...c };
+      delete next.stay;
+      cleared.push(Number(d));
+      if (!next.main && !next.more) delete data.itin[d];
+      else data.itin[d] = next;
+    }
+    delete data.stays[key];
+    const mo = tripCfg?.month || 0;
+    const span = cleared.length > 1
+      ? `${mo}/${Math.min(...cleared)}–${mo}/${Math.max(...cleared)}`
+      : `${mo}/${cleared[0]}`;
+    const titleLower = String(s.title || "").toLowerCase();
+    data.activity = [
+      { t: `Removed ${span} stay at ${s.title}`, ts: now, d: Math.min(...cleared), removed: true },
+      ...((data.activity || []).filter(a => !(a && String(a.t || "").toLowerCase().includes(titleLower))))
+    ].slice(0, ACTIVITY_MAX);
+    return { data, summary: s.title };
+  }
 
   if (slot === "main") {
     if (!same(cell.main)) return { error: "That item has changed since you loaded the page — reload and try again." };
@@ -265,9 +335,10 @@ export function removeEvent(input, { day, slot, title }, tripCfg, now = Date.now
   else data.itin[day] = cell;
 
   const mo = tripCfg?.month || 0;
+  const titleLower = String(removed.title || "").toLowerCase();
   data.activity = [
-    { t: `Removed ${mo}/${day} ${removed.title}`, ts: now, d: day },
-    ...(data.activity || []),
+    { t: `Removed ${mo}/${day} ${removed.title}`, ts: now, d: day, removed: true },
+    ...((data.activity || []).filter(a => !(a && String(a.t || "").toLowerCase().includes(titleLower))))
   ].slice(0, ACTIVITY_MAX);
 
   return { data, summary: removed.title };
