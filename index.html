@@ -3239,6 +3239,14 @@
       opacity: .6
     }
 
+    /* The badge on the card being replaced drops its accent too — same
+       construction as .itin-ic, with --seal swapped for --muted, so losing the
+       colour is the signal rather than any change in shape or weight. */
+    .rp-remove .itin-ic {
+      background: color-mix(in srgb, var(--muted) 12%, var(--card));
+      color: var(--muted)
+    }
+
     .rp-card {
       border: 1px solid var(--line-2);
       border-radius: 10px;

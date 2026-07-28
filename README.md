@@ -5,6 +5,7 @@ Organize travel details. View, pin and share fun unique things to do, eat or see
 ## Setup
 
 - **Email → calendar**: forward any booking email (flight, hotel, train, dinner…) to the trip address and it lands on the calendar automatically. One-time setup guide: [worker/SETUP.md](worker/SETUP.md) (finishing setup locally: [worker/HANDOFF.md](worker/HANDOFF.md)).
+- **How it all works**: [worker/ARCHITECTURE.md](worker/ARCHITECTURE.md) — the full design of the pipeline: how email is received and parsed, the two-tier parser, the security model, how concurrent edits stay safe, and how the same path serves the app's "Add to calendar" box.
 
 
 <div align="center">
