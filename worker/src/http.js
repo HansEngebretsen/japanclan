@@ -12,7 +12,7 @@
 import { loadConfig } from "./config.js";
 import { getDoc, setDoc } from "./firestore.js";
 import { geminiParseEvents, validateEvent } from "./parse.js";
-import { applyEvent, resolveTripByDate } from "./map.js";
+import { applyEvent, resolveTripByDate, removeEvent } from "./map.js";
 import { verifyIdToken, AuthError } from "./auth.js";
 import { saInfo } from "./gauth.js";
 
@@ -48,6 +48,16 @@ const json = (body, status, origin) =>
     headers: { "Content-Type": "application/json", ...cors(origin) },
   });
 
+/* Every outcome gets logged, not just the successes. A refusal with no record
+   of the input is impossible to debug after the fact — which is exactly the
+   hole this closes. */
+function writeLog(env, email, text, entry) {
+  return setDoc(env, `pipeline/state/log/${Date.now()}-${crypto.randomUUID().slice(0, 8)}`, {
+    from: email, to: "app", subject: String(text || "").slice(0, 200),
+    ts: new Date().toISOString(), ...entry,
+  }).catch((e) => console.error("log write failed:", e));
+}
+
 /* The app's allowlist is the source of truth for who may use the app, so it is
    what gates this too — an email sender isn't automatically an app user, or
    the reverse. Returns the trip to bias parsing toward, or null if not allowed. */
@@ -73,7 +83,8 @@ export async function handleFetch(request, env) {
   if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors(origin) });
 
   const url = new URL(request.url);
-  if (request.method !== "POST" || url.pathname !== "/add") {
+  const route = url.pathname;
+  if (request.method !== "POST" || (route !== "/add" && route !== "/remove")) {
     return json({ ok: false, error: "Not found" }, 404, origin);
   }
   if (!origin) return json({ ok: false, error: "Origin not allowed" }, 403, null);
@@ -83,9 +94,11 @@ export async function handleFetch(request, env) {
   catch { return json({ ok: false, error: "Bad request" }, 400, origin); }
 
   const text = String(body?.text || "").trim();
-  if (!text) return json({ ok: false, error: "Paste some event details first." }, 400, origin);
-  if (text.length > MAX_TEXT) {
-    return json({ ok: false, error: `That's too long — keep it under ${MAX_TEXT} characters.` }, 400, origin);
+  if (route === "/add") {
+    if (!text) return json({ ok: false, error: "Paste some event details first." }, 400, origin);
+    if (text.length > MAX_TEXT) {
+      return json({ ok: false, error: `That's too long — keep it under ${MAX_TEXT} characters.` }, 400, origin);
+    }
   }
 
   let email;
@@ -94,7 +107,7 @@ export async function handleFetch(request, env) {
     // the service-account key rather than trusting a separately-set env var
     ({ email } = await verifyIdToken(body?.idToken, saInfo(env).project_id));
   } catch (e) {
-    if (e instanceof AuthError) return json({ ok: false, error: "Sign in again to add events." }, 401, origin);
+    if (e instanceof AuthError) return json({ ok: false, error: "Sign in again to make changes." }, 401, origin);
     console.error("token verification error:", e);
     return json({ ok: false, error: "Couldn't verify your sign-in." }, 500, origin);
   }
@@ -107,7 +120,7 @@ export async function handleFetch(request, env) {
   }
 
   const match = await allowedTrip(env, cfg, email);
-  if (!match) return json({ ok: false, error: "This account isn't allowed to add events." }, 403, origin);
+  if (!match) return json({ ok: false, error: "This account isn't allowed to change the calendar." }, 403, origin);
 
   // per-user daily cap — bounds Gemini and Firestore use if an account is taken over
   const dayKey = new Date().toISOString().slice(0, 10);
@@ -115,19 +128,23 @@ export async function handleFetch(request, env) {
   const rate = await getDoc(env, `pipeline/state/rate/${rateId}`).catch(() => null);
   const used = rate?.data?.count || 0;
   if (used >= MAX_PER_USER_PER_DAY) {
-    return json({ ok: false, error: `You've hit today's limit of ${MAX_PER_USER_PER_DAY} additions.` }, 429, origin);
+    return json({ ok: false, error: `You've hit today's limit of ${MAX_PER_USER_PER_DAY} changes.` }, 429, origin);
   }
   await setDoc(env, `pipeline/state/rate/${rateId}`, { count: used + 1, ts: new Date().toISOString() })
     .catch((e) => console.error("rate write failed:", e));
 
+  if (route === "/remove") return handleRemove(env, origin, email, cfg, match, body);
+
   let events;
-  try { events = await geminiParseEvents(env, cfg, text, match.trip); }
+  try { events = await geminiParseEvents(env, cfg, text, match.trip, "manual"); }
   catch (e) {
     console.error("gemini failed:", e);
+    await writeLog(env, email, text, { outcome: "http-error", error: String(e).slice(0, 300) });
     return json({ ok: false, error: "Couldn't read that — try rephrasing it." }, 502, origin);
   }
   if (!events.length) {
-    return json({ ok: false, error: "Couldn't find an event and a date in that. Include a date." }, 422, origin);
+    await writeLog(env, email, text, { outcome: "http-unparseable" });
+    return json({ ok: false, error: "Couldn't find a date in that. Try naming a day on the calendar." }, 422, origin);
   }
 
   /* Only two things are worth refusing: no readable date, and a date outside
@@ -157,6 +174,10 @@ export async function handleFetch(request, env) {
 
     if (!added.length) {
       const t = match.trip;
+      await writeLog(env, email, text, {
+        outcome: "http-out-of-range",
+        result: events.map((e) => `${e.title || "?"} @ ${e.startDateTime || "no date"}`).join(" | ").slice(0, 400),
+      });
       return json({
         ok: false,
         error: `That date isn't on the calendar — it runs ${t.month}/${t.firstDay} to ${t.month}/${t.lastDay}. Adjust the date and try again.`,
@@ -173,10 +194,10 @@ export async function handleFetch(request, env) {
     }
   }
 
-  await setDoc(env, `pipeline/state/log/${Date.now()}-${crypto.randomUUID().slice(0, 8)}`, {
-    from: email, to: "app", subject: text.slice(0, 120), ts: new Date().toISOString(),
-    outcome: "processed-http", events: added.length, result: added.map((a) => a.t).join(" | ").slice(0, 400),
-  }).catch((e) => console.error("log write failed:", e));
+  await writeLog(env, email, text, {
+    outcome: "processed-http", events: added.length,
+    result: added.map((a) => a.t).join(" | ").slice(0, 400),
+  });
 
   return json({
     ok: true,
@@ -185,4 +206,41 @@ export async function handleFetch(request, env) {
     ts: added[0].ts,          // so the app can pre-mark this entry as seen
     summary: added.map((a) => a.t).join(", "),
   }, 200, origin);
+}
+
+/* Deleting affects everyone on the trip, so the caller has to name both the
+   slot and the title it believed was there. removeEvent refuses on a mismatch,
+   which is what stops a stale tab from deleting whatever moved into that
+   position after somebody else's change. */
+async function handleRemove(env, origin, email, cfg, match, body) {
+  const day = Number(body?.day);
+  const slot = body?.slot;
+  const title = String(body?.title || "");
+  if (!Number.isInteger(day) || (slot !== "main" && !Number.isInteger(Number(slot))) || !title) {
+    return json({ ok: false, error: "Bad request" }, 400, origin);
+  }
+
+  for (let attempt = 0; ; attempt++) {
+    const cur = await getDoc(env, match.trip.itineraryPath);
+    if (!cur) return json({ ok: false, error: "Nothing to remove." }, 404, origin);
+
+    const res = removeEvent(cur.data, { day, slot, title }, match.trip);
+    if (res.error) {
+      await writeLog(env, email, title, { outcome: "http-remove-rejected", error: res.error });
+      return json({ ok: false, error: res.error }, 409, origin);
+    }
+
+    try {
+      await setDoc(env, match.trip.itineraryPath, res.data, { updateTime: cur.updateTime });
+      await writeLog(env, email, title, { outcome: "removed-http", result: res.summary, day });
+      return json({
+        ok: true, day, summary: res.summary,
+        ts: res.data.activity[0].ts,   // pre-mark: the remover doesn't need a dot for their own change
+      }, 200, origin);
+    } catch (e) {
+      if (e.code === "FAILED_PRECONDITION" && attempt < 2) continue;
+      console.error("remove write failed:", e);
+      return json({ ok: false, error: "Couldn't remove that — try again." }, 500, origin);
+    }
+  }
 }

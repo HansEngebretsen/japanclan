@@ -3,7 +3,7 @@
    { type, title, startDateTime, endDateTime?, timezoneOffset, endTimezoneOffset?,
      locationName?, address?, confirmation?, seats?, carrierNumber?, details[], confidence } */
 
-import { DEFAULT_PROMPT } from "./config.js";
+import { DEFAULT_PROMPT, MANUAL_PROMPT } from "./config.js";
 
 /* ---------- text trimming ---------- */
 
@@ -202,13 +202,20 @@ async function geminiCall(env, model, prompt, text) {
 /* Returns ParsedEvent[]. Retries once; a quota/availability failure retries on
    the fallback model so a tightened free tier never silently kills the
    pipeline. Both model names are config-switchable without a redeploy. */
-export async function geminiParseEvents(env, cfg, text, tripCfg) {
+export async function geminiParseEvents(env, cfg, text, tripCfg, mode = "email") {
   const model = cfg.llm?.model || "gemini-3.5-flash";
   const fallback = cfg.llm?.fallbackModel || "gemini-3.1-flash-lite";
   const tripWindow = tripCfg
     ? `the trip runs ${tripCfg.year}-${String(tripCfg.month).padStart(2, "0")}-${tripCfg.firstDay} to ${tripCfg.year}-${String(tripCfg.month).padStart(2, "0")}-${tripCfg.lastDay}, default timezone ${tripCfg.defaultTz || "GMT+9"} (${tripCfg.tzOffset || "+09:00"})`
     : "unknown trip window";
-  const prompt = (cfg.llm?.promptTemplate || DEFAULT_PROMPT)
+  /* Typed-in notes get their own, permissive instructions — the email prompt
+     is built to reject anything that isn't plainly a booking, which is
+     exactly wrong for someone typing "drinks with Kenji thursday". Each mode
+     has its own config override key so they can be tuned independently. */
+  const base = mode === "manual"
+    ? (cfg.llm?.manualPromptTemplate || MANUAL_PROMPT)
+    : (cfg.llm?.promptTemplate || DEFAULT_PROMPT);
+  const prompt = base
     .replace("{{tripWindow}}", tripWindow)
     .replace("{{today}}", new Date().toISOString().slice(0, 10));
   try {

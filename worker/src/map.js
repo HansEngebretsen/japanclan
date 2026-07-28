@@ -215,3 +215,55 @@ export function applyEvent(input, ev, tripCfg, now = Date.now()) {
     ? "" : ` (alongside ${cell.main.title})`;
   return { data, summary: `${ev.title} on ${month} ${day} at ${fmtTime(ev.startDateTime)}${alongside}` };
 }
+
+/* Remove one event from a day. `slot` is "main" or an index into `more`, and
+   `title` must match what the caller believed it was deleting — the app sends
+   both, so a stale view can't delete whatever slid into that position after
+   someone else's change. Returns { data, summary } or { error }.
+
+   Deletions are appended to the activity feed rather than erasing the "Added"
+   entry: an activity log is history, and quietly rewriting it would leave the
+   feed disagreeing with what people remember doing. */
+export function removeEvent(input, { day, slot, title }, tripCfg, now = Date.now()) {
+  const data = {
+    ...input,
+    defaultCity: { ...(input.defaultCity || {}) },
+    stays: { ...(input.stays || {}) },
+    itin: Object.fromEntries(Object.entries(input.itin || {}).map(([k, v]) => [k, { ...v }])),
+  };
+  const cell = data.itin[day];
+  if (!cell) return { error: "That day has nothing on it." };
+
+  const same = (m) => m && String(m.title || "").toLowerCase() === String(title || "").toLowerCase();
+  let removed = null;
+
+  if (slot === "main") {
+    if (!same(cell.main)) return { error: "That item has changed since you loaded the page — reload and try again." };
+    removed = cell.main;
+    const more = (cell.more || []).slice();
+    // the day keeps its shape: the next event is promoted into the anchor slot
+    if (more.length) { cell.main = more.shift(); cell.more = more; }
+    else delete cell.main;
+    if (cell.more && !cell.more.length) delete cell.more;
+  } else {
+    const i = Number(slot);
+    const more = (cell.more || []).slice();
+    if (!Number.isInteger(i) || i < 0 || i >= more.length || !same(more[i])) {
+      return { error: "That item has changed since you loaded the page — reload and try again." };
+    }
+    removed = more[i];
+    more.splice(i, 1);
+    if (more.length) cell.more = more; else delete cell.more;
+  }
+
+  if (!cell.main && !cell.more && !cell.stay) delete data.itin[day];
+  else data.itin[day] = cell;
+
+  const mo = tripCfg?.month || 0;
+  data.activity = [
+    { t: `Removed ${mo}/${day} ${removed.title}`, ts: now, d: day },
+    ...(data.activity || []),
+  ].slice(0, ACTIVITY_MAX);
+
+  return { data, summary: removed.title };
+}

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { applyEvent, buildMain, fmtTime, tzLabel, slugify, resolveTripByDate, activityLine, ACTIVITY_MAX } from "../src/map.js";
+import { applyEvent, buildMain, fmtTime, tzLabel, slugify, resolveTripByDate, activityLine, ACTIVITY_MAX, removeEvent } from "../src/map.js";
 
 const TRIP = { year: 2026, month: 7, firstDay: 12, lastDay: 25, tzOffset: "+09:00" };
 
@@ -212,5 +212,68 @@ describe("activity feed", () => {
     }
     expect(data.activity).toHaveLength(ACTIVITY_MAX);
     expect(data.activity[0].t).toContain(`Place ${ACTIVITY_MAX + 11}`);
+  });
+});
+
+describe("removeEvent", () => {
+  const base = () => ({
+    itin: {
+      20: {
+        main: { title: "HAKODATE → SAPPORO", t: "8:56 AM", ic: "train" },
+        more: [
+          { title: "Gonpachi", t: "7:00 PM", ic: "event" },
+          { title: "Ramen Alley", t: "8:00 PM", ic: "event" },
+        ],
+        stay: "sapporo",
+      },
+      21: { main: { title: "Solo thing", t: "9:00 AM", ic: "event" } },
+    },
+    stays: { sapporo: { title: "Yuen" } },
+  });
+
+  it("removes a secondary event and leaves the rest alone", () => {
+    const res = removeEvent(base(), { day: 20, slot: 0, title: "Gonpachi" }, TRIP, 900);
+    expect(res.data.itin[20].more.map(m => m.title)).toEqual(["Ramen Alley"]);
+    expect(res.data.itin[20].main.title).toBe("HAKODATE → SAPPORO");
+    expect(res.summary).toBe("Gonpachi");
+  });
+
+  it("promotes the next event when the anchor is removed", () => {
+    const res = removeEvent(base(), { day: 20, slot: "main", title: "HAKODATE → SAPPORO" }, TRIP, 900);
+    expect(res.data.itin[20].main.title).toBe("Gonpachi");
+    expect(res.data.itin[20].more.map(m => m.title)).toEqual(["Ramen Alley"]);
+  });
+
+  /* The whole point of sending the title: another person's change can shift
+     what sits in a slot between page load and click. */
+  it("refuses when the slot holds something else now", () => {
+    const res = removeEvent(base(), { day: 20, slot: 0, title: "Ramen Alley" }, TRIP, 900);
+    expect(res.error).toMatch(/changed since/);
+    expect(res.data).toBeUndefined();
+  });
+
+  it("refuses an out-of-bounds slot instead of throwing", () => {
+    expect(removeEvent(base(), { day: 20, slot: 9, title: "Gonpachi" }, TRIP, 900).error).toBeTruthy();
+    expect(removeEvent(base(), { day: 99, slot: "main", title: "x" }, TRIP, 900).error).toBeTruthy();
+  });
+
+  it("drops the day only when nothing is left on it", () => {
+    const kept = removeEvent(base(), { day: 20, slot: "main", title: "HAKODATE → SAPPORO" }, TRIP, 900);
+    expect(kept.data.itin[20]).toBeTruthy();               // stay + more remain
+    const gone = removeEvent(base(), { day: 21, slot: "main", title: "Solo thing" }, TRIP, 900);
+    expect(gone.data.itin[21]).toBeUndefined();
+  });
+
+  it("appends to the activity feed rather than erasing the add", () => {
+    const withFeed = { ...base(), activity: [{ t: "Added 7/20 dinner at Gonpachi", ts: 100, d: 20 }] };
+    const res = removeEvent(withFeed, { day: 20, slot: 0, title: "Gonpachi" }, TRIP, 900);
+    expect(res.data.activity[0]).toEqual({ t: "Removed 7/20 Gonpachi", ts: 900, d: 20 });
+    expect(res.data.activity[1].t).toBe("Added 7/20 dinner at Gonpachi");
+  });
+
+  it("does not mutate its input", () => {
+    const b = base();
+    removeEvent(b, { day: 20, slot: 0, title: "Gonpachi" }, TRIP, 900);
+    expect(b.itin[20].more).toHaveLength(2);
   });
 });

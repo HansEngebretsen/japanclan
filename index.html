@@ -805,7 +805,66 @@
     .itin-main {
       display: flex;
       gap: 11px;
-      align-items: flex-start
+      align-items: flex-start;
+      position: relative;
+      /* No default max-height: a fixed cap would clip the box of any taller
+         item while its content spilled. The collapse animation measures the
+         real height and sets max-height inline just before removing. */
+      transition: max-height .32s ease, opacity .22s ease, margin-top .32s ease
+    }
+
+    /* max-height is driven inline by collapseRow (an inline style can't be
+       overridden from here); this handles the rest of the collapse */
+    .itin-main.removing {
+      overflow: hidden;
+      opacity: 0;
+      margin-top: 0 !important
+    }
+
+    /* right-justified, revealed on hover or keyboard focus */
+    .itin-del {
+      flex: 0 0 auto;
+      align-self: center;
+      margin-left: auto;
+      width: 26px;
+      height: 26px;
+      display: grid;
+      place-items: center;
+      border: 0;
+      background: 0;
+      border-radius: 7px;
+      cursor: pointer;
+      color: var(--muted);
+      opacity: 0;
+      transition: opacity .14s, color .12s
+    }
+
+    .itin-del svg {
+      width: 15px;
+      height: 15px
+    }
+
+    .itin-main:hover .itin-del,
+    .itin-del:focus-visible {
+      opacity: 1
+    }
+
+    .itin-del:hover,
+    .itin-del:focus-visible {
+      color: var(--seal)
+    }
+
+    /* touch has no hover, so keep it visible there */
+    @media (hover: none) {
+      .itin-del {
+        opacity: .55
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .itin-main {
+        transition: none
+      }
     }
 
     .itin-ic {
@@ -1879,9 +1938,11 @@
       line-height: 1
     }
 
+    /* matches .ibtn svg so the sheet's close reads the same weight as the
+       header icon buttons */
     .sh-x svg {
-      width: 14px;
-      height: 14px
+      width: 17px;
+      height: 17px
     }
 
     .sh-meta {
@@ -3166,6 +3227,47 @@
       height: 21px
     }
 
+    .dc-q {
+      font-family: var(--sans);
+      font-size: 14.5px;
+      line-height: 1.45;
+      color: var(--ink)
+    }
+
+    .dc-note {
+      font-family: var(--sans);
+      font-size: 12px;
+      line-height: 1.4;
+      color: var(--muted);
+      margin-top: 6px
+    }
+
+    .dc-foot {
+      justify-content: flex-end;
+      gap: 6px
+    }
+
+    .dc-cancel {
+      border: 0;
+      background: 0;
+      cursor: pointer;
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 8px 12px;
+      transition: color .12s
+    }
+
+    .dc-cancel:hover {
+      color: var(--ink)
+    }
+
+    .dc-del {
+      background: var(--seal)
+    }
+
     .ac-msg {
       font-family: var(--sans);
       font-size: 12px;
@@ -3284,16 +3386,22 @@
     }
 
     .act-it.go {
-      cursor: pointer;
-      margin: 0 -6px;
-      padding: 0 8px;
-      border-radius: 7px;
-      transition: background .12s
+      cursor: pointer
     }
 
-    .act-it.go:hover,
+    /* bold on hover rather than a fill — the row is already inside a popover,
+       and a second background reads as a nested surface */
+    .act-it.go .act-t {
+      transition: color .12s
+    }
+
+    .act-it.go:hover .act-t,
+    .act-it.go:focus-visible .act-t {
+      font-weight: 700;
+      color: var(--ink)
+    }
+
     .act-it.go:focus-visible {
-      background: var(--line);
       outline: none
     }
 
@@ -4701,11 +4809,19 @@
       const it = ITIN[d] || {};
       const first = DAYS[0], last = DAYS[DAYS.length - 1];
       let mainHTML = "";
+      /* index 0 is the day's anchor (`main`); the rest index into `more`.
+         Both the slot and the title travel with the delete button so the
+         worker can refuse if the day changed since this render. */
       [it.main, ...(it.more || [])].filter(Boolean).forEach((m, i) => {
         const subs = (m.sub || []).filter(s => !ARR_RE.test(s)).map(esc).join("<br>");
+        const slot = i === 0 ? "main" : String(i - 1);
+        const del = me
+          ? `<button class="itin-del" type="button" data-del data-day="${d}" data-slot="${slot}" `
+          + `data-title="${esc(m.title || "")}" aria-label="Remove ${esc(m.title || "event")}" title="Remove">${ICONS.x}</button>`
+          : "";
         mainHTML += `<div class="itin-main"${i ? ' style="margin-top:16px;"' : ""}><div class="itin-ic">${ICONS[m.ic] || ICONS.event}</div>`
           + `<div class="itin-mn"><div class="itin-time">${esc(getDisplayTime(m, d))}</div>${ttlHTML(m)}${subs ? `<div class="itin-sub">${subs}</div>` : ""}</div>`
-          + `${m.wp ? mapThumb(m.wp, mapZoom(m.ic)) : ""}</div>`;
+          + `${m.wp ? mapThumb(m.wp, mapZoom(m.ic)) : ""}${del}</div>`;
       });
       let stayHTML = "";
       if (it.stay) {
@@ -4784,6 +4900,9 @@
     }
 
     let itinDay = null, itinAll = false, itinRAF = 0;
+    /* set while a row is collapsing, so an arriving snapshot doesn't re-render
+       the panel out from under the animation */
+    let itinRenderHold = false;
     const itinWin = document.getElementById("itinWin");
     function itinOpen() { return itinAll || itinDay !== null; }
     function markPicked() {
@@ -4838,6 +4957,8 @@
     }
 
     itinWin.addEventListener("click", e => {
+      const del = e.target.closest("[data-del]");
+      if (del) { e.preventDefault(); e.stopPropagation(); openDelCal(del); return; }
       if (e.target.closest("[data-addcal]")) { openAddCal(); return; }
       if (e.target.closest("[data-viewall]")) { itinAll ? selectDay(itinDay || DAYS[0]) : showAllDays(); return; }
       if (e.target.closest("[data-close]")) { itinAll ? selectDay(itinDay || DAYS[0]) : closeItin(); return; }
@@ -5310,6 +5431,7 @@
       if (e.target === $("#ov")) {
         if (modalId === COMPOSE_ID && composeDirty()) return;   /* a stray backdrop tap never eats a half-written item */
         if (modalId === ADDCAL_ID && (addcalBusy || ($("#acText") || {}).value?.trim())) return;
+        if (modalId === DELCAL_ID && delBusy) return;   /* don't dismiss mid-delete */
         closeModal(); return;
       }
       if (act && act.dataset.act === "close") { closeModal(); return; }
@@ -5322,6 +5444,7 @@
       }
       if (act && act.dataset.act === "add-custom" && modalId === COMPOSE_ID) { addCustomItem(); return; }
       if (act && act.dataset.act === "add-cal" && modalId === ADDCAL_ID) { submitAddCal(); return; }
+      if (act && act.dataset.act === "do-del" && modalId === DELCAL_ID) { confirmDelete(); return; }
       if (act && act.dataset.act === "del-custom" && modalId && modalId !== COMPOSE_ID) {
         if (!act.classList.contains("arm")) { act.classList.add("arm"); act.textContent = "Tap again to remove"; return; }
         deleteCustomItem(modalId); return;
@@ -5506,6 +5629,114 @@
         console.warn("[addcal]", e);
         acSetBusy(false);
         acSetMsg("Couldn't reach the calendar service — check your connection.", "bad");
+      }
+    }
+
+    /* ---------------- remove from calendar ----------------
+       Deleting hits everyone on the trip, so it takes a deliberate second
+       click. The row collapses locally the moment the server confirms; the
+       snapshot that follows re-renders it away for real. */
+    const DELCAL_ID = "__delcal";
+    const REMOVE_ENDPOINT = "https://japanclan-mail.engebretsenh.workers.dev/remove";
+    let delTarget = null, delBusy = false;
+
+    function delcalHTML(title) {
+      return `<div class="sh-handle" aria-hidden="true"></div><div class="sh-top">
+      <span class="ac-ic" aria-hidden="true">${ICONS.x}</span>
+      <div class="sh-name">Remove from calendar</div>
+      <button class="sh-x" data-act="close" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+    <div class="sh-form">
+      <div class="ac-msg" id="dcMsg" hidden></div>
+      <div class="dc-q">Are you sure you want to delete <b>${esc(title)}</b> for everyone?</div>
+      <div class="dc-note">It comes off the calendar for the whole clan, not just you.</div>
+    </div>
+    <div class="sh-cfoot ac-foot dc-foot">
+      <button type="button" class="dc-cancel" data-act="close">Cancel</button>
+      <button type="button" class="sh-add dc-del" id="dcDel" data-act="do-del">
+        <span class="ac-spin" aria-hidden="true"></span>
+        <span id="dcDelLbl">Delete</span>
+      </button>
+    </div>`;
+    }
+
+    function openDelCal(btn) {
+      if (!me) return;
+      delTarget = {
+        day: Number(btn.dataset.day), slot: btn.dataset.slot,
+        title: btn.dataset.title, el: btn.closest(".itin-main"),
+      };
+      delBusy = false;
+      modalId = DELCAL_ID;
+      $("#sheet").innerHTML = delcalHTML(delTarget.title);
+      lockMobileScroll();
+      const ov = $("#ov"); ov.setAttribute("aria-hidden", "false");
+      requestAnimationFrame(() => ov.classList.add("show"));
+      if (typeof syncThemeColor === "function") syncThemeColor();
+    }
+
+    /* Collapse the row to nothing. max-height can't animate from `auto`, so
+       the measured height is pinned first and the next frame drives it to 0.
+       Both values have to be set inline: the pinned height is an inline style,
+       and a class rule can never override one, so `.removing`'s max-height
+       would silently lose and the row would just sit there at full height. */
+    function collapseRow(el) {
+      if (!el) return;
+      el.style.maxHeight = el.getBoundingClientRect().height + "px";
+      el.getBoundingClientRect();
+      requestAnimationFrame(() => {
+        el.classList.add("removing");
+        el.style.maxHeight = "0px";
+      });
+    }
+
+    async function confirmDelete() {
+      if (delBusy || !delTarget) return;
+      const { day, slot, title, el } = delTarget;
+      delBusy = true;
+      const btn = $("#dcDel"), lbl = $("#dcDelLbl");
+      if (btn) { btn.classList.add("busy"); btn.disabled = true; }
+      if (lbl) lbl.textContent = "Deleting";
+      try {
+        const idToken = await firebase.auth().currentUser.getIdToken();
+        const res = await fetch(REMOVE_ENDPOINT, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ idToken, day, slot, title }),
+        });
+        const out = await res.json().catch(() => ({}));
+        if (!res.ok || !out.ok) {
+          delBusy = false;
+          if (btn) { btn.classList.remove("busy"); btn.disabled = false; }
+          if (lbl) lbl.textContent = "Delete";
+          const m = $("#dcMsg");
+          if (m) { m.hidden = false; m.className = "ac-msg bad"; m.textContent = out.error || "Couldn't remove that."; }
+          return;
+        }
+        if (out.ts) { try { localStorage.setItem("_actSeen", String(out.ts)); } catch (e) { } }
+        closeModal();
+        /* Hold the incoming snapshot for the length of the animation, or the
+           re-render would replace the node mid-collapse and it would vanish
+           with a jump instead of a glide. */
+        itinRenderHold = true;
+        collapseRow(el);
+        setTimeout(() => {
+          itinRenderHold = false;
+          if (itinDay !== null) animItin(renderItinDay(itinDay));
+          else if (itinAll) animItin(renderItinAll());
+        }, 340);
+      } catch (e) {
+        console.warn("[delcal]", e);
+        delBusy = false;
+        if (btn) { btn.classList.remove("busy"); btn.disabled = false; }
+        if (lbl) lbl.textContent = "Delete";
+        const m = $("#dcMsg");
+        if (m) { m.hidden = false; m.className = "ac-msg bad"; m.textContent = "Couldn't reach the calendar service."; }
       }
     }
 
@@ -6192,6 +6423,7 @@
         hydrateItin(d);
         try { localStorage.setItem("_itin", JSON.stringify(d)); } catch (e) { }
         renderCal();
+        if (itinRenderHold) return;                 /* a row is mid-collapse; it re-renders when that finishes */
         if (itinDay !== null) animItin(renderItinDay(itinDay));
         else if (itinAll) animItin(renderItinAll());
         else maybeAutoOpenItin();
