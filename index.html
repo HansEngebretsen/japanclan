@@ -3206,12 +3206,40 @@
       margin-top: 10px
     }
 
+    /* replace-hotel comparison */
+    .rp-lbl {
+      font-family: var(--mono);
+      font-size: 9.5px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin: 12px 0 6px
+    }
+
+    .rp-lbl:first-child {
+      margin-top: 2px
+    }
+
+    .rp-card {
+      border: 1px solid var(--line-2);
+      border-radius: 10px;
+      padding: 11px
+    }
+
+    .rp-note {
+      font-family: var(--sans);
+      font-size: 11.5px;
+      line-height: 1.45;
+      color: var(--muted);
+      margin-top: 12px
+    }
+
     .ac-hint {
       font-family: var(--sans);
       font-size: 11.5px;
       line-height: 1.45;
       color: var(--muted);
-      margin-top: 10px
+      margin-bottom: 10px
     }
 
     .ac-hint b {
@@ -3246,6 +3274,49 @@
       font-size: 14.5px;
       line-height: 1.45;
       color: var(--ink)
+    }
+
+    /* the remove confirm reverses out onto the seal so it reads as the one
+       destructive surface in the app */
+    .sheet.danger {
+      background: var(--seal);
+      border-color: var(--seal)
+    }
+
+    .sheet.danger .sh-name,
+    .sheet.danger .dc-q,
+    .sheet.danger .dc-q b {
+      color: #fff
+    }
+
+    .sheet.danger .sh-handle {
+      background: rgba(255, 255, 255, .35)
+    }
+
+    .sheet.danger .sh-x {
+      color: rgba(255, 255, 255, .8)
+    }
+
+    .sheet.danger .sh-x:hover {
+      color: #fff
+    }
+
+    .sheet.danger .dc-cancel {
+      color: rgba(255, 255, 255, .78)
+    }
+
+    .sheet.danger .dc-cancel:hover {
+      color: #fff
+    }
+
+    .sheet.danger .dc-del {
+      background: #fff;
+      color: var(--seal)
+    }
+
+    .sheet.danger .ac-msg.bad {
+      background: rgba(255, 255, 255, .16);
+      color: #fff
     }
 
     .dc-foot {
@@ -4833,9 +4904,15 @@
           const mHTML = s.addr ? `<a class="itin-ttl" href="${mapsLink(s.addr)}" target="_blank" rel="noopener">${esc(s.title)}</a>` : `<span class="itin-ttl">${esc(s.title)}</span>`;
           const sHTML = s.addr ? `<div class="itin-sub"><a href="${mapsLink(s.addr)}" target="_blank" rel="noopener">${esc(s.addr)}</a></div>` : "";
           const tHTML = s.in ? `<div class="itin-time">Check in: ${esc(s.in)}</div>` : "";
+          /* slot "stay" removes the property from every night it covers, not
+             just this one — see removeEvent in worker/src/map.js */
+          const stayDel = me
+            ? `<button class="itin-del" type="button" data-del data-day="${d}" data-slot="stay" `
+            + `data-title="${esc(s.title || "")}" aria-label="Remove ${esc(s.title || "stay")}" title="Remove">${ICONS.x}</button>`
+            : "";
           stayHTML = `<div class="itin-main" style="margin-top: ${mainHTML ? '16px' : '0'};"><div class="itin-ic">${ICONS.hotel}</div>`
             + `<div class="itin-mn">${tHTML}${mHTML}${sHTML}</div>`
-            + `${s.addr ? mapThumb(s.addr, 12) : ""}</div>`;
+            + `${s.addr ? mapThumb(s.addr, 12) : ""}${stayDel}</div>`;
         } else {
           let stayDaysCount = 0;
           for (let i = 0; i < DAYS.length; i++) {
@@ -5424,6 +5501,7 @@
     }
     function closeModal() {
       const ov = $("#ov"); ov.classList.remove("show"); ov.setAttribute("aria-hidden", "true");
+      $("#sheet").classList.remove("danger");
       modalId = null;
       unlockMobileScroll();
       if (typeof syncThemeColor === "function") syncThemeColor();
@@ -5446,6 +5524,7 @@
       }
       if (act && act.dataset.act === "add-custom" && modalId === COMPOSE_ID) { addCustomItem(); return; }
       if (act && act.dataset.act === "add-cal" && modalId === ADDCAL_ID) { submitAddCal(); return; }
+      if (act && act.dataset.act === "do-replace" && modalId === ADDCAL_ID) { submitAddCal(true); return; }
       if (act && act.dataset.act === "do-del" && modalId === DELCAL_ID) { confirmDelete(); return; }
       if (act && act.dataset.act === "del-custom" && modalId && modalId !== COMPOSE_ID) {
         if (!act.classList.contains("arm")) { act.classList.add("arm"); act.textContent = "Tap again to remove"; return; }
@@ -5552,10 +5631,10 @@
     </div>
     <div class="sh-form">
       <div class="ac-msg" id="acMsg" hidden></div>
-      <textarea class="sh-field" id="acText" rows="4" maxlength="2000" aria-label="Event details"
+      <div class="ac-hint">Forward emails to <b>trip@trips.haaans.com</b> to add calendar items, or create new trips</div>
+      <textarea class="sh-field" id="acText" rows="5" maxlength="2000" aria-label="Event details"
         placeholder="Add any event details, include date"></textarea>
     </div>
-    <div class="ac-hint">Forward emails to <b>trip@trips.haaans.com</b> to add calendar items, or create new trips</div>
     <div class="sh-cfoot ac-foot">
       <button type="button" class="sh-add" id="acAdd" data-act="add-cal" disabled>
         <span class="ac-spin" aria-hidden="true"></span>
@@ -5569,12 +5648,71 @@
       if (!me) { signIn(); return; }
       modalId = ADDCAL_ID;
       addcalBusy = false;
+      replacePending = null;
       $("#sheet").innerHTML = addcalHTML();
       lockMobileScroll();
       const ov = $("#ov"); ov.setAttribute("aria-hidden", "false");
       requestAnimationFrame(() => ov.classList.add("show"));
       const t = $("#acText"); if (t) t.focus({ preventScroll: true });
       if (typeof syncThemeColor === "function") syncThemeColor();
+    }
+
+    /* ---- hotel replace step ----
+       Only reachable from a stay conflict: the add is refused, the server
+       hands back both properties and the nights at stake, and this asks
+       before overwriting anything. Cancel dismisses and changes nothing. */
+    let replacePending = null;
+
+    function dayRange(days) {
+      if (!days || !days.length) return "";
+      const a = Math.min(...days), b = Math.max(...days);
+      return a === b ? `${TRIP_MONTH}/${a}` : `${TRIP_MONTH}/${a}–${TRIP_MONTH}/${b}`;
+    }
+
+    /* Same shape as an itinerary row so the comparison reads as the calendar. */
+    function stayCardHTML(s, nights) {
+      const when = nights && nights.length ? dayRange(nights) : "";
+      const sub = [when ? `Nights ${when}` : "", s.addr || ""].filter(Boolean).map(esc).join("<br>");
+      return `<div class="itin-main rp-card"><div class="itin-ic">${ICONS.hotel}</div>`
+        + `<div class="itin-mn">${s.in ? `<div class="itin-time">Check in: ${esc(s.in)}</div>` : ""}`
+        + `<span class="itin-ttl">${esc(s.title || "")}</span>`
+        + `${sub ? `<div class="itin-sub">${sub}</div>` : ""}</div></div>`;
+    }
+
+    function replaceHTML(c) {
+      const ex = c.existing[0] || {};
+      const partial = (ex.nights || []).length > (c.days || []).length;
+      const note = partial
+        ? `<div class="rp-note">Only nights ${dayRange(c.days)} are affected — the rest of ${esc(ex.title || "that stay")} stays put.</div>`
+        : "";
+      return `<div class="sh-handle" aria-hidden="true"></div><div class="sh-top">
+      <div class="sh-name">Replace current hotel?</div>
+      <button class="sh-x" data-act="close" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+          <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+    <div class="sh-form">
+      <div class="ac-msg" id="acMsg" hidden></div>
+      ${c.existing.map(e => `<div class="rp-lbl">Replace</div>${stayCardHTML(e, e.nights)}`).join("")}
+      <div class="rp-lbl">Add</div>
+      ${stayCardHTML(c.incoming, c.days)}
+      ${note}
+    </div>
+    <div class="sh-cfoot ac-foot dc-foot">
+      <button type="button" class="dc-cancel" data-act="close">Cancel</button>
+      <button type="button" class="sh-add" id="acAdd" data-act="do-replace">
+        <span class="ac-spin" aria-hidden="true"></span>
+        <span id="acAddLbl">Replace</span>
+      </button>
+    </div>`;
+    }
+
+    function openReplace(conflict, text) {
+      replacePending = { conflict, text };
+      modalId = ADDCAL_ID;
+      $("#sheet").innerHTML = replaceHTML(conflict);
     }
 
     function acSetMsg(text, kind) {
@@ -5584,20 +5722,21 @@
       m.className = `ac-msg${kind ? " " + kind : ""}`;
     }
 
+    /* The replace step has no textarea, so nothing here may depend on one. */
     function acSetBusy(on) {
       addcalBusy = on;
       const btn = $("#acAdd"), txt = $("#acText"), lbl = $("#acAddLbl");
-      if (!btn || !txt || !lbl) return;
-      btn.classList.toggle("busy", on);
-      txt.disabled = on;
-      btn.disabled = on || !txt.value.trim();
-      lbl.textContent = on ? "Adding" : "Add";
+      if (txt) txt.disabled = on;
+      if (btn) {
+        btn.classList.toggle("busy", on);
+        btn.disabled = on || (txt ? !txt.value.trim() : false);
+      }
+      if (lbl) lbl.textContent = on ? (txt ? "Adding" : "Replacing") : (txt ? "Add" : "Replace");
     }
 
-    async function submitAddCal() {
+    async function submitAddCal(replace = false) {
       if (addcalBusy) return;
-      const txt = $("#acText"); if (!txt) return;
-      const text = txt.value.trim();
+      const text = replace ? replacePending?.text : ($("#acText") || {}).value?.trim();
       if (!text) return;
       acSetMsg("", "");
       acSetBusy(true);
@@ -5606,9 +5745,16 @@
         const res = await fetch(ADDCAL_ENDPOINT, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ idToken, text }),
+          body: JSON.stringify({ idToken, text, replace }),
         });
         const out = await res.json().catch(() => ({}));
+        /* A hotel landing on booked nights isn't a failure, it's a decision —
+           swap the sheet for the side-by-side comparison and ask. */
+        if (res.status === 409 && out.needsReplace && out.conflict) {
+          acSetBusy(false);
+          openReplace(out.conflict, text);
+          return;
+        }
         if (!res.ok || !out.ok) {
           acSetBusy(false);
           acSetMsg(out.error || "Couldn't add that — try again.", "bad");
@@ -5701,6 +5847,7 @@
       delBusy = false;
       modalId = DELCAL_ID;
       $("#sheet").innerHTML = delcalHTML(delTarget.title);
+      $("#sheet").classList.add("danger");
       fetchRosterCount();          /* fills the count in place if it isn't cached yet */
       lockMobileScroll();
       const ov = $("#ov"); ov.setAttribute("aria-hidden", "false");
