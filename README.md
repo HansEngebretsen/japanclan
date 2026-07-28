@@ -4,7 +4,7 @@ Organize travel details. View, pin and share fun unique things to do, eat or see
 
 ## Setup
 
-- **Email → calendar**: forward any booking email (flight, hotel, train, dinner…) to the trip address and it lands on the calendar automatically. One-time setup guide: [worker/SETUP.md](worker/SETUP.md).
+- **Email → calendar**: forward any booking email (flight, hotel, train, dinner…) to the trip address and it lands on the calendar automatically. One-time setup guide: [worker/SETUP.md](worker/SETUP.md) (finishing setup locally: [worker/HANDOFF.md](worker/HANDOFF.md)).
 
 
 <div align="center">
