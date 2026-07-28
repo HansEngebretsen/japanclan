@@ -97,17 +97,53 @@ function minsOf(t) {
 
 const ANCHOR_RANK = { flight: 2, train: 1 };
 
+/* Activity feed. It lives on the itinerary doc rather than in pipeline/state
+   because the app can already read this doc (firestore.rules → config/itinerary
+   `allow read: if isAllowed()`) and already subscribes to it; pipeline/* is
+   denied to clients by design. So the feed costs no rules change, no second
+   subscription, and no extra reads. UNDO restores a whole-doc snapshot, which
+   means an undone event takes its activity line with it. */
+export const ACTIVITY_MAX = 50;
+
+function mealWord(t) {
+  const m = minsOf(t);
+  if (m === null || Number.isNaN(m)) return "dinner";
+  if (m < 11 * 60) return "breakfast";
+  if (m < 16 * 60) return "lunch";
+  return "dinner";
+}
+
+/* "Added 7/20 dinner at Gonpachi Nishiazabu" */
+export function activityLine(ev, mo, day) {
+  const when = `${mo}/${day}`;
+  const title = ev.title || "Untitled";
+  switch (ev.type) {
+    case "dining": return `Added ${when} ${mealWord(fmtTime(ev.startDateTime))} at ${title}`;
+    case "lodging": return `Added ${when} stay at ${title}`;
+    case "flight": return `Added ${when} flight ${title}`;
+    case "train": return `Added ${when} train ${title}`;
+    default: return `Added ${when} ${title}`;
+  }
+}
+
+function pushActivity(data, ev, mo, day, now) {
+  const entry = { t: activityLine(ev, mo, day), ts: now };
+  data.activity = [entry, ...(data.activity || [])].slice(0, ACTIVITY_MAX);
+}
+
 /* Merge one validated ParsedEvent into itinerary data.
    Returns { data, summary } on success or { conflict: "reason" }.
    Never mutates the input. */
-export function applyEvent(input, ev, tripCfg) {
+export function applyEvent(input, ev, tripCfg, now = Date.now()) {
   const data = {
+    ...input,   // carry any field this function doesn't know about (activity), so a write never drops it
     defaultCity: { ...(input.defaultCity || {}) },
     stays: { ...(input.stays || {}) },
     itin: Object.fromEntries(Object.entries(input.itin || {}).map(([k, v]) => [k, { ...v }])),
   };
   const start = localParts(ev.startDateTime);
-  const month = MONTHS[tripCfg?.month || start.mo];
+  const monthNum = tripCfg?.month || start.mo;
+  const month = MONTHS[monthNum];
 
   if (ev.type === "lodging") {
     const inDay = start.d;
@@ -139,6 +175,7 @@ export function applyEvent(input, ev, tripCfg) {
       }
       data.itin[d] = { ...(data.itin[d] || {}), stay: key };
     }
+    pushActivity(data, ev, monthNum, inDay, now);
     return { data, summary: `${ev.title}, ${month} ${inDay}–${outDay}` };
   }
 
@@ -172,6 +209,7 @@ export function applyEvent(input, ev, tripCfg) {
     cell.more = more;
   }
   data.itin[day] = cell;
+  pushActivity(data, ev, monthNum, day, now);
   const alongside = cell.main === incoming
     ? "" : ` (alongside ${cell.main.title})`;
   return { data, summary: `${ev.title} on ${month} ${day} at ${fmtTime(ev.startDateTime)}${alongside}` };

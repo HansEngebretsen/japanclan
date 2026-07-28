@@ -3137,6 +3137,124 @@
       width: 190px
     }
 
+    /* ===== activity dropdown — reuses the cog menu shell =====
+       Item height is a variable because the JS pages the list by exactly four
+       of them, and the "more" button hides once you've scrolled past one. */
+    .actmenu {
+      --act-item-h: 46px;
+      width: 262px;
+      padding-bottom: 6px
+    }
+
+    .actbtn {
+      position: relative
+    }
+
+    .act-dot {
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--seal);
+      box-shadow: 0 0 0 2px var(--paper)
+    }
+
+    .act-dot[hidden] {
+      display: none
+    }
+
+    .act-scroll {
+      max-height: calc(var(--act-item-h) * 4);
+      overflow-y: auto;
+      scroll-behavior: smooth;
+      overscroll-behavior: contain;
+      scrollbar-width: none
+    }
+
+    .act-scroll::-webkit-scrollbar {
+      width: 0;
+      height: 0
+    }
+
+    .act-it {
+      height: var(--act-item-h);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 2px;
+      padding: 0 2px;
+      box-sizing: border-box;
+      border-bottom: 1px solid var(--line)
+    }
+
+    .act-it:last-child {
+      border-bottom: 0
+    }
+
+    .act-t {
+      font-family: var(--sans);
+      font-size: 12.5px;
+      line-height: 1.25;
+      color: var(--ink);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap
+    }
+
+    .act-when {
+      font-family: var(--mono);
+      font-size: 9.5px;
+      letter-spacing: .04em;
+      color: var(--muted)
+    }
+
+    .act-none {
+      font-family: var(--sans);
+      font-size: 12.5px;
+      color: var(--muted);
+      padding: 6px 2px 4px
+    }
+
+    .act-more {
+      display: block;
+      width: 100%;
+      margin-top: 6px;
+      padding: 5px 0 1px;
+      border: 0;
+      border-top: 1px solid var(--line);
+      background: 0;
+      cursor: pointer;
+      font-family: var(--mono);
+      font-size: 9.5px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      transition: opacity .18s, color .12s
+    }
+
+    .act-more:hover {
+      color: var(--seal)
+    }
+
+    /* bound to the list's scroll position: fades out once you're past the
+       first item, fades back in as you return to the top */
+    .act-more.hid {
+      opacity: 0;
+      pointer-events: none
+    }
+
+    .act-more[hidden] {
+      display: none
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .act-scroll {
+        scroll-behavior: auto
+      }
+    }
+
     .off-row {
       display: flex;
       align-items: center;
@@ -3912,6 +4030,22 @@
             <div class="off-fail" id="offFail" hidden>Couldn't update</div>
           </div>
         </div>
+        <!-- activity feed — signed-in only; entries ride along on the itinerary doc -->
+        <div class="cogwrap" id="actWrap" hidden>
+          <button class="ibtn actbtn" id="actBtn" type="button" aria-label="Activity" title="Activity"
+            aria-haspopup="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+            </svg>
+            <span class="act-dot" id="actDot" hidden></span>
+          </button>
+          <div class="cogmenu actmenu" id="actMenu" hidden>
+            <div class="cog-lbl">Activity</div>
+            <div class="act-scroll" id="actScroll"></div>
+            <button class="act-more" id="actMore" type="button" hidden></button>
+          </div>
+        </div>
         <a href="https://docs.google.com/document/d/1-jccafbZFzifdpOfkJt6z2TDBRb_i6nRuN08KsGikk8/edit?tab=t.116vmxasik2y#heading=h.rryhsrm594zj"
           target="_blank" rel="noreferrer" class="ibtn" aria-label="Google doc for planning"
           data-tip="Google doc for planning">
@@ -4332,10 +4466,13 @@
     }
     window.addEventListener("online", () => warmImages());   /* resume anything left when the network returns */
 
-    let DEFAULT_CITY = {}, STAYS = {}, ITIN = {}, itinLoaded = false;
+    let DEFAULT_CITY = {}, STAYS = {}, ITIN = {}, ACTIVITY = [], itinLoaded = false;
     function hydrateItin(data) {
       if (devOn("mock")) data = MOCK_ITIN;   /* dev: anonymized stand-in for every data path (Firestore, cache, boot) */
       if (!data) return;
+      /* newest-first, written by the mail worker; see worker/src/map.js */
+      ACTIVITY = (Array.isArray(data.activity) ? data.activity : []).filter(a => a && a.t && a.ts);
+      renderActivity();
       STAYS = data.stays || {};
       DEFAULT_CITY = data.defaultCity || {};
       ITIN = {};
@@ -4357,7 +4494,8 @@
       warmImages(mapUrls);
     }
     function clearItin() {
-      DEFAULT_CITY = {}; STAYS = {}; ITIN = {}; itinLoaded = false;
+      DEFAULT_CITY = {}; STAYS = {}; ITIN = {}; ACTIVITY = []; itinLoaded = false;
+      renderActivity();
       try { localStorage.removeItem("_itin"); } catch (e) { }
       if (devOn("mock")) hydrateItin(null);   /* mock mode keeps the anonymized calendar up even signed out */
     }
@@ -5236,7 +5374,68 @@
     });
     document.addEventListener("click", e => { if (!e.target.closest("#cogWrap")) cogMenu.hidden = true; });
     /* Esc still closes an open item detail (kept minimal; the settings dialog is gone) */
-    document.addEventListener("keydown", e => { if (e.key === "Escape") { if (!cogMenu.hidden) { cogMenu.hidden = true; return; } if (modalId) closeModal(); } });
+    document.addEventListener("keydown", e => {
+      if (e.key !== "Escape") return;
+      if (!actMenu.hidden) { actMenu.hidden = true; return; }
+      if (!cogMenu.hidden) { cogMenu.hidden = true; return; }
+      if (modalId) closeModal();
+    });
+
+    /* ---------------- activity feed ----------------
+       Entries are written by the mail worker onto the itinerary doc, so they
+       arrive through the subscription that's already open — no extra reads.
+
+       "Viewed" is deliberately local-only: the newest timestamp the user has
+       seen goes in localStorage, so opening the menu costs zero writes. The
+       feed is shared but read state is per-device, which is the right trade
+       for a dot whose only job is "is there something new for me here". */
+    const actWrap = $("#actWrap"), actBtn = $("#actBtn"), actMenu = $("#actMenu"),
+      actDot = $("#actDot"), actScroll = $("#actScroll"), actMore = $("#actMore");
+    const ACT_PAGE = 4;
+    const actItemH = () => parseFloat(getComputedStyle(actMenu).getPropertyValue("--act-item-h")) || 46;
+
+    function actSeen() { try { return Number(localStorage.getItem("_actSeen")) || 0; } catch (e) { return 0; } }
+    function markActSeen(ts) { try { localStorage.setItem("_actSeen", String(ts)); } catch (e) { } }
+
+    function renderActivity() {
+      if (!actWrap) return;
+      actWrap.hidden = !me || !ACTIVITY.length;
+      if (actWrap.hidden) { actMenu.hidden = true; return; }
+      actDot.hidden = !(ACTIVITY[0].ts > actSeen());
+      actScroll.innerHTML = ACTIVITY.map(a =>
+        `<div class="act-it"><div class="act-t" title="${esc(a.t)}">${esc(a.t)}</div>` +
+        `<div class="act-when">${esc(fmtAgo(a.ts))}</div></div>`).join("");
+      syncActMore();
+    }
+
+    /* The button both counts what's below the fold and hides itself once the
+       list has been scrolled past its first item. */
+    function syncActMore() {
+      const hidden = ACTIVITY.length <= ACT_PAGE;
+      actMore.hidden = hidden;
+      if (hidden) return;
+      actMore.textContent = `${ACTIVITY.length - ACT_PAGE} more`;
+      actMore.classList.toggle("hid", actScroll.scrollTop > actItemH());
+    }
+
+    if (actBtn) {
+      actBtn.addEventListener("click", e => {
+        e.stopPropagation();
+        const opening = actMenu.hidden;
+        actMenu.hidden = !opening;
+        if (!opening) return;
+        cogMenu.hidden = true;
+        actScroll.scrollTop = 0;
+        renderActivity();                       /* repaint so "3 min ago" is current on every open */
+        if (ACTIVITY.length) { markActSeen(ACTIVITY[0].ts); actDot.hidden = true; }
+      });
+      actScroll.addEventListener("scroll", syncActMore, { passive: true });
+      actMore.addEventListener("click", e => {
+        e.stopPropagation();
+        actScroll.scrollTop += actItemH() * ACT_PAGE;   /* CSS scroll-behavior does the easing */
+      });
+      document.addEventListener("click", e => { if (!e.target.closest("#actWrap")) actMenu.hidden = true; });
+    }
 
     /* ---------------- events ---------------- */
     $("#main").addEventListener("click", e => {

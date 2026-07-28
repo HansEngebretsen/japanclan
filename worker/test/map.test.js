@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { applyEvent, buildMain, fmtTime, tzLabel, slugify, resolveTripByDate } from "../src/map.js";
+import { applyEvent, buildMain, fmtTime, tzLabel, slugify, resolveTripByDate, activityLine, ACTIVITY_MAX } from "../src/map.js";
 
 const TRIP = { year: 2026, month: 7, firstDay: 12, lastDay: 25, tzOffset: "+09:00" };
 
@@ -154,5 +154,63 @@ describe("resolveTripByDate (trip grouping)", () => {
   });
   it("returns null when no trip window matches", () => {
     expect(resolveTripByDate(cfg, { startDateTime: "2026-08-01T12:00:00+09:00" }, "japan-2026")).toBeNull();
+  });
+});
+
+describe("activity feed", () => {
+  const DINNER = {
+    type: "dining", title: "Gonpachi Nishiazabu",
+    startDateTime: "2026-07-20T19:00:00+09:00", endDateTime: null,
+    timezoneOffset: "+09:00", locationName: "Gonpachi Nishiazabu",
+    address: "1-13-11 Nishiazabu, Minato City, Tokyo",
+    confirmation: "GP-8842", details: [], confidence: 1,
+  };
+  const HOTEL = {
+    type: "lodging", title: "Hotel Nord Otaru",
+    startDateTime: "2026-07-22T15:00:00+09:00", endDateTime: "2026-07-23T11:00:00+09:00",
+    timezoneOffset: "+09:00", details: [],
+  };
+
+  it("writes a line in the format the app renders", () => {
+    const res = applyEvent({}, DINNER, TRIP, 1700000000000);
+    expect(res.data.activity).toEqual([
+      { t: "Added 7/20 dinner at Gonpachi Nishiazabu", ts: 1700000000000 },
+    ]);
+  });
+
+  it("names the meal from the time of day", () => {
+    const lunch = { ...DINNER, startDateTime: "2026-07-20T12:30:00+09:00" };
+    expect(activityLine(lunch, 7, 20)).toBe("Added 7/20 lunch at Gonpachi Nishiazabu");
+    const breakfast = { ...DINNER, startDateTime: "2026-07-20T08:00:00+09:00" };
+    expect(activityLine(breakfast, 7, 20)).toBe("Added 7/20 breakfast at Gonpachi Nishiazabu");
+  });
+
+  it("labels each event type", () => {
+    expect(applyEvent({}, FLIGHT, TRIP, 1).data.activity[0].t).toBe("Added 7/14 flight SFO → HND");
+    expect(applyEvent({}, HOTEL, TRIP, 1).data.activity[0].t).toBe("Added 7/22 stay at Hotel Nord Otaru");
+  });
+
+  it("puts the newest entry first and never drops existing ones", () => {
+    let data = applyEvent({}, FLIGHT, TRIP, 1000).data;
+    data = applyEvent(data, DINNER, TRIP, 2000).data;
+    expect(data.activity.map((a) => a.ts)).toEqual([2000, 1000]);
+  });
+
+  /* applyEvent rebuilds `data` field by field, so anything it doesn't know
+     about has to be carried across or every write silently truncates it. */
+  it("preserves an existing feed through an unrelated write", () => {
+    const prior = [{ t: "Added 7/14 flight SFO → HND", ts: 500 }];
+    const res = applyEvent({ activity: prior, itin: {}, stays: {} }, DINNER, TRIP, 900);
+    expect(res.data.activity).toHaveLength(2);
+    expect(res.data.activity[1]).toEqual(prior[0]);
+  });
+
+  it("caps the feed so the doc can't grow without bound", () => {
+    let data = {};
+    for (let i = 0; i < ACTIVITY_MAX + 12; i++) {
+      data = applyEvent(data, { ...DINNER, title: `Place ${i}` }, TRIP, i).data;
+    }
+    expect(data.activity).toHaveLength(ACTIVITY_MAX);
+    expect(data.activity[0].t).toContain(`Place ${ACTIVITY_MAX + 11}`);
   });
 });
