@@ -30,7 +30,11 @@ const STARTER = {
     },
   },
   llm: {
-    model: "gemini-2.5-flash",
+    // Google retires models and they start returning 404 "no longer available
+    // to new users" — the 2.5-flash pair that shipped here originally both did.
+    // Switchable in Firestore without a redeploy when it happens again.
+    model: "gemini-3.5-flash",
+    fallbackModel: "gemini-3.1-flash-lite",
     maxInputChars: 8000,
     // promptTemplate: ""   ← optional override; the worker has a good default built in
   },

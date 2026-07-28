@@ -203,8 +203,8 @@ async function geminiCall(env, model, prompt, text) {
    the fallback model so a tightened free tier never silently kills the
    pipeline. Both model names are config-switchable without a redeploy. */
 export async function geminiParseEvents(env, cfg, text, tripCfg) {
-  const model = cfg.llm?.model || "gemini-2.5-flash";
-  const fallback = cfg.llm?.fallbackModel || "gemini-2.5-flash-lite";
+  const model = cfg.llm?.model || "gemini-3.5-flash";
+  const fallback = cfg.llm?.fallbackModel || "gemini-3.1-flash-lite";
   const tripWindow = tripCfg
     ? `the trip runs ${tripCfg.year}-${String(tripCfg.month).padStart(2, "0")}-${tripCfg.firstDay} to ${tripCfg.year}-${String(tripCfg.month).padStart(2, "0")}-${tripCfg.lastDay}, default timezone ${tripCfg.defaultTz || "GMT+9"} (${tripCfg.tzOffset || "+09:00"})`
     : "unknown trip window";
@@ -215,7 +215,13 @@ export async function geminiParseEvents(env, cfg, text, tripCfg) {
     return await geminiCall(env, model, prompt, text);
   } catch (e) {
     console.error("gemini primary failed:", e.message);
-    const retryModel = (e.status === 429 || e.status >= 500) && fallback !== model ? fallback : model;
+    /* 404 matters as much as 429/5xx: Google retires a model and every call
+       returns "no longer available to new users", so retrying the same name is
+       guaranteed to fail again. That is the failure most likely to hit an
+       unattended pipeline months later, and it is exactly the case the
+       fallback exists for. */
+    const shouldFallback = e.status === 404 || e.status === 429 || e.status >= 500;
+    const retryModel = shouldFallback && fallback !== model ? fallback : model;
     return await geminiCall(env, retryModel, prompt, text);
   }
 }

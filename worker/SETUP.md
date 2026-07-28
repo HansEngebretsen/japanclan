@@ -208,7 +208,7 @@ timezone, and model are pre-filled; adjust if needed.
 | No reply, nothing in the app | Check `pipeline/state/log` in Firestore; if empty, check the route in step 6 is bound to the worker. `npx wrangler tail` shows live errors. |
 | Sender got a bounce | Their address isn't in `senders` (add it), or the worker crashed before handling — check `wrangler tail`. Bounced mail is retried by the sender's mail server, so a transient failure usually self-heals. |
 | Reply says "couldn't confidently read" | The email had no clear booking. It's in `pipeline/state/pending` — add it manually. |
-| Gemini errors in the log | Free-tier daily limit or model rename. In `pipeline/config` → `llm.model`, switch to `gemini-2.5-flash-lite`. No redeploy needed. |
+| Gemini errors in the log | Free-tier daily limit, or the model was retired. A retired model returns `404 "no longer available to new users"` — both `gemini-2.5-flash` and `gemini-2.5-flash-lite` went that way. Check what your key can actually reach, then switch `pipeline/config` → `llm.model` / `llm.fallbackModel`. No redeploy needed. Note the models list endpoint still advertises retired models, so verify with a real `generateContent` call rather than trusting the list. |
 | Wrong time/timezone on an event | Fix the event in the Firebase console (itinerary doc), and consider tightening `llm.promptTemplate` in config. |
 
 ## If a secret leaks
