@@ -14,6 +14,7 @@ import { trimEmail, extractIcsEvents, geminiParseEvents, validateEvent } from ".
 import { applyEvent, resolveTripByDate, fmtTime, localParts } from "./map.js";
 import { replyTo } from "./reply.js";
 import { parseCommand, HELP_TEXT } from "./commands.js";
+import { handleFetch } from "./http.js";
 
 async function sha256(s) {
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
@@ -41,6 +42,9 @@ function isAutomated(message, from) {
 }
 
 export default {
+  /* The app's "Add to calendar" box — see http.js for the auth gate. */
+  fetch: (request, env) => handleFetch(request, env),
+
   async email(message, env, ctx) {
     const started = Date.now();
     const from = (message.from || "").toLowerCase();

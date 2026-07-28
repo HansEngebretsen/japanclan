@@ -174,7 +174,7 @@ describe("activity feed", () => {
   it("writes a line in the format the app renders", () => {
     const res = applyEvent({}, DINNER, TRIP, 1700000000000);
     expect(res.data.activity).toEqual([
-      { t: "Added 7/20 dinner at Gonpachi Nishiazabu", ts: 1700000000000 },
+      { t: "Added 7/20 dinner at Gonpachi Nishiazabu", ts: 1700000000000, d: 20 },
     ]);
   });
 

@@ -3137,6 +3137,68 @@
       width: 190px
     }
 
+    /* ===== add-to-calendar sheet ===== */
+    .ac-msg {
+      font-family: var(--sans);
+      font-size: 12px;
+      line-height: 1.35;
+      padding: 8px 10px;
+      margin-bottom: 8px;
+      border-radius: 8px;
+      background: var(--line);
+      color: var(--ink-2)
+    }
+
+    .ac-msg.bad {
+      background: color-mix(in srgb, var(--seal) 12%, transparent);
+      color: var(--seal)
+    }
+
+    .ac-msg[hidden] {
+      display: none
+    }
+
+    /* the button swaps its plus for a spinner while the model is working */
+    .ac-spin {
+      display: none;
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      border: 2px solid currentColor;
+      border-right-color: transparent;
+      animation: ac-rot .7s linear infinite
+    }
+
+    .sh-add.busy .ac-spin {
+      display: inline-block
+    }
+
+    .sh-add.busy .ac-plus {
+      display: none
+    }
+
+    @keyframes ac-rot {
+      to {
+        transform: rotate(360deg)
+      }
+    }
+
+    /* "Added" holds for a beat, then the sheet fades out */
+    #sheet.done {
+      opacity: 0;
+      transition: opacity .45s ease .35s
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .ac-spin {
+        animation-duration: 1.6s
+      }
+
+      #sheet.done {
+        transition: none
+      }
+    }
+
     /* ===== activity dropdown — reuses the cog menu shell =====
        Item height is a variable because the JS pages the list by exactly four
        of them, and the "more" button hides once you've scrolled past one. */
@@ -3191,6 +3253,20 @@
 
     .act-it:last-child {
       border-bottom: 0
+    }
+
+    .act-it.go {
+      cursor: pointer;
+      margin: 0 -6px;
+      padding: 0 8px;
+      border-radius: 7px;
+      transition: background .12s
+    }
+
+    .act-it.go:hover,
+    .act-it.go:focus-visible {
+      background: var(--line);
+      outline: none
     }
 
     .act-t {
@@ -4435,6 +4511,17 @@
     };
 
     /* ---------------- calendar (editable cities; Sapporo extended over Hakodate) ---------------- */
+    /* The calendar covers one month of one trip. These two say which — keep
+       them and DAYS/CAL_DAYS in step and the rest of the calendar follows,
+       including which day it opens on and the weekday letters.
+
+       TODO (pairs with the TODO in worker/src/http.js): let "Add to calendar"
+       grow the trip instead of refusing a date just outside it. That means
+       deriving these four from the trip config in Firestore rather than
+       hardcoding them, so widening firstDay/lastDay server-side reshapes the
+       calendar on the next snapshot. Until then a date off the calendar is
+       rejected and the user is asked to adjust it. */
+    const TRIP_YEAR = 2026, TRIP_MONTH = 7;          /* 1-based month */
     const DAYS = [14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24];
     const CAL_DAYS = [12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25];
     const TRIP = new Set(DAYS);
@@ -4544,6 +4631,8 @@
       chevL: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>',
       chevR: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>',
       x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>',
+      hide: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 10 8 10 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="M6.61 6.61A18.15 18.15 0 0 0 2 12s3 8 10 8a9.12 9.12 0 0 0 5.39-1.61"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><path d="M2 2l20 20"/></svg>',
+      plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>',
       expand: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>',
       collapse: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14h6v6"/><path d="M20 10h-6V4"/><path d="M14 10l7-7"/><path d="M3 21l7-7"/></svg>'
     };
@@ -4576,7 +4665,7 @@
       return arr ? `${m.t} → ${arr}${plus}` : m.t;
     }
     const DOW3 = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-    function dowOf(d) { return DOW3[new Date(2026, 6, d).getDay()]; }
+    function dowOf(d) { return DOW3[new Date(TRIP_YEAR, TRIP_MONTH - 1, d).getDay()]; }
     function ttlHTML(m) { return m.wp ? `<a class="itin-ttl" href="${mapsLink(m.wp)}" target="_blank" rel="noopener">${esc(m.title)}</a>` : `<span class="itin-ttl">${esc(m.title)}</span>`; }
 
     function renderItinDay(d) {
@@ -4619,8 +4708,9 @@
       return `<div class="itin"><div class="itin-arrows">`
         + `<button class="itin-arrow" data-prev ${d > first ? "" : "disabled"} aria-label="Previous day">${ICONS.chevL}</button>`
         + `<button class="itin-arrow" data-next ${d < last ? "" : "disabled"} aria-label="Next day">${ICONS.chevR}</button>`
+        + `<button class="itin-arrow" data-addcal type="button" aria-label="Add to calendar" title="Add to calendar">${ICONS.plus}</button>`
         + `<button class="itin-arrow itin-expand" data-viewall type="button" aria-label="View all days" title="View all">${ICONS.expand}</button>`
-        + `<button class="itin-arrow itin-close" data-close aria-label="Close">${ICONS.x}</button>`
+        + `<button class="itin-arrow itin-close" data-close aria-label="Hide" title="Hide">${ICONS.hide}</button>`
         + `</div><div class="itin-body">${mainHTML}${stayHTML}</div></div>`;
     }
 
@@ -4658,6 +4748,7 @@
         prevStay = currStay;
       });
       return `<div class="itin"><div class="itin-arrows">`
+        + `<button class="itin-arrow" data-addcal type="button" aria-label="Add to calendar" title="Add to calendar">${ICONS.plus}</button>`
         + `<button class="itin-arrow itin-expand" data-viewall type="button" aria-label="Collapse" title="Collapse">${ICONS.collapse}</button>`
         + `<button class="itin-arrow itin-close" data-close aria-label="Back">${ICONS.x}</button>`
         + `</div><div class="itin-tl">${html}</div></div>`;
@@ -4689,6 +4780,15 @@
       if (itinOpen()) itinWin.style.height = "auto"; else itinWin.innerHTML = "";
     });
     function selectDay(d) { itinAll = false; itinDay = d; animItin(renderItinDay(d)); }
+    /* Open the calendar once per load, after the cells exist so the date ring
+       lands. Only the first hydration does this — later snapshots must not
+       yank the panel back from wherever the reader navigated to. */
+    let itinAutoOpened = false;
+    function maybeAutoOpenItin() {
+      if (itinAutoOpened || !itinLoaded || !DAYS.length) return;
+      itinAutoOpened = true;
+      selectDay(defaultDay());
+    }
     function showAllDays() { itinAll = true; animItin(renderItinAll()); }
     function closeItin() { if (!itinOpen()) return; itinDay = null; itinAll = false; markPicked(); animItin(null); }
     document.getElementById("days").addEventListener("click", e => {
@@ -4698,7 +4798,18 @@
       if (itinAll) { selectDay(d); return; }            /* clicking a date exits the timeline into that day */
       if (itinDay === d) closeItin(); else selectDay(d);
     });
+    /* Which day the calendar opens on: today while the trip is running, the
+       first day otherwise. "Today is on the calendar" has to mean the month
+       and year match too — a July trip shouldn't open on the 20th just
+       because it happens to be the 20th of some other month. */
+    function defaultDay() {
+      const now = new Date();
+      const sameMonth = now.getFullYear() === TRIP_YEAR && now.getMonth() + 1 === TRIP_MONTH;
+      return (sameMonth && DAYS.includes(now.getDate())) ? now.getDate() : DAYS[0];
+    }
+
     itinWin.addEventListener("click", e => {
+      if (e.target.closest("[data-addcal]")) { openAddCal(); return; }
       if (e.target.closest("[data-viewall]")) { itinAll ? selectDay(itinDay || DAYS[0]) : showAllDays(); return; }
       if (e.target.closest("[data-close]")) { itinAll ? selectDay(itinDay || DAYS[0]) : closeItin(); return; }
       if (e.target.closest("[data-prev]")) { if (itinDay > DAYS[0]) selectDay(itinDay - 1); return; }
@@ -5169,6 +5280,7 @@
       const act = e.target.closest("[data-act]");
       if (e.target === $("#ov")) {
         if (modalId === COMPOSE_ID && composeDirty()) return;   /* a stray backdrop tap never eats a half-written item */
+        if (modalId === ADDCAL_ID && (addcalBusy || ($("#acText") || {}).value?.trim())) return;
         closeModal(); return;
       }
       if (act && act.dataset.act === "close") { closeModal(); return; }
@@ -5180,6 +5292,7 @@
         return;
       }
       if (act && act.dataset.act === "add-custom" && modalId === COMPOSE_ID) { addCustomItem(); return; }
+      if (act && act.dataset.act === "add-cal" && modalId === ADDCAL_ID) { submitAddCal(); return; }
       if (act && act.dataset.act === "del-custom" && modalId && modalId !== COMPOSE_ID) {
         if (!act.classList.contains("arm")) { act.classList.add("arm"); act.textContent = "Tap again to remove"; return; }
         deleteCustomItem(modalId); return;
@@ -5263,6 +5376,111 @@
       const seg = $("#cCatSeg"); if (!seg) return;
       slideSegBg(seg, $("#cCatBg"), seg.querySelector(".segopt.on"));
     }
+    /* ---------------- add to calendar (LLM-parsed free text) ----------------
+       The Gemini key can't live in a static public page, so the paste goes to
+       the mail worker's /add endpoint, which verifies a Firebase ID token and
+       then runs the identical parse → validate → apply chain the email path
+       uses. See worker/src/http.js. */
+    const ADDCAL_ID = "__addcal";
+    const ADDCAL_ENDPOINT = "https://japanclan-mail.engebretsenh.workers.dev/add";
+    let addcalBusy = false;
+
+    function addcalHTML() {
+      return `<div class="sh-handle" aria-hidden="true"></div><div class="sh-top">
+      <span class="sh-coin has" aria-hidden="true">暦</span>
+      <div class="sh-name">Add to calendar</div>
+      <button class="sh-x" data-act="close" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+    <div class="sh-form">
+      <div class="ac-msg" id="acMsg" hidden></div>
+      <textarea class="sh-field" id="acText" rows="4" maxlength="2000" aria-label="Event details"
+        placeholder="Paste event details…"></textarea>
+    </div>
+    <div class="sh-cfoot">
+      <div class="sh-by">Any booking or a plain note — it needs a date on the calendar</div>
+      <button type="button" class="sh-add" id="acAdd" data-act="add-cal" disabled>
+        <span class="ac-spin" aria-hidden="true"></span>
+        <svg class="ac-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        <span id="acAddLbl">Add</span>
+      </button>
+    </div>`;
+    }
+
+    function openAddCal() {
+      if (!me) { signIn(); return; }
+      modalId = ADDCAL_ID;
+      addcalBusy = false;
+      $("#sheet").innerHTML = addcalHTML();
+      lockMobileScroll();
+      const ov = $("#ov"); ov.setAttribute("aria-hidden", "false");
+      requestAnimationFrame(() => ov.classList.add("show"));
+      const t = $("#acText"); if (t) t.focus({ preventScroll: true });
+      if (typeof syncThemeColor === "function") syncThemeColor();
+    }
+
+    function acSetMsg(text, kind) {
+      const m = $("#acMsg"); if (!m) return;
+      m.hidden = !text;
+      m.textContent = text || "";
+      m.className = `ac-msg${kind ? " " + kind : ""}`;
+    }
+
+    function acSetBusy(on) {
+      addcalBusy = on;
+      const btn = $("#acAdd"), txt = $("#acText"), lbl = $("#acAddLbl");
+      if (!btn || !txt || !lbl) return;
+      btn.classList.toggle("busy", on);
+      txt.disabled = on;
+      btn.disabled = on || !txt.value.trim();
+      lbl.textContent = on ? "Adding" : "Add";
+    }
+
+    async function submitAddCal() {
+      if (addcalBusy) return;
+      const txt = $("#acText"); if (!txt) return;
+      const text = txt.value.trim();
+      if (!text) return;
+      acSetMsg("", "");
+      acSetBusy(true);
+      try {
+        const idToken = await firebase.auth().currentUser.getIdToken();
+        const res = await fetch(ADDCAL_ENDPOINT, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ idToken, text }),
+        });
+        const out = await res.json().catch(() => ({}));
+        if (!res.ok || !out.ok) {
+          acSetBusy(false);
+          acSetMsg(out.error || "Couldn't add that — try again.", "bad");
+          return;
+        }
+        /* We added this by hand, so it's already "seen" — don't light the dot
+           for the person who just did it. The snapshot that carries the entry
+           may not have landed yet, hence marking by timestamp rather than
+           reading ACTIVITY. */
+        if (out.ts) { try { localStorage.setItem("_actSeen", String(out.ts)); } catch (e) { } }
+        const lbl = $("#acAddLbl");
+        if (lbl) lbl.textContent = "Added";
+        acSetMsg("", "");
+        $("#sheet").classList.add("done");
+        setTimeout(() => {
+          $("#sheet").classList.remove("done");
+          closeModal();
+          if (DAYS.includes(out.day)) selectDay(out.day);
+        }, 900);
+      } catch (e) {
+        console.warn("[addcal]", e);
+        acSetBusy(false);
+        acSetMsg("Couldn't reach the calendar service — check your connection.", "bad");
+      }
+    }
+
     function composeDirty() {
       return ["cName", "cNote", "cTip"].some(id => { const el = document.getElementById(id); return el && el.value.trim(); });
     }
@@ -5283,11 +5501,21 @@
     window.addEventListener("resize", () => { if (modalId === COMPOSE_ID) slideCatBg(); });
     { const aib = $("#addItemBtn"); if (aib) aib.addEventListener("click", openCompose); }
     $("#sheet").addEventListener("input", e => {
+      if (modalId === ADDCAL_ID) {
+        if (e.target.id !== "acText") return;
+        const b = $("#acAdd"); if (b) b.disabled = addcalBusy || !e.target.value.trim();
+        acSetMsg("", "");                      /* a fresh edit clears the last error */
+        return;
+      }
       if (modalId !== COMPOSE_ID) return;
       if (e.target.id === "cNote") { e.target.style.height = "auto"; e.target.style.height = e.target.scrollHeight + "px"; }
       const b = $("#cAdd"); if (b) b.disabled = !composeValid();
     });
     $("#sheet").addEventListener("keydown", e => {
+      if (modalId === ADDCAL_ID) {
+        if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); submitAddCal(); }
+        return;
+      }
       if (modalId !== COMPOSE_ID || e.key !== "Enter") return;
       if ((e.metaKey || e.ctrlKey) && composeValid()) { e.preventDefault(); addCustomItem(); return; }
       if (e.target.id === "cName") { e.preventDefault(); $("#cNote").focus(); }
@@ -5402,9 +5630,15 @@
       actWrap.hidden = !me || !ACTIVITY.length;
       if (actWrap.hidden) { actMenu.hidden = true; return; }
       actDot.hidden = !(ACTIVITY[0].ts > actSeen());
-      actScroll.innerHTML = ACTIVITY.map(a =>
-        `<div class="act-it"><div class="act-t" title="${esc(a.t)}">${esc(a.t)}</div>` +
-        `<div class="act-when">${esc(fmtAgo(a.ts))}</div></div>`).join("");
+      /* Entries carry the day they landed on, so an entry is only clickable
+         when that day is still on the calendar — an event removed by UNDO, or
+         a trip whose days changed, shouldn't offer a dead link. */
+      actScroll.innerHTML = ACTIVITY.map(a => {
+        const go = DAYS.includes(a.d);
+        return `<div class="act-it${go ? " go" : ""}"${go ? ` role="button" tabindex="0" data-actday="${a.d}"` : ""}>` +
+          `<div class="act-t" title="${esc(a.t)}">${esc(a.t)}</div>` +
+          `<div class="act-when">${esc(fmtAgo(a.ts))}</div></div>`;
+      }).join("");
       syncActMore();
     }
 
@@ -5430,6 +5664,22 @@
         if (ACTIVITY.length) { markActSeen(ACTIVITY[0].ts); actDot.hidden = true; }
       });
       actScroll.addEventListener("scroll", syncActMore, { passive: true });
+      /* clicking an entry jumps the calendar to the day it describes */
+      const gotoDay = el => {
+        const d = Number(el.dataset.actday);
+        if (!DAYS.includes(d)) return;
+        actMenu.hidden = true;
+        selectDay(d);
+        itinWin.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      };
+      actScroll.addEventListener("click", e => {
+        const it = e.target.closest(".act-it[data-actday]"); if (it) gotoDay(it);
+      });
+      actScroll.addEventListener("keydown", e => {
+        if (e.key !== "Enter" && e.key !== " ") return;
+        const it = e.target.closest(".act-it[data-actday]"); if (!it) return;
+        e.preventDefault(); gotoDay(it);
+      });
       actMore.addEventListener("click", e => {
         e.stopPropagation();
         actScroll.scrollTop += actItemH() * ACT_PAGE;   /* CSS scroll-behavior does the easing */
@@ -5916,6 +6166,7 @@
         renderCal();
         if (itinDay !== null) animItin(renderItinDay(itinDay));
         else if (itinAll) animItin(renderItinAll());
+        else maybeAutoOpenItin();
       }, fbErr);
     }
 
@@ -6027,7 +6278,7 @@
       window.fbReady = true;
       restoreMe(); paintAuthBtn();   /* restore cached user to avoid auth flash on reload */
       /* restore cached itinerary alongside the cached user so the calendar doesn't flash locked */
-      if (me) { try { const c = localStorage.getItem("_itin"); if (c) { hydrateItin(JSON.parse(c)); renderCal(); } } catch (e) { } }
+      if (me) { try { const c = localStorage.getItem("_itin"); if (c) { hydrateItin(JSON.parse(c)); renderCal(); maybeAutoOpenItin(); } } catch (e) { } }
 
       /* sign in from nav */
       const topBtn = $("#authBtnTop");

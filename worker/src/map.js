@@ -127,7 +127,8 @@ export function activityLine(ev, mo, day) {
 }
 
 function pushActivity(data, ev, mo, day, now) {
-  const entry = { t: activityLine(ev, mo, day), ts: now };
+  // `d` lets the app jump straight to the day this entry describes
+  const entry = { t: activityLine(ev, mo, day), ts: now, d: day };
   data.activity = [entry, ...(data.activity || [])].slice(0, ACTIVITY_MAX);
 }
 
