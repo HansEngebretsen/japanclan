@@ -276,13 +276,103 @@ describe("removeEvent", () => {
   it("appends to the activity feed rather than erasing the add", () => {
     const withFeed = { ...base(), activity: [{ t: "Added 7/20 dinner at Gonpachi", ts: 100, d: 20 }] };
     const res = removeEvent(withFeed, { day: 20, slot: 0, title: "Gonpachi" }, TRIP, 900);
-    expect(res.data.activity[0]).toEqual({ t: "Removed 7/20 Gonpachi", ts: 900, d: 20 });
+    expect(res.data.activity[0]).toEqual({ t: "Removed 7/20 Gonpachi", ts: 900, d: 20, dead: true });
     expect(res.data.activity[1].t).toBe("Added 7/20 dinner at Gonpachi");
+  });
+
+  /* Both halves of a removal have to stop being links: the app keys off `dead`
+     rather than re-deriving "is this still on the calendar" per entry. */
+  it("marks the removal and the add it undid as dead, leaving others alone", () => {
+    const withFeed = {
+      ...base(),
+      activity: [
+        { t: "Added 7/20 dinner at Gonpachi", ts: 100, d: 20 },
+        { t: "Added 7/21 teamLab", ts: 90, d: 21 },
+      ],
+    };
+    const res = removeEvent(withFeed, { day: 20, slot: 0, title: "Gonpachi" }, TRIP, 900);
+    expect(res.data.activity[0].dead).toBe(true);
+    expect(res.data.activity[1].dead).toBe(true);
+    expect(res.data.activity[2].dead).toBeUndefined();
+  });
+
+  it("deadens every entry naming a stay when the stay is removed", () => {
+    const withFeed = {
+      ...base(),
+      activity: [{ t: "Added 7/20 stay at Yuen", ts: 100, d: 20 }],
+    };
+    const res = removeEvent(withFeed, { day: 20, slot: "stay", title: "Yuen" }, TRIP, 900);
+    expect(res.data.activity[0].dead).toBe(true);
+    expect(res.data.activity[1]).toMatchObject({ t: "Added 7/20 stay at Yuen", dead: true });
   });
 
   it("does not mutate its input", () => {
     const b = base();
     removeEvent(b, { day: 20, slot: 0, title: "Gonpachi" }, TRIP, 900);
     expect(b.itin[20].more).toHaveLength(2);
+  });
+});
+
+describe("stay conflicts and replacement", () => {
+  const HOTEL_A = {
+    type: "lodging", title: "Yuen Sapporo",
+    startDateTime: "2026-07-20T15:00:00+09:00", endDateTime: "2026-07-22T11:00:00+09:00",
+    timezoneOffset: "+09:00", details: [],
+  };
+  const HOTEL_B = { ...HOTEL_A, title: "BLAH BLAH Hotel" };
+
+  const withA = () => applyEvent({}, HOTEL_A, TRIP, 100).data;
+
+  it("reports every clashing night, not just the first", () => {
+    const res = applyEvent(withA(), HOTEL_B, TRIP, 200);
+    expect(res.conflictInfo.days).toEqual([20, 21]);
+    expect(res.conflictInfo.existing[0].title).toBe("Yuen Sapporo");
+    expect(res.conflictInfo.incoming.title).toBe("BLAH BLAH Hotel");
+    expect(res.conflictInfo.range).toEqual({ inDay: 20, outDay: 22 });
+    expect(res.data).toBeUndefined();
+  });
+
+  it("replaces when told to, and drops the property left with no nights", () => {
+    const res = applyEvent(withA(), HOTEL_B, TRIP, 200, { replaceStay: true });
+    expect(res.conflict).toBeUndefined();
+    expect(res.data.itin[20].stay).toBe("blah-blah-hotel");
+    expect(res.data.itin[21].stay).toBe("blah-blah-hotel");
+    expect(Object.keys(res.data.stays)).toEqual(["blah-blah-hotel"]);
+  });
+
+  /* Partial overlap is the case that makes "drop the old one" wrong. */
+  it("keeps a replaced property that still holds nights outside the range", () => {
+    const long = applyEvent({}, {
+      ...HOTEL_A, startDateTime: "2026-07-18T15:00:00+09:00", endDateTime: "2026-07-22T11:00:00+09:00",
+    }, TRIP, 100).data;
+    const res = applyEvent(long, HOTEL_B, TRIP, 200, { replaceStay: true });
+    expect(res.data.itin[18].stay).toBe("yuen-sapporo");   // untouched nights keep it
+    expect(res.data.itin[19].stay).toBe("yuen-sapporo");
+    expect(res.data.itin[20].stay).toBe("blah-blah-hotel");
+    expect(res.data.stays["yuen-sapporo"]).toBeTruthy();
+  });
+
+  it("removes a stay from every night it covers", () => {
+    const res = removeEvent(withA(), { day: 20, slot: "stay", title: "Yuen Sapporo" }, TRIP, 900);
+    expect(res.data.itin[20]).toBeUndefined();
+    expect(res.data.itin[21]).toBeUndefined();
+    expect(res.data.stays["yuen-sapporo"]).toBeUndefined();
+    expect(res.data.activity[0].t).toBe("Removed 7/20–7/21 stay at Yuen Sapporo");
+  });
+
+  it("keeps a day that still has events after its stay is removed", () => {
+    let d = withA();
+    d = applyEvent(d, {
+      type: "dining", title: "Ramen", startDateTime: "2026-07-21T19:00:00+09:00",
+      timezoneOffset: "+09:00", details: [],
+    }, TRIP, 150).data;
+    const res = removeEvent(d, { day: 20, slot: "stay", title: "Yuen Sapporo" }, TRIP, 900);
+    expect(res.data.itin[21].main.title).toBe("Ramen");
+    expect(res.data.itin[21].stay).toBeUndefined();
+  });
+
+  it("refuses a stay removal when the title no longer matches", () => {
+    expect(removeEvent(withA(), { day: 20, slot: "stay", title: "Some Other Hotel" }, TRIP, 900).error)
+      .toMatch(/changed since/);
   });
 });

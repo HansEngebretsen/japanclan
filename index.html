@@ -6081,10 +6081,11 @@
       actDot.hidden = !(ACTIVITY[0].ts > actSeen());
       /* Entries carry the day they landed on, so an entry is only clickable
          when that day is still on the calendar — an event removed by UNDO, or
-         a trip whose days changed, shouldn't offer a dead link. Also, removed
-         entries themselves should never be clickable. */
+         a trip whose days changed, shouldn't offer a dead link. `dead` marks
+         both halves of a removal: the line announcing the removal and the
+         older line that announced the add it undid. */
       actScroll.innerHTML = ACTIVITY.map(a => {
-        const go = !a.removed && DAYS.includes(a.d);
+        const go = !a.dead && DAYS.includes(a.d);
         return `<div class="act-it${go ? " go" : ""}"${go ? ` role="button" tabindex="0" data-actday="${a.d}"` : ""}>` +
           `<div class="act-t" title="${esc(a.t)}">${esc(a.t)}</div>` +
           `<div class="act-when">${esc(fmtAgo(a.ts))}</div></div>`;

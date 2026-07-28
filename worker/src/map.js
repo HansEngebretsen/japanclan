@@ -304,10 +304,9 @@ export function removeEvent(input, { day, slot, title }, tripCfg, now = Date.now
     const span = cleared.length > 1
       ? `${mo}/${Math.min(...cleared)}–${mo}/${Math.max(...cleared)}`
       : `${mo}/${cleared[0]}`;
-    const titleLower = String(s.title || "").toLowerCase();
     data.activity = [
-      { t: `Removed ${span} stay at ${s.title}`, ts: now, d: Math.min(...cleared), removed: true },
-      ...((data.activity || []).filter(a => !(a && String(a.t || "").toLowerCase().includes(titleLower))))
+      { t: `Removed ${span} stay at ${s.title}`, ts: now, d: Math.min(...cleared), dead: true },
+      ...deaden(data.activity, s.title),
     ].slice(0, ACTIVITY_MAX);
     return { data, summary: s.title };
   }
@@ -335,11 +334,24 @@ export function removeEvent(input, { day, slot, title }, tripCfg, now = Date.now
   else data.itin[day] = cell;
 
   const mo = tripCfg?.month || 0;
-  const titleLower = String(removed.title || "").toLowerCase();
   data.activity = [
-    { t: `Removed ${mo}/${day} ${removed.title}`, ts: now, d: day, removed: true },
-    ...((data.activity || []).filter(a => !(a && String(a.t || "").toLowerCase().includes(titleLower))))
+    { t: `Removed ${mo}/${day} ${removed.title}`, ts: now, d: day, dead: true },
+    ...deaden(data.activity, removed.title),
   ].slice(0, ACTIVITY_MAX);
 
   return { data, summary: removed.title };
+}
+
+/* The feed is a history, so removing something must not erase the entry that
+   announced it — but that entry now points at an item the calendar no longer
+   has. Flag it instead of dropping it: the app keeps showing the line and
+   stops offering it as a link. Matching on the title is deliberately loose
+   because the add line wraps it in prose ("Added 7/20 dinner at Gonpachi"). */
+function deaden(activity, title) {
+  const needle = String(title || "").toLowerCase();
+  if (!needle) return activity || [];
+  return (activity || []).map((a) => {
+    if (!a || a.dead || !String(a.t || "").toLowerCase().includes(needle)) return a;
+    return { ...a, dead: true };
+  });
 }

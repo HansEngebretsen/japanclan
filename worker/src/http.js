@@ -94,6 +94,10 @@ export async function handleFetch(request, env) {
   catch { return json({ ok: false, error: "Bad request" }, 400, origin); }
 
   const text = String(body?.text || "").trim();
+  /* Replacing re-sends the original text rather than the parsed event: taking
+     an event object from the client would mean trusting it to describe what
+     the model actually produced. One extra model call, only on conflicts. */
+  const replace = body?.replace === true;
   if (route === "/add") {
     if (!text) return json({ ok: false, error: "Paste some event details first." }, 400, origin);
     if (text.length > MAX_TEXT) {
@@ -168,8 +172,8 @@ export async function handleFetch(request, env) {
       if (!resolved) { rejects.push({ kind: "date", ev: raw }); continue; }
       const v = validateEvent(raw, resolved.trip);
       if (!v.ok) { rejects.push({ kind: v.reason === "out-of-range" ? "date" : "invalid", ev: raw }); continue; }
-      const res = applyEvent(data, v.ev, resolved.trip);
-      if (res.conflict) { rejects.push({ kind: "conflict", ev: raw, why: res.conflict }); continue; }
+      const res = applyEvent(data, v.ev, resolved.trip, Date.now(), { replaceStay: replace });
+      if (res.conflict) { rejects.push({ kind: "conflict", ev: raw, why: res.conflict, info: res.conflictInfo }); continue; }
       data = res.data;
       added.push({ day: data.activity[0].d, ts: data.activity[0].ts, t: data.activity[0].t });
     }
@@ -182,14 +186,20 @@ export async function handleFetch(request, env) {
       const t = match.trip;
       const conflict = rejects.find((r) => r.kind === "conflict");
       const invalid = rejects.find((r) => r.kind === "invalid");
+
+      /* A hotel landing on booked nights isn't really an error — it is a
+         choice. Hand the app both properties and the nights at stake so it can
+         offer a replace, and let it come back with replace:true. */
+      if (conflict?.info) {
+        await writeLog(env, email, text, { outcome: "http-stay-conflict", result: conflict.why.slice(0, 300) });
+        return json({
+          ok: false, needsReplace: true, error: conflict.why,
+          conflict: conflict.info,
+        }, 409, origin);
+      }
+
       let error;
       if (conflict) {
-        /* TODO: hotels are the only thing that can conflict, and there is no
-           way to remove a stay from the app yet — the per-event delete only
-           covers `main`/`more`. Until stays are deletable (or this offers to
-           replace the overlapping one), the honest move is to name the clash
-           and point at the console rather than suggest an action the UI
-           can't perform. */
         error = `${conflict.why}. Those nights are already booked, so this one wasn't added.`;
       } else if (invalid) {
         error = "Couldn't read enough of that to put it on the calendar — try including the date and time.";
