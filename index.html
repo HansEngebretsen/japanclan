@@ -3140,7 +3140,16 @@
     /* ===== add-to-calendar sheet ===== */
     /* no helper text in this footer, so the button owns the row */
     .ac-foot {
-      justify-content: flex-end
+      justify-content: flex-end;
+      margin-bottom: 0
+    }
+
+    /* Hiding the day panel is off for now — the calendar auto-opens on load,
+       so there was nowhere useful to go back to. Drop this rule to restore it;
+       the button and its handler are untouched. Only the single-day view is
+       affected: the all-days view's "Back" shares .itin-close and still works. */
+    .itin-hidebtn {
+      display: none
     }
 
     .ac-ic {
@@ -4729,8 +4738,8 @@
         + `<button class="itin-arrow" data-prev ${d > first ? "" : "disabled"} aria-label="Previous day">${ICONS.chevL}</button>`
         + `<button class="itin-arrow" data-next ${d < last ? "" : "disabled"} aria-label="Next day">${ICONS.chevR}</button>`
         + `<button class="itin-arrow itin-expand" data-viewall type="button" aria-label="View all days" title="View all">${ICONS.expand}</button>`
+        + `<button class="itin-arrow itin-close itin-hidebtn" data-close aria-label="Hide" title="Hide">${ICONS.hide}</button>`
         + `<button class="itin-arrow" data-addcal type="button" aria-label="Add to calendar" title="Add to calendar">${ICONS.plus}</button>`
-        + `<button class="itin-arrow itin-close" data-close aria-label="Hide" title="Hide">${ICONS.hide}</button>`
         + `</div><div class="itin-body">${mainHTML}${stayHTML}</div></div>`;
     }
 
@@ -4769,8 +4778,8 @@
       });
       return `<div class="itin"><div class="itin-arrows">`
         + `<button class="itin-arrow itin-expand" data-viewall type="button" aria-label="Collapse" title="Collapse">${ICONS.collapse}</button>`
-        + `<button class="itin-arrow" data-addcal type="button" aria-label="Add to calendar" title="Add to calendar">${ICONS.plus}</button>`
         + `<button class="itin-arrow itin-close" data-close aria-label="Back">${ICONS.x}</button>`
+        + `<button class="itin-arrow" data-addcal type="button" aria-label="Add to calendar" title="Add to calendar">${ICONS.plus}</button>`
         + `</div><div class="itin-tl">${html}</div></div>`;
     }
 
