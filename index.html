@@ -3230,8 +3230,13 @@
       margin-top: 2px
     }
 
+    /* --muted alone barely reads against --ink-2 on the dark skins (they sit
+       ~16% apart in luminance), so the icon also loses some opacity. Opacity
+       composites against whatever the card is, which keeps this working across
+       every skin without pinning a literal colour. */
     .rp-remove .rp-lbl svg {
-      color: var(--muted)
+      color: var(--muted);
+      opacity: .6
     }
 
     .rp-card {
@@ -4782,7 +4787,6 @@
       if (!data) return;
       /* newest-first, written by the mail worker; see worker/src/map.js */
       ACTIVITY = (Array.isArray(data.activity) ? data.activity : []).filter(a => a && a.t && a.ts);
-      renderActivity();
       STAYS = data.stays || {};
       DEFAULT_CITY = data.defaultCity || {};
       ITIN = {};
@@ -4794,6 +4798,9 @@
         ITIN[k] = e;
       });
       itinLoaded = true;
+      /* after ITIN, not before: actLinkable reads it to decide which entries
+         still point at something */
+      renderActivity();
       /* warm this itinerary's map thumbs so they render offline too */
       const mapUrls = [];
       Object.values(ITIN).forEach(e => {
@@ -6074,18 +6081,43 @@
     function actSeen() { try { return Number(localStorage.getItem("_actSeen")) || 0; } catch (e) { return 0; } }
     function markActSeen(ts) { try { localStorage.setItem("_actSeen", String(ts)); } catch (e) { } }
 
+    /* An entry may only link when the thing it describes is still on the
+       calendar. Two signals, because neither alone is enough:
+
+       `dead` is what the worker writes when something is removed — it flags
+       both the removal line and the older line that announced the add it
+       undid. Authoritative, but only for removals made after that shipped.
+
+       The title check covers everything else, including every entry already
+       in Firestore from before the flag existed. Activity text always embeds
+       the item's title verbatim (see activityLine/buildMain in
+       worker/src/map.js), so if no title still on that day appears in the
+       line, whatever it referred to is gone. */
+    function actLinkable(a) {
+      if (a.dead || !DAYS.includes(a.d)) return false;
+      /* A removal line never links, whatever the calendar looks like now — it
+         describes something that stopped existing. Matching the prefix rather
+         than trusting `dead` alone is what makes the old entries already in
+         Firestore inert without waiting on a worker deploy. The worker is the
+         only writer of these strings (worker/src/map.js). */
+      if (/^Removed /.test(a.t || "")) return false;
+      const e = ITIN[a.d];
+      if (!e) return false;
+      const line = String(a.t || "").toLowerCase();
+      const titles = [];
+      if (e.main && e.main.title) titles.push(e.main.title);
+      if (e.more) e.more.forEach(m => { if (m && m.title) titles.push(m.title); });
+      if (e.stay && e.stay.title) titles.push(e.stay.title);
+      return titles.some(t => line.includes(String(t).toLowerCase()));
+    }
+
     function renderActivity() {
       if (!actWrap) return;
       actWrap.hidden = !me || !ACTIVITY.length;
       if (actWrap.hidden) { actMenu.hidden = true; return; }
       actDot.hidden = !(ACTIVITY[0].ts > actSeen());
-      /* Entries carry the day they landed on, so an entry is only clickable
-         when that day is still on the calendar — an event removed by UNDO, or
-         a trip whose days changed, shouldn't offer a dead link. `dead` marks
-         both halves of a removal: the line announcing the removal and the
-         older line that announced the add it undid. */
       actScroll.innerHTML = ACTIVITY.map(a => {
-        const go = !a.dead && DAYS.includes(a.d);
+        const go = actLinkable(a);
         return `<div class="act-it${go ? " go" : ""}"${go ? ` role="button" tabindex="0" data-actday="${a.d}"` : ""}>` +
           `<div class="act-t" title="${esc(a.t)}">${esc(a.t)}</div>` +
           `<div class="act-when">${esc(fmtAgo(a.ts))}</div></div>`;
