@@ -59,11 +59,13 @@ try {
 
 if (gcloudOk) {
   try {
-    const sa = sh("gcloud iam service-accounts list --project=japanclan2k6 --format=value(email) 2>&1");
+    // The format/flatten/filter arguments contain shell metacharacters — ( ) [ ]
+    // — and execSync runs through /bin/sh, so they have to stay quoted.
+    const sa = sh(`gcloud iam service-accounts list --project=japanclan2k6 --format="value(email)" 2>&1`);
     sa.includes("japanclan-mail@")
       ? ok("Service account japanclan-mail exists")
       : bad("Service account japanclan-mail not found", "Run: ./setup.sh  (creates it)");
-    const policy = sh("gcloud projects get-iam-policy japanclan2k6 --flatten=bindings[].members --format=value(bindings.role) --filter=bindings.members:japanclan-mail@japanclan2k6.iam.gserviceaccount.com 2>&1");
+    const policy = sh(`gcloud projects get-iam-policy japanclan2k6 --flatten="bindings[].members" --format="value(bindings.role)" --filter="bindings.members:japanclan-mail@japanclan2k6.iam.gserviceaccount.com" 2>&1`);
     policy.includes("roles/datastore.user")
       ? ok("Service account has Cloud Datastore User")
       : bad("Service account is missing roles/datastore.user", "Run: ./setup.sh");

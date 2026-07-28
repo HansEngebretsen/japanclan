@@ -70,6 +70,15 @@ else
   ok "Granted roles/datastore.user (Firestore read/write — and nothing else)"
 fi
 
+# -------------------------------------------------------------- deploy
+# Must come before the secrets: `wrangler secret put` can only target a worker
+# that already exists ("This Worker does not exist on your account"), so a fresh
+# account has to deploy first. Setting a secret publishes a new version by
+# itself, so there's no need to deploy again afterwards.
+bold "Deploying the worker"
+npx wrangler deploy 2>&1 | grep -vE "^(npm notice|$)" | tail -6
+ok "Worker '$WORKER_NAME' deployed"
+
 # ------------------------------------------------------------- secrets
 bold "Secrets → Cloudflare (nothing touches your disk)"
 EXISTING_SECRETS="$(npx wrangler secret list 2>/dev/null || echo '')"
@@ -87,20 +96,23 @@ fi
 if echo "$EXISTING_SECRETS" | grep -q "GEMINI_API_KEY"; then
   ok "GEMINI_API_KEY already set"
 else
-  echo ""
-  echo "  Paste your Gemini API key (from https://aistudio.google.com → Get API key)."
-  echo "  It won't be echoed to the screen:"
-  read -rs GEMINI_KEY
+  # Pre-set GEMINI_API_KEY in the environment to run unattended, e.g.
+  #   GEMINI_API_KEY="$(some-command-that-prints-it)" ./setup.sh
+  # Otherwise the key is prompted for, and never echoed.
+  if [ -n "${GEMINI_API_KEY:-}" ]; then
+    GEMINI_KEY="$GEMINI_API_KEY"
+    echo "  Using GEMINI_API_KEY from the environment."
+  else
+    echo ""
+    echo "  Paste your Gemini API key (from https://aistudio.google.com → Get API key)."
+    echo "  It won't be echoed to the screen:"
+    read -rs GEMINI_KEY
+  fi
   [ -n "$GEMINI_KEY" ] || die "No key entered — re-run ./setup.sh when you have one"
   printf "%s" "$GEMINI_KEY" | npx wrangler secret put GEMINI_API_KEY >/dev/null
   unset GEMINI_KEY
   ok "GEMINI_API_KEY stored in Cloudflare"
 fi
-
-# -------------------------------------------------------------- deploy
-bold "Deploying the worker"
-npx wrangler deploy 2>&1 | grep -vE "^(npm notice|$)" | tail -6
-ok "Worker '$WORKER_NAME' deployed"
 
 # ------------------------------------------------------- seed the config
 bold "Seeding Firestore config (uses YOUR gcloud login, no key file)"
