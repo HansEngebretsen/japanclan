@@ -264,6 +264,22 @@ behave correctly without a migration.
 One reply per email, summarizing every event: what was added, what was already
 there, what conflicted, what needs a `YES`/`NO`.
 
+Anything that actually landed is followed by a **link to the calendar**, so the
+confirmation is useful rather than merely reassuring. `UNDO` is offered only
+when something was genuinely applied *and* nothing is still awaiting a
+`YES`/`NO` — offering it otherwise points at a change that doesn't exist, or
+contradicts a confirmation request in the same message.
+
+The reply is **always attempted**; there is no config switch to suppress it. A
+setting that silently disables confirmations is the hardest possible "nothing
+happened" to debug, and it is the one thing every sender notices.
+
+**Reply delivery is recorded on the log entry.** This matters more than it
+sounds: replying happens through the mail platform and can fail independently
+of everything else, so a run can add an event perfectly and still leave the
+sender with silence. Without recording it, the log says `processed` either way
+and the two outcomes are indistinguishable from the outside.
+
 Handled failures reply politely and queue the email for review. Only genuinely
 unexpected crashes are allowed to reject the message — that makes the sender's
 mail server retry, which is the correct behavior for a transient fault and the
@@ -353,8 +369,7 @@ Roughly:
     // promptTemplate / manualPromptTemplate: optional overrides
   },
   "options": {
-    "replyOnSuccess": true,
-    "replyOnFailure": true,
+    "appUrl": "<link included in the confirmation reply>",  // optional override
     "maxPerSenderPerDay": 30,
     "archiveTo": "<archive address>"
   }
@@ -393,7 +408,11 @@ The pipeline keeps several small collections:
 | `applied` | Before-snapshots, for `UNDO` |
 
 Every outcome is logged — successes, conflicts, refusals, rejections and errors
-alike — so "I forwarded it and nothing happened" is always answerable.
+alike — so "I forwarded it and nothing happened" is always answerable. Each
+entry also carries whether the **reply** was sent, and the reason if it wasn't,
+which separates "the pipeline ignored my email" from "it worked and the
+confirmation didn't arrive". Those look identical to the sender and have
+completely different causes.
 
 ---
 

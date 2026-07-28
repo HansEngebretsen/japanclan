@@ -8,7 +8,7 @@
    bounce (so the sender's server retries). */
 
 import PostalMime from "postal-mime";
-import { loadConfig } from "./config.js";
+import { loadConfig, DEFAULT_APP_URL } from "./config.js";
 import { getDoc, setDoc, deleteDoc, latestDocs } from "./firestore.js";
 import { trimEmail, extractIcsEvents, geminiParseEvents, validateEvent } from "./parse.js";
 import { applyEvent, resolveTripByDate, fmtTime, localParts } from "./map.js";
@@ -62,13 +62,25 @@ export default {
     }
 
     const subject = message.headers.get("subject") || "";
+    /* Reply delivery is recorded on the log entry. It used to vanish into
+       console.error, so the log said "processed" whether or not the sender
+       ever heard back — which is indistinguishable, from the outside, from the
+       pipeline having ignored the email entirely. That is the one failure the
+       sender always notices and the log could never explain. */
+    let replyState = "not attempted";
     const writeLog = (entry) =>
       setDoc(env, `pipeline/state/log/${logId()}`, {
-        from, to, subject, ts: nowIso(), ms: Date.now() - started, ...entry,
+        from, to, subject, ts: nowIso(), ms: Date.now() - started, reply: replyState, ...entry,
       }).catch((e) => console.error("log write failed:", e));
     const safeReply = async (text) => {
-      try { await replyTo(message, text); }
-      catch (e) { console.error("reply failed:", e); }
+      try {
+        await replyTo(message, text);
+        replyState = "sent";
+      } catch (e) {
+        // keep the reason: Cloudflare's refusals are specific and worth reading
+        replyState = `failed: ${String(e?.message || e).slice(0, 200)}`;
+        console.error("reply failed:", e);
+      }
     };
 
     // ---- security boundary: only allowlisted senders proceed ----
@@ -86,8 +98,9 @@ export default {
     const rate = await getDoc(env, `pipeline/state/rate/${rateId}`).catch(() => null);
     const count = rate?.data?.count || 0;
     if (count >= max) {
-      await writeLog({ outcome: "rate-limited" });
+      // reply first so the log entry can record whether it actually went out
       await safeReply(`You've hit today's limit of ${max} emails — try again tomorrow.`);
+      await writeLog({ outcome: "rate-limited" });
       return;
     }
     ctx.waitUntil(setDoc(env, `pipeline/state/rate/${rateId}`, { count: count + 1, ts: nowIso() })
@@ -151,6 +164,7 @@ export default {
       const lines = [];
       const byTrip = new Map(); // tripId → { trip, events: [] }
       let anyProposed = false;
+      let appliedAny = false;
 
       for (const raw of events) {
         const resolved = raw.startDateTime ? resolveTripByDate(cfg, raw, provisionalId) : null;
@@ -225,6 +239,7 @@ export default {
             const afterUpdateTime = await setDoc(env, group.trip.itineraryPath, data,
               cur ? { updateTime: cur.updateTime } : {});
             for (const s of applied) lines.push(`✅ Added: ${s}`);
+            appliedAny = true;
             ctx.waitUntil(setDoc(env, `pipeline/state/applied/${logId()}`, {
               from, ts: nowIso(), tripId, itineraryPath: group.trip.itineraryPath,
               before: cur?.data || {}, afterUpdateTime, summary: applied.join("; "),
@@ -237,9 +252,21 @@ export default {
         }
       }
 
-      const footer = anyProposed
-        ? "" : "\n\nReply UNDO to remove what was just added, or HELP for everything I understand.";
-      await safeReply(`${lines.join("\n")}${footer}`);
+      /* Anything that actually landed gets a link to go look at it — that is
+         the whole point of the confirmation, and it is what makes the reply
+         useful rather than just reassuring. UNDO is only offered when there is
+         nothing still waiting on a yes/no, since the two instructions
+         contradict each other in the same message. */
+      const appUrl = cfg.options?.appUrl || DEFAULT_APP_URL;
+      const bits = [];
+      if (appliedAny && appUrl) bits.push(`See it on the calendar: ${appUrl}`);
+      // offering UNDO when nothing was applied points at something that doesn't exist
+      if (appliedAny && !anyProposed) {
+        bits.push("Reply UNDO to remove what was just added, or HELP for everything I understand.");
+      } else {
+        bits.push("Reply HELP for everything I understand.");
+      }
+      await safeReply(`${lines.join("\n")}\n\n${bits.join("\n\n")}`);
       await writeLog({ outcome: "processed", tier, events: events.length, result: lines.join(" | ").slice(0, 400) });
     } catch (err) {
       console.error("pipeline error:", err);

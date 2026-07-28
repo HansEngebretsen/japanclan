@@ -39,9 +39,15 @@ const STARTER = {
     // promptTemplate: ""   ← optional override; the worker has a good default built in
   },
   options: {
-    replyOnSuccess: true,
-    replyOnFailure: true,
+    // Where the confirmation reply points once something lands on the
+    // calendar. The worker has a default; set this to override it.
+    // appUrl: "https://example.com/trip",
     archiveTo: "engebretsenh@gmail.com",
+    /* NOTE: replyOnSuccess / replyOnFailure used to be seeded here and were
+       never read by any code — the worker always replies. Removed rather than
+       implemented: a switch that silently suppresses confirmations is the
+       hardest kind of "nothing happened" to debug, and it is the one thing
+       senders always notice. */
   },
 };
 
