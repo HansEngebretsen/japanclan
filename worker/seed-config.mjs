@@ -12,6 +12,10 @@ const STARTER = {
     "engebretsenh@gmail.com": { name: "Hans", trip: "japan-2026" },
   },
   addresses: {
+    // trip@ is the generic address and the one Cloudflare actually routes.
+    // Events land in whichever trip's date window contains them, so a single
+    // address serves every trip; this mapping is only the tie-break default.
+    "trip@trips.haaans.com": "japan-2026",
     "japan@trips.haaans.com": "japan-2026",
   },
   trips: {

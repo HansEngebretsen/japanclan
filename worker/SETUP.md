@@ -1,7 +1,7 @@
 # Email → Calendar: setup guide
 
 Forward any booking email — a flight, a hotel, a train, a dinner reservation,
-anything — to **`japan@trips.haaans.com`** and it appears on the japanclan
+anything — to **`trip@trips.haaans.com`** and it appears on the japanclan
 calendar within seconds. You get a reply confirming exactly what was added,
 and you can control everything by replying in plain words (**UNDO**,
 **YES**/**NO**, **STATUS**, **HELP**). One email can contain several bookings
@@ -114,10 +114,26 @@ already done.
 
 ### 4. Route the address to the worker (Cloudflare — the one manual step)
 
-**Email Routing** → **Routing rules**: on the `trips.haaans.com` subdomain,
-set the **catch-all** action to **Send to a Worker** → `japanclan-mail`.
-(Catch-all means `japan@`, `paris@`, anything `@trips.haaans.com` all reach
-the worker — future trips need zero extra Cloudflare setup.)
+**Email Routing** → **Routing rules**: create a rule for `trip@` on the
+`trips.haaans.com` subdomain with the action **Send to a Worker** →
+`japanclan-mail`.
+
+One generic address covers every trip: events are grouped by *date*, not by
+the address they were sent to, so `trip@` alone serves Japan now and whatever
+comes after. A booking whose date falls outside every configured trip window
+is parked in `pipeline/state/pending` and the reply says so — see the FUTURE
+note in `src/index.js` for the sketch of auto-creating a trip from that signal.
+
+⚠️ **Don't reach for the catch-all.** Cloudflare's Email Routing API has no
+subdomain-scoped catch-all — `?subdomain=` is silently ignored and the
+`/email/routing/subdomains/…` paths 404. The only catch-all is **zone-wide**,
+so enabling it would also cover `@haaans.com` the moment that domain's MX ever
+moves off Mailgun onto Cloudflare. A literal per-address rule has no such edge.
+
+Note that the zone will report **`status: misconfigured`** with `mx.foreign`
+and `mx.missing` errors. That is expected and correct: it is Email Routing
+observing that the *root* `haaans.com` still points at Mailgun, which is
+exactly what you want. Do not "fix" it.
 
 ### 5. Add the people who may email the calendar, and verify
 
@@ -133,7 +149,7 @@ timezone, and model are pre-filled; adjust if needed.
 ### 6. Test it
 
 1. From your own Gmail, forward a real flight or hotel confirmation to
-   `japan@trips.haaans.com`.
+   `trip@trips.haaans.com`.
 2. Within a few seconds you should get a reply listing exactly what was added
    (a round-trip confirmation adds **both** flights) — and it's live in the
    app, no refresh needed.

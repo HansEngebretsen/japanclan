@@ -151,6 +151,19 @@ export default {
       for (const raw of events) {
         const resolved = raw.startDateTime ? resolveTripByDate(cfg, raw, provisionalId) : null;
         if (!resolved) {
+          /* No configured trip window contains this date. Today that means the
+             booking is parked in the review queue and the sender is told, which
+             is the safe default while japan-2026 is the only trip.
+
+             FUTURE — auto-create a trip from here: the generic `trip@` address
+             carries no trip of its own, so an event landing outside every
+             window is the natural signal that a *new* trip is starting. To
+             support that, derive a window from the event (flights are the
+             reliable anchor: outbound start → return end, everything else is
+             too narrow to define a trip), write a new entry under cfg.trips
+             with its own itineraryPath, and re-run resolveTripByDate. Worth
+             gating behind a confirmation reply ("Start a new trip for these
+             dates? YES/NO") so a mistyped year doesn't silently spawn one. */
           const v0 = validateEvent(raw, null);
           await pending("out-of-range", { parsed: v0.ok ? v0.ev : null });
           lines.push(`✳️ ${raw.title || "One item"} — falls outside every trip window, saved for review.`);
