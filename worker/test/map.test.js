@@ -178,6 +178,15 @@ describe("activity feed", () => {
     ]);
   });
 
+  /* "dinner at Drinks with Kenji" is what typed-in notes produce when the
+     meal wording is applied unconditionally. */
+  it("drops the meal wording when there's no venue", () => {
+    const note = { ...DINNER, title: "Drinks with Kenji", locationName: null };
+    expect(activityLine(note, 7, 16)).toBe("Added 7/16 Drinks with Kenji");
+    expect(activityLine({ ...note, locationName: "Bar Trench" }, 7, 16))
+      .toBe("Added 7/16 dinner at Drinks with Kenji");
+  });
+
   it("names the meal from the time of day", () => {
     const lunch = { ...DINNER, startDateTime: "2026-07-20T12:30:00+09:00" };
     expect(activityLine(lunch, 7, 20)).toBe("Added 7/20 lunch at Gonpachi Nishiazabu");

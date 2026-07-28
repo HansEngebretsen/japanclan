@@ -156,32 +156,52 @@ export async function handleFetch(request, env) {
      CAL_DAYS, which is derived from it) rather than bounce the user. Until
      then the message asks them to pick a date already on the calendar. */
   const added = [];
+  let rejects = [];
   for (let attempt = 0; ; attempt++) {
     const cur = await getDoc(env, match.trip.itineraryPath);
     let data = cur?.data || {};
     added.length = 0;
+    rejects = [];
 
     for (const raw of events) {
       const resolved = raw.startDateTime ? resolveTripByDate(cfg, raw, match.id) : null;
-      if (!resolved) continue;
+      if (!resolved) { rejects.push({ kind: "date", ev: raw }); continue; }
       const v = validateEvent(raw, resolved.trip);
-      if (!v.ok) continue;
+      if (!v.ok) { rejects.push({ kind: v.reason === "out-of-range" ? "date" : "invalid", ev: raw }); continue; }
       const res = applyEvent(data, v.ev, resolved.trip);
-      if (res.conflict) continue;
+      if (res.conflict) { rejects.push({ kind: "conflict", ev: raw, why: res.conflict }); continue; }
       data = res.data;
       added.push({ day: data.activity[0].d, ts: data.activity[0].ts, t: data.activity[0].t });
     }
 
     if (!added.length) {
+      /* Report why it actually failed. Collapsing every rejection into "that
+         date isn't on the calendar" was worse than unhelpful — a hotel
+         colliding with another hotel on the same nights parses perfectly and
+         sits well inside the window, so that message was simply false. */
       const t = match.trip;
+      const conflict = rejects.find((r) => r.kind === "conflict");
+      const invalid = rejects.find((r) => r.kind === "invalid");
+      let error;
+      if (conflict) {
+        /* TODO: hotels are the only thing that can conflict, and there is no
+           way to remove a stay from the app yet — the per-event delete only
+           covers `main`/`more`. Until stays are deletable (or this offers to
+           replace the overlapping one), the honest move is to name the clash
+           and point at the console rather than suggest an action the UI
+           can't perform. */
+        error = `${conflict.why}. Those nights are already booked, so this one wasn't added.`;
+      } else if (invalid) {
+        error = "Couldn't read enough of that to put it on the calendar — try including the date and time.";
+      } else {
+        error = `That date isn't on the calendar — it runs ${t.month}/${t.firstDay} to ${t.month}/${t.lastDay}. Adjust the date and try again.`;
+      }
       await writeLog(env, email, text, {
-        outcome: "http-out-of-range",
-        result: events.map((e) => `${e.title || "?"} @ ${e.startDateTime || "no date"}`).join(" | ").slice(0, 400),
+        outcome: `http-rejected-${conflict ? "conflict" : invalid ? "invalid" : "out-of-range"}`,
+        result: events.map((e) => `${e.title || "?"} @ ${e.startDateTime || "no date"} → ${e.endDateTime || ""}`).join(" | ").slice(0, 400),
+        error: error.slice(0, 300),
       });
-      return json({
-        ok: false,
-        error: `That date isn't on the calendar — it runs ${t.month}/${t.firstDay} to ${t.month}/${t.lastDay}. Adjust the date and try again.`,
-      }, 422, origin);
+      return json({ ok: false, error }, 422, origin);
     }
 
     try {

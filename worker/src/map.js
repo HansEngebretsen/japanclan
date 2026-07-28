@@ -118,7 +118,12 @@ export function activityLine(ev, mo, day) {
   const when = `${mo}/${day}`;
   const title = ev.title || "Untitled";
   switch (ev.type) {
-    case "dining": return `Added ${when} ${mealWord(fmtTime(ev.startDateTime))} at ${title}`;
+    /* "dinner at Gonpachi" reads well; "dinner at Drinks with Kenji" does not.
+       A venue name is the signal — without one the title already describes the
+       thing, so it stands alone. */
+    case "dining": return ev.locationName
+      ? `Added ${when} ${mealWord(fmtTime(ev.startDateTime))} at ${title}`
+      : `Added ${when} ${title}`;
     case "lodging": return `Added ${when} stay at ${title}`;
     case "flight": return `Added ${when} flight ${title}`;
     case "train": return `Added ${when} train ${title}`;
