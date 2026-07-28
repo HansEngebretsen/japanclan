@@ -3234,14 +3234,6 @@
       color: var(--ink)
     }
 
-    .dc-note {
-      font-family: var(--sans);
-      font-size: 12px;
-      line-height: 1.4;
-      color: var(--muted);
-      margin-top: 6px
-    }
-
     .dc-foot {
       justify-content: flex-end;
       gap: 6px
@@ -3389,16 +3381,12 @@
       cursor: pointer
     }
 
-    /* bold on hover rather than a fill — the row is already inside a popover,
-       and a second background reads as a nested surface */
-    .act-it.go .act-t {
-      transition: color .12s
-    }
-
+    /* underline on hover — the row sits inside a popover, so a second
+       background would read as a nested surface */
     .act-it.go:hover .act-t,
     .act-it.go:focus-visible .act-t {
-      font-weight: 700;
-      color: var(--ink)
+      text-decoration: underline;
+      text-underline-offset: 2px
     }
 
     .act-it.go:focus-visible {
@@ -5640,10 +5628,35 @@
     const REMOVE_ENDPOINT = "https://japanclan-mail.engebretsenh.workers.dev/remove";
     let delTarget = null, delBusy = false;
 
+    /* How many people this affects. The real answer is the allowlist, which
+       clients deliberately can't read (firestore.rules → config/allowlist
+       denies everyone; only the rules themselves get() it). The roster is
+       readable and holds everyone who has signed in and joined, so that is
+       what gets counted — a floor, not the full invite list.
+
+       TODO: when this is generalized, have the worker report the allowlist
+       count alongside the itinerary (it can read it via IAM) so the number is
+       "people with access" rather than "people who have signed in". */
+    let rosterCount = null;
+    function fetchRosterCount() {
+      if (rosterCount !== null || !fbRoster) return;
+      fbRoster.get().then(d => {
+        rosterCount = Object.keys((d.data() || {}).members || {}).length || null;
+        const el = $("#dcWho");
+        if (el && rosterCount) el.textContent = whoText(rosterCount);
+      }).catch(() => { });
+    }
+    /* "all 1 person" reads badly, and a count of one is usually just the
+       roster lagging behind reality, so anything under two falls back to the
+       generic phrasing. */
+    function whoText(n) {
+      return n > 1 ? `all ${n} people who can see this calendar`
+        : "everyone who can see this calendar";
+    }
+
     function delcalHTML(title) {
       return `<div class="sh-handle" aria-hidden="true"></div><div class="sh-top">
-      <span class="ac-ic" aria-hidden="true">${ICONS.x}</span>
-      <div class="sh-name">Remove from calendar</div>
+      <div class="sh-name">Really remove?</div>
       <button class="sh-x" data-act="close" aria-label="Close">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
           <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -5653,8 +5666,7 @@
     </div>
     <div class="sh-form">
       <div class="ac-msg" id="dcMsg" hidden></div>
-      <div class="dc-q">Are you sure you want to delete <b>${esc(title)}</b> for everyone?</div>
-      <div class="dc-note">It comes off the calendar for the whole clan, not just you.</div>
+      <div class="dc-q">This will remove <b>${esc(title)}</b> for <span id="dcWho">${whoText(rosterCount)}</span>.</div>
     </div>
     <div class="sh-cfoot ac-foot dc-foot">
       <button type="button" class="dc-cancel" data-act="close">Cancel</button>
@@ -5674,6 +5686,7 @@
       delBusy = false;
       modalId = DELCAL_ID;
       $("#sheet").innerHTML = delcalHTML(delTarget.title);
+      fetchRosterCount();          /* fills the count in place if it isn't cached yet */
       lockMobileScroll();
       const ov = $("#ov"); ov.setAttribute("aria-hidden", "false");
       requestAnimationFrame(() => ov.classList.add("show"));
