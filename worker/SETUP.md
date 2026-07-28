@@ -33,7 +33,7 @@ This repo is **public**, so it's worth being clear about what is and isn't safe:
 | Thing | Where it lives | Public? |
 |---|---|---|
 | Worker code (this folder) | GitHub | ✅ Public — contains no secrets |
-| Service-account key (`GCP_SA_KEY`) | Cloudflare's encrypted secret store only | 🔒 **Never** in git, never in a file that stays on disk |
+| Service-account key (`GCP_SA_KEY`) | Cloudflare's encrypted secret store only | 🔒 **Never** in git, and never written to your disk at all — `setup.sh` streams it straight from gcloud into Cloudflare |
 | Gemini API key (`GEMINI_API_KEY`) | Cloudflare's encrypted secret store only | 🔒 Same |
 | Sender allowlist, trip config | Firestore `pipeline/config` (clients can't read it) | 🔒 Private, but not secret-level |
 | Itinerary (flights, confirmations) | Firestore, unchanged — clients still can't write it | 🔒 Same as today |
@@ -47,9 +47,12 @@ Ground rules baked into the design:
 - **Least privilege.** The service account you'll create can read/write
   Firestore data and *nothing else* — it can't touch billing, rules, auth, or
   other Google services. Your Firestore security rules are not modified.
-- **Nothing secret ever gets committed.** The two secrets are pasted once into
-  Cloudflare (`wrangler secret put`) and the key file deleted. If either ever
-  leaks, the "If a secret leaks" section below rotates it in two minutes.
+- **No key file exists.** `setup.sh` pipes the service-account key from gcloud
+  directly into Cloudflare's secret store — there is no file in `~/Downloads`
+  to leak, forget about, or commit by accident. Your *local* tools (`npm run
+  seed`, `npm run check`) use your own short-lived gcloud login instead of a
+  key. If a secret ever leaks, the "If a secret leaks" section below rotates it
+  in two minutes.
 
 ---
 
@@ -76,87 +79,58 @@ Still in **Email Routing** → **Destination addresses** → **Add address** →
 (The worker forwards a copy of every accepted email here, so you always have
 an archive even if something goes wrong downstream.)
 
-### 3. Create the service account (Google Cloud)
+### 3. Everything else: one command
 
-1. Go to [console.cloud.google.com](https://console.cloud.google.com) — make
-   sure the project selector at the top says **japanclan2k6**.
-2. **IAM & Admin** → **Service Accounts** → **Create service account**.
-   - Name: `japanclan-mail`
-   - Role: **Cloud Datastore User** (that's Firestore read/write — nothing more).
-   - Skip "grant users access", click **Done**.
-3. Open the new account → **Keys** tab → **Add key** → **Create new key** →
-   **JSON**. A file downloads (e.g. `japanclan2k6-a1b2c3.json`).
-4. 🔒 Treat that file like a password. You'll paste it in step 5 and then
-   **delete it**. Don't move it into this repo folder, don't email it,
-   don't screenshot it.
+The rest of the setup — service account, permissions, secrets, deploy, and the
+Firestore config — is handled by a script, so there is **no JSON key file to
+download, store, or delete**. The key is created by `gcloud` and streamed
+directly into Cloudflare's encrypted secret store; it never touches your disk.
 
-### 4. Get a Gemini API key (Google AI Studio)
+First, get a **Gemini API key** (free, no credit card): go to
+[aistudio.google.com](https://aistudio.google.com) → **Get API key** →
+**Create API key**, and copy it — the script will ask for it.
 
-Go to [aistudio.google.com](https://aistudio.google.com) → **Get API key** →
-**Create API key**. Copy it. (Free tier — no card, and this pipeline's few
-calls a day sit far below its limits.)
-
-### 5. Deploy the worker and set the secrets
-
-In a terminal, from this repo:
+Then, from this repo:
 
 ```bash
 cd worker
-npm install
-npx wrangler login                 # opens a browser to your Cloudflare account
-
-npx wrangler secret put GCP_SA_KEY
-#  → when prompted, paste the ENTIRE contents of the JSON key file from step 3
-#    (open it in a text editor, select all, copy, paste, Enter)
-
-npx wrangler secret put GEMINI_API_KEY
-#  → paste the key from step 4
-
-npx wrangler deploy
+./setup.sh
 ```
 
-Then confirm everything so far with the built-in checker — it prints a ✅ or
-❌ (with the fix) for every step:
+It signs you in to Google Cloud and Cloudflare (browser popups) if needed, then:
 
-```bash
-npm run check
-```
+| Step | What it does |
+|---|---|
+| Service account | Creates `japanclan-mail` if missing |
+| Permissions | Grants **Cloud Datastore User** only — Firestore read/write, nothing else |
+| `GCP_SA_KEY` | Creates a key and pipes it into Cloudflare (never written to disk) |
+| `GEMINI_API_KEY` | Prompts for your key (not echoed) and stores it in Cloudflare |
+| Deploy | `wrangler deploy` |
+| Config | Seeds the Firestore `pipeline/config` doc using **your own gcloud login** |
+| Key hygiene | Warns if more than one key exists, with the command to clean up |
 
-### 6. Route the address to the worker (Cloudflare)
+The script is safe to re-run — it checks each step and skips whatever is
+already done.
+
+### 4. Route the address to the worker (Cloudflare — the one manual step)
 
 **Email Routing** → **Routing rules**: on the `trips.haaans.com` subdomain,
 set the **catch-all** action to **Send to a Worker** → `japanclan-mail`.
 (Catch-all means `japan@`, `paris@`, anything `@trips.haaans.com` all reach
 the worker — future trips need zero extra Cloudflare setup.)
 
-### 7. Create the config (Firestore)
-
-The worker reads everything it's allowed to do from one Firestore doc, so you
-can change senders/trips/prompts later without touching code. Seed it from the
-repo using the key file from step 3:
+### 5. Add the people who may email the calendar, and verify
 
 ```bash
-cd worker
-GCP_SA_KEY_FILE=~/Downloads/japanclan2k6-*.json npm run seed
-GCP_SA_KEY_FILE=~/Downloads/japanclan2k6-*.json npm run check   # full verification
-```
-
-Now that the key has been pasted into Cloudflare (step 5) and the config is
-seeded, **delete the downloaded key file** (and empty the trash):
-
-```bash
-rm ~/Downloads/japanclan2k6-*.json
+npm run check     # verifies every step above and prints the fix for anything missing
 ```
 
 Then open [Firebase console](https://console.firebase.google.com/project/japanclan2k6/firestore)
-→ `pipeline/config` and edit:
+→ `pipeline/config` → **`senders`** and add each person allowed to email the
+calendar: their email (lowercase) → `{ name, trip: "japan-2026" }`. Trip dates,
+timezone, and model are pre-filled; adjust if needed.
 
-- **`senders`** — add each person allowed to email the calendar:
-  their email (lowercase) → `{ name, trip: "japan-2026" }`.
-- Everything else (trip dates, timezone, model) is pre-filled for the
-  Japan trip; adjust if needed.
-
-### 8. Test it
+### 6. Test it
 
 1. From your own Gmail, forward a real flight or hotel confirmation to
    `japan@trips.haaans.com`.
@@ -223,9 +197,14 @@ Then open [Firebase console](https://console.firebase.google.com/project/japancl
 
 ## If a secret leaks
 
-- **Service-account key:** Google Cloud console → IAM & Admin → Service
-  Accounts → `japanclan-mail` → Keys → delete the key. Create a new one and
-  `npx wrangler secret put GCP_SA_KEY` again. Old key is dead instantly.
+- **Service-account key:** list and delete it, then re-run setup — old key dies
+  instantly:
+  ```bash
+  gcloud iam service-accounts keys list --iam-account=japanclan-mail@japanclan2k6.iam.gserviceaccount.com --managed-by=user
+  gcloud iam service-accounts keys delete KEY_ID --iam-account=japanclan-mail@japanclan2k6.iam.gserviceaccount.com
+  ```
+  Then delete `GCP_SA_KEY` in the Cloudflare dashboard and run `./setup.sh`
+  again to mint a fresh one.
 - **Gemini key:** AI Studio → API keys → delete + recreate →
   `npx wrangler secret put GEMINI_API_KEY`.
 

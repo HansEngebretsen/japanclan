@@ -2,16 +2,10 @@
      GCP_SA_KEY_FILE=~/Downloads/japanclan2k6-xxxx.json npm run seed
    Refuses to overwrite an existing config. Node 20+. */
 
-import { readFileSync } from "node:fs";
 import { getDoc, setDoc } from "./src/firestore.js";
+import { localEnv } from "./src/localauth.js";
 
-const file = process.env.GCP_SA_KEY_FILE;
-if (!file) {
-  console.error("Set GCP_SA_KEY_FILE to the path of your service-account JSON key.\n" +
-    "Example: GCP_SA_KEY_FILE=~/Downloads/japanclan2k6-a1b2c3.json npm run seed");
-  process.exit(1);
-}
-const env = { GCP_SA_KEY: readFileSync(file.replace(/^~/, process.env.HOME || "~"), "utf8") };
+const env = localEnv();
 
 const STARTER = {
   senders: {

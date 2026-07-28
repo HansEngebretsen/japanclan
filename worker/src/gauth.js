@@ -23,11 +23,14 @@ function pemToBuffer(pem) {
 export function saInfo(env) {
   // Emulator mode (wrangler dev with FIRESTORE_HOST set) needs no real key.
   if (env.FIRESTORE_HOST) return { project_id: env.GCP_PROJECT || "japanclan2k6" };
+  // Local tooling (seed/check) passes a short-lived gcloud token — no key file.
+  if (env.GCP_ACCESS_TOKEN) return { project_id: env.GCP_PROJECT || "japanclan2k6" };
   return JSON.parse(env.GCP_SA_KEY);
 }
 
 export async function getBearer(env) {
   if (env.FIRESTORE_HOST) return "owner"; // Firestore emulator accepts anything
+  if (env.GCP_ACCESS_TOKEN) return env.GCP_ACCESS_TOKEN;
   const now = Math.floor(Date.now() / 1000);
   if (cache.jwt && now < cache.exp - 300) return cache.jwt;
   const sa = saInfo(env);

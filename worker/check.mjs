@@ -3,7 +3,7 @@
    as many times as you like; it only reads. Node 20+. */
 
 import { execSync } from "node:child_process";
-import { readFileSync, existsSync } from "node:fs";
+import { existsSync } from "node:fs";
 
 let pass = 0, fail = 0;
 const ok = (msg) => { pass++; console.log(`  ✅ ${msg}`); };
@@ -49,20 +49,37 @@ if (loggedIn) {
   info("the trips subdomain catch-all sends to the japanclan-mail worker (step 6).");
 }
 
-console.log("\nFirestore (optional deeper check — needs the key file)");
-const keyFile = process.env.GCP_SA_KEY_FILE;
-if (!keyFile) {
-  info("Skipped. To verify Firestore + config, run:");
-  info("GCP_SA_KEY_FILE=~/Downloads/japanclan2k6-xxxx.json npm run check");
-} else {
+console.log("\nGoogle Cloud / Firestore");
+let gcloudOk = false;
+try {
+  const acct = sh("gcloud config get-value account 2>/dev/null").trim();
+  if (acct && acct !== "(unset)") { ok(`Signed in to gcloud as ${acct}`); gcloudOk = true; }
+  else bad("gcloud has no active account", "Run: gcloud auth login");
+} catch { bad("gcloud isn't installed", "Install it: https://cloud.google.com/sdk/docs/install"); }
+
+if (gcloudOk) {
   try {
-    const env = { GCP_SA_KEY: readFileSync(keyFile.replace(/^~/, process.env.HOME || "~"), "utf8") };
+    const sa = sh("gcloud iam service-accounts list --project=japanclan2k6 --format=value(email) 2>&1");
+    sa.includes("japanclan-mail@")
+      ? ok("Service account japanclan-mail exists")
+      : bad("Service account japanclan-mail not found", "Run: ./setup.sh  (creates it)");
+    const policy = sh("gcloud projects get-iam-policy japanclan2k6 --flatten=bindings[].members --format=value(bindings.role) --filter=bindings.members:japanclan-mail@japanclan2k6.iam.gserviceaccount.com 2>&1");
+    policy.includes("roles/datastore.user")
+      ? ok("Service account has Cloud Datastore User")
+      : bad("Service account is missing roles/datastore.user", "Run: ./setup.sh");
+  } catch (e) { bad(`Couldn't inspect the project: ${String(e).slice(0, 120)}`, "Check: gcloud config set project japanclan2k6"); }
+}
+
+{
+  try {
+    const { localEnv } = await import("./src/localauth.js");
+    const env = localEnv();
     const { getDoc } = await import("./src/firestore.js");
     const cfgDoc = await getDoc(env, "pipeline/config");
     if (!cfgDoc) {
       bad("pipeline/config doc doesn't exist", "Run: npm run seed  (SETUP.md step 7)");
     } else {
-      ok("Service-account key works and pipeline/config exists");
+      ok("Firestore reachable and pipeline/config exists");
       const cfg = cfgDoc.data;
       const senders = Object.keys(cfg.senders || {});
       senders.length
@@ -80,13 +97,14 @@ if (!keyFile) {
     }
   } catch (e) {
     bad(`Firestore check failed: ${String(e).slice(0, 140)}`,
-      "Re-check the service account role (Cloud Datastore User) and key file — SETUP.md step 3");
+      "Run: gcloud auth login && gcloud config set project japanclan2k6, then ./setup.sh");
   }
 }
 
-console.log("\nGemini (optional — set GEMINI_API_KEY env var to test the key)");
+console.log("\nGemini");
 if (!process.env.GEMINI_API_KEY) {
-  info("Skipped. To verify: GEMINI_API_KEY=xxxx npm run check");
+  info("Key not checkable from here (it lives in Cloudflare's secret store).");
+  info("To test a key directly: GEMINI_API_KEY=xxxx npm run check");
 } else {
   try {
     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${process.env.GEMINI_API_KEY}`);
