@@ -3535,7 +3535,6 @@
       margin-top: 6px;
       padding: 5px 0 1px;
       border: 0;
-      border-top: 1px solid var(--line);
       background: 0;
       cursor: pointer;
       font-family: var(--mono);
@@ -5794,7 +5793,7 @@
            for the person who just did it. The snapshot that carries the entry
            may not have landed yet, hence marking by timestamp rather than
            reading ACTIVITY. */
-        if (out.ts) { try { localStorage.setItem("_actSeen", String(out.ts)); } catch (e) { } }
+        markMineSeen(out.ts);
         const lbl = $("#acAddLbl");
         if (lbl) lbl.textContent = "Added";
         acSetMsg("", "");
@@ -5923,7 +5922,7 @@
           if (m) { m.hidden = false; m.className = "ac-msg bad"; m.textContent = out.error || "Couldn't remove that."; }
           return;
         }
-        if (out.ts) { try { localStorage.setItem("_actSeen", String(out.ts)); } catch (e) { } }
+        markMineSeen(out.ts);
         closeModal();
         /* Hold the incoming snapshot for the length of the animation, or the
            re-render would replace the node mid-collapse and it would vanish
@@ -6088,6 +6087,23 @@
 
     function actSeen() { try { return Number(localStorage.getItem("_actSeen")) || 0; } catch (e) { return 0; } }
     function markActSeen(ts) { try { localStorage.setItem("_actSeen", String(ts)); } catch (e) { } }
+
+    /* Your own add/remove must never light the unread dot — the dot means
+       "someone else changed this and you haven't looked".
+
+       Marking seen isn't enough on its own: the Firestore snapshot usually
+       lands before the fetch resolves, so the feed has already painted the dot
+       by the time we know the timestamp. Hence the repaint.
+
+       max() because a snapshot from someone else may have arrived in between,
+       and their newer entry must still raise the dot. Lowering the watermark
+       would resurrect entries you had already seen. */
+    function markMineSeen(ts) {
+      const n = Number(ts) || 0;
+      if (!n) return;
+      markActSeen(Math.max(actSeen(), n));
+      renderActivity();
+    }
 
     /* An entry may only link when the thing it describes is still on the
        calendar. Two signals, because neither alone is enough:
