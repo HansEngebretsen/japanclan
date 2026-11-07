@@ -18,6 +18,24 @@
   #bar { position: sticky; top: 0; background: #1a1611; color: #fff; padding: 10px 14px; border-radius: 10px; z-index: 5; }
   #flagged { width: 100%; box-sizing: border-box; margin-top: 6px; font-family: monospace; }
 </style>
+<!-- Google Analytics: page address only, so nothing kept in the URL reaches Google -->
+<script>
+(function () {
+  if (location.hostname !== 'haaans.com') return;
+  window.dataLayer = window.dataLayer || [];
+  window.gtag = function () { dataLayer.push(arguments); };
+  gtag('js', new Date());
+  gtag('config', 'G-MGSJYZJ5YJ', {
+    content_group: 'japanclan',
+    page_location: location.origin + location.pathname,
+    page_referrer: document.referrer.split(/[?#]/)[0]
+  });
+  var s = document.createElement('script');
+  s.async = true;
+  s.src = 'https://www.googletagmanager.com/gtag/js?id=G-MGSJYZJ5YJ';
+  document.head.appendChild(s);
+})();
+</script>
 </head>
 <body>
 <h1>Photo review — click any photo to flag it for replacement</h1>

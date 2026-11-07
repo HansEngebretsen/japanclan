@@ -47,7 +47,8 @@ self.addEventListener("fetch", e => {
   // fonts.googleapis.com is the one exception: it's static font CSS (precached in
   // ASSETS above) and must be cache-served or typography dies offline.
   if ((url.hostname.endsWith("googleapis.com") && url.hostname !== "fonts.googleapis.com") ||
-      url.hostname.endsWith("firebaseio.com")) return;
+      url.hostname.endsWith("firebaseio.com") ||
+      url.hostname.endsWith("googletagmanager.com") || url.hostname.endsWith("google-analytics.com")) return;
   // App shell is network-first: every launch gets the freshest index.html and the
   // cache is only the offline fallback. Cache-first here would pin installed PWAs
   // to whatever shell was cached when the worker installed, so deploys that touch
